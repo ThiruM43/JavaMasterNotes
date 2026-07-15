@@ -1,0 +1,261 @@
+{
+  "id": "7",
+  "slug": "lambda",
+  "title": "Lambda & Functional Programming",
+  "icon": "λ",
+  "accentColor": "#0284c7",
+  "subsections": [
+    {
+      "id": "7.1",
+      "slug": "lambda-functional-interfaces",
+      "title": "Lambda & Functional Interfaces",
+      "keyRule": "Lambda = concise implementation of a functional interface (interface with exactly ONE abstract method). @FunctionalInterface enforces this. Key built-ins: Function<T,R>, Predicate<T>, Consumer<T>, Supplier<T>, BiFunction<T,U,R>. Lambdas replaced anonymous inner classes.",
+      "terms": [
+        {
+          "id": "7.1.lambda-syntax",
+          "term": "Lambda Syntax",
+          "what": "Lambda is a short, anonymous function. Instead of creating an object to hold one method, you write the logic inline with arrow syntax: (params) -> body.",
+          "why": "Before Java 8, passing behavior required anonymous inner classes — 5+ lines for a simple comparator. Lambdas express the same in one line.",
+          "how": "(a, b) -> a.compareTo(b) is a Comparator. x -> x > 0 is a Predicate. () -> 'hello' is a Supplier. str -> System.out.println(str) is a Consumer.",
+          "where": "Anywhere a functional interface is expected: Collections.sort(), Stream API, CompletableFuture, @Async, event listeners.",
+          "when": "Use lambdas for short, one-method behaviors. If logic is more than 3-4 lines, extract to a named method for readability.",
+          "issue": "Lambda capturing a mutable local variable fails — variables captured by lambda must be effectively final.",
+          "fix": "Make captured variables final or effectively final. If you need to mutate, use an AtomicInteger or an instance field.",
+          "star": {
+            "s": "Sort employee list by salary — 5-line anonymous class.",
+            "t": "Modernize.",
+            "a": "employees.sort((a,b) -> a.getSalary().compareTo(b.getSalary())).",
+            "r": "One line, same behavior."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "7.1.functionalinterfac-e",
+          "term": "@FunctionalInterfac e",
+          "what": "Function<T,R> takes one input of type T, returns one output of type R. It is the most versatile built-in functional interface.",
+          "why": "Represents transformations — convert input to output. Map one type to another.",
+          "how": "Function<String,Integer> strLen = s -> s.length(); strLen.apply('hello') → 5. Chain: func1.andThen(func2) — output of func1 is input of func2.",
+          "where": "Stream.map(), transformation pipelines, data conversion, DTO mapping.",
+          "when": "Use Function when transforming data from one type to another.",
+          "issue": "null input causes NPE in the lambda body if not handled.",
+          "fix": "Use Optional.ofNullable(input).map(func).orElse(default) for null-safe transformation.",
+          "star": {
+            "s": "DTO to Entity mapping function needed.",
+            "t": "Implement as reusable Function.",
+            "a": "Function<UserDTO, User> toEntity = dto -> new User(dto.getName(), dto.getEmail()).",
+            "r": "Reusable, composable, testable."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "7.1.predicate-t",
+          "term": "Predicate<T>",
+          "what": "Predicate<T> takes input of type T, returns boolean. Represents a test/filter condition.",
+          "why": "Extracts filter logic from loops into reusable, composable conditions.",
+          "how": "Predicate<Employee> highSalary = e -> e.getSalary() > 100000; stream.filter(highSalary). Combine: pred1.and(pred2), pred1.or(pred2), pred1.negate().",
+          "where": "Stream.filter(), input validation, access control checks, business rule testing.",
+          "when": "Use Predicate for any condition that returns true/false. Compose complex conditions with and()/or()/negate().",
+          "issue": "Complex Predicate chains can become hard to read.",
+          "fix": "Name each Predicate clearly: Predicate<User> isActive = ...; Predicate<User> isAdmin = ...; isActive.and(isAdmin) reads naturally.",
+          "star": {
+            "s": "User search with multiple optional filters.",
+            "t": "Clean implementation.",
+            "a": "Built Predicate for each filter. Combined with and(). stream.filter(combined).",
+            "r": "Each filter independently testable. Easy to add new filters."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "7.1.consumer-t",
+          "term": "Consumer<T>",
+          "what": "Consumer<T> takes one input, returns nothing (void). Represents a side-effect operation — do something with T but produce no output.",
+          "why": "For operations that consume data: logging, persisting, printing, sending notifications.",
+          "how": "Consumer<String> logger = msg -> System.out.println('[LOG] ' + msg); list.forEach(logger). Chain: consumer1.andThen(consumer2).",
+          "where": "Stream.forEach(), Iterable.forEach(), event handlers, side-effect operations.",
+          "when": "Use Consumer for side-effects: logging, persisting, displaying. Not for transformations (use Function for those).",
+          "issue": "Multiple side effects in one Consumer lambda — hard to test each effect separately.",
+          "fix": "Separate into individual Consumers and chain with andThen(): logConsumer.andThen(saveConsumer).andThen(notifyConsumer).",
+          "star": {
+            "s": "Processing pipeline needs to log, save, and notify for each item.",
+            "t": "Clean design.",
+            "a": "Three separate Consumers chained with andThen(). Each independently testable.",
+            "r": "Each concern separate."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "7.1.supplier-t",
+          "term": "Supplier<T>",
+          "what": "Supplier<T> takes no input, produces a value of type T. Represents lazy value creation — 'give me a value when asked'.",
+          "why": "For lazy initialization, default value factories, and providing values on demand without computing them upfront.",
+          "how": "Supplier<User> defaultUser = () -> new User('guest', 'guest@example.com'); user = Optional.ofNullable(maybeUser).orElseGet(defaultUser);",
+          "where": "Optional.orElseGet(), lazy initialization, test fixtures, configuration providers.",
+          "when": "Use Supplier when computation should be deferred — not done until the value is actually needed.",
+          "issue": "orElse() evaluates the default eagerly even if the Optional has a value. orElseGet() is lazy — uses Supplier.",
+          "fix": "Prefer orElseGet(supplier) over orElse(default) when the default involves any computation or object creation.",
+          "star": {
+            "s": "Optional.orElse(expensiveComputation()) called even when optional has value.",
+            "t": "Fix.",
+            "a": "Changed to orElseGet(() -> expensiveComputation()).",
+            "r": "Expensive call only when needed."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "7.1.method-references",
+          "term": "Method References",
+          "what": "Method reference is a shorthand for a lambda that calls one existing method. Uses :: notation. Four types: static, instance, instance of arbitrary type, constructor.",
+          "why": "More readable than lambdas for simple method calls. Self-documenting.",
+          "how": "Static: Integer::parseInt. Instance of specific object: myList::add. Instance of arbitrary type: String::length (applied to each String). Constructor: User::new.",
+          "where": "Stream operations, Comparator.comparing(), forEach, any place a lambda calls exactly one method.",
+          "when": "Use method reference when lambda body is just one method call. Use lambda when there is any additional logic.",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "7.1b",
+      "slug": "lambda-internals-closures",
+      "title": "Lambda Internals & Closures",
+      "keyRule": "Lambda captures variables from enclosing scope — they must be effectively final (not reassigned). Lambda 'this' refers to the enclosing class, not the lambda itself. Type inference lets compiler determine functional interface type from context.",
+      "terms": [
+        {
+          "id": "7.1b.effectively-final-closure",
+          "term": "Effectively Final & Closure",
+          "what": "A lambda can capture local variables from its enclosing method, but those variables must be effectively final — assigned once and never changed again.",
+          "why": "Lambdas can run later in a different thread. If the variable changed after capture, the lambda would have stale or unexpected data.",
+          "how": "int x = 10; Runnable r = () -> System.out.println(x); // OK — x never changed. int y = 10; y = 20; Runnable r2 = () -> System.out.println(y); // COMPILE ERROR — y is reassigned.",
+          "where": "Any lambda or anonymous class capturing local variables.",
+          "when": "When you need to capture a value that changes in a loop: copy it to a final local variable before the lambda.",
+          "issue": "Loop variable capture: for(int i=0; i<10; i++) { threads.add(() -> print(i)); } — compile error. i changes.",
+          "fix": "final int captured = i; threads.add(() -> print(captured)); — each iteration captures its own copy.",
+          "star": {
+            "s": "Lambda in loop captures wrong values.",
+            "t": "Fix.",
+            "a": "For each iteration, assign loop variable to a new effectively-final local. Each lambda captures its own copy.",
+            "r": "Correct values captured."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "7.1b.this-in-lambda-vs-anonymous-class",
+          "term": "'this' in Lambda vs Anonymous Class",
+          "what": "In a lambda, 'this' refers to the enclosing class instance. In an anonymous class, 'this' refers to the anonymous class instance itself.",
+          "why": "Lambda is not a class — it has no 'this'. Anonymous class IS a class — it has its own 'this'.",
+          "how": "class Outer { Runnable lambda = () -> System.out.println(this); // 'this' = Outer. Runnable anon = new Runnable() { public void run() { System.out.println(this); } }; // 'this' = anonymous Runnable }",
+          "where": "Event handlers, callbacks, Spring @EventListener — important distinction when accessing enclosing class fields.",
+          "when": "Use lambda when you want to access the enclosing class's fields via 'this'. Use anonymous class only when you need the inner class's own identity.",
+          "issue": "Using 'this' in anonymous class when you meant to access outer class — wrong reference, NPE or wrong behavior.",
+          "fix": "Prefer lambdas over anonymous classes. Lambda 'this' = enclosing class — simpler and clearer.",
+          "star": {
+            "s": "Anonymous class callback: 'this.service' throws NPE — 'this' refers to anonymous class which has no service field.",
+            "t": "Fix.",
+            "a": "Changed to lambda. 'this.service' now refers to outer class correctly.",
+            "r": "NPE fixed."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "7.1b.type-inference-in-lambdas",
+          "term": "Type Inference in Lambdas",
+          "what": "Java compiler infers the lambda's type from context — you don't need to specify the functional interface type if it's unambiguous.",
+          "why": "Reduces boilerplate. Comparator<Employee> c = (a, b) -> a.getName().compareTo(b.getName()); — no need to write Employee types in the lambda.",
+          "how": "List<String> list = Arrays.asList('b','a','c'); list.sort((a, b) -> a.compareTo(b)); — compiler infers a and b are String from List<String> context.",
+          "where": "Lambda parameters, var in local variable type inference, method reference type inference.",
+          "when": "Let inference work. Only add explicit types when: ambiguity exists, or the types make the code clearer.",
+          "issue": "Ambiguous context confuses compiler: list.stream().collect(toUnmodifiableList()) — sometimes needs explicit type.",
+          "fix": "Add explicit type parameter: .<String>toUnmodifiableList() or just add cast to resolve ambiguity.",
+          "star": {
+            "s": "Lambda compile error 'cannot infer type'.",
+            "t": "Fix.",
+            "a": "Method overload creates ambiguity. Added explicit parameter type in lambda to resolve.",
+            "r": "Compiles correctly."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "7.2b",
+      "slug": "additional-functional-interfaces",
+      "title": "Additional Functional Interfaces",
+      "keyRule": "BiFunction<T,U,R>: two inputs, one output. BiPredicate<T,U>: two inputs, boolean output. BiConsumer<T,U>: two inputs, no output. UnaryOperator<T>: one input, same type output. BinaryOperator<T>: two same-type inputs, same type output. IntFunction/ToIntFunction for primitive-to-object/object-to-int.",
+      "terms": [
+        {
+          "id": "7.2b.bifunction-bipredicate",
+          "term": "BiFunction & BiPredicate",
+          "what": "BiConsumer<T,U> takes two parameters and returns nothing (void). For two-input operations with side effects.",
+          "why": "Regular Consumer handles one parameter. Many side-effect operations naturally need two inputs — print key+value, log field+message.",
+          "how": "BiConsumer<String,Integer> print = (k,v) -> System.out.println(k + '=' + v); map.forEach(print); — Map.forEach takes a BiConsumer.",
+          "where": "Map.forEach(), Map.replaceAll(), BiFunction with side effects.",
+          "when": "Use BiConsumer for Map iteration, logging two values, writing key-value pairs.",
+          "issue": "BiConsumer is void — cannot chain results. For chaining, use BiFunction.",
+          "fix": "BiConsumer supports andThen(): biConsumer.andThen(biConsumer2) executes both in sequence.",
+          "star": {
+            "s": "Stream.reduce needs a combining function of two values → same type.",
+            "t": "Use right interface.",
+            "a": "BinaryOperator<Integer> sum = Integer::sum; stream.reduce(0, sum).",
+            "r": "Clean functional style. BiConsumer"
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "7.2b.unaryoperator-binaryoperator",
+          "term": "UnaryOperator & BinaryOperator",
+          "what": "UnaryOperator<T> extends Function<T,T> — same type in and out. BinaryOperator<T> extends BiFunction<T,T,T> — two same-type inputs, same type output.",
+          "why": "Specialized for operations where input and output type are the same — transform in place, combine two values of same type.",
+          "how": "UnaryOperator<String> upper = String::toUpperCase; list.replaceAll(upper); — transforms each element. BinaryOperator<Integer> sum = Integer::sum; stream.reduce(0, sum);",
+          "where": "List.replaceAll(), Stream.reduce(), math operations on same type, string transformations.",
+          "when": "Use UnaryOperator instead of Function<T,T> for clarity. BinaryOperator instead of BiFunction<T,T,T>.",
+          "issue": "UnaryOperator is a subtype of Function — can pass to any method expecting Function<T,T>.",
+          "fix": "No fix needed — use them for semantic clarity. UnaryOperator makes the 'same type in/out' contract explicit.",
+          "star": {
+            "s": "Need to uppercase all strings in a list in-place.",
+            "t": "Clean syntax.",
+            "a": "list.replaceAll(String::toUpperCase); — replaceAll takes UnaryOperator<E>.",
+            "r": "One-liner. Clean and readable."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "7.2b.intfunction-tointfunction",
+          "term": "IntFunction / ToIntFunction",
+          "what": "IntFunction<R> takes an int and returns R. ToIntFunction<T> takes T and returns int. Primitive-specialized to avoid boxing overhead.",
+          "why": "Boxing int to Integer and back has cost. Primitive functional interfaces avoid it for numeric operations.",
+          "how": "IntFunction<String> intToStr = Integer::toString; // int → String. ToIntFunction<String> len = String::length; // String → int. int[] lengths = strings.stream().mapToInt(len).toArray();",
+          "where": "Stream.mapToInt(), IntStream operations, performance-critical numeric processing.",
+          "when": "Use primitive functional interfaces when working with int/long/double streams to avoid boxing.",
+          "issue": "Using Function<Integer,Integer> instead of IntUnaryOperator — every call boxes and unboxes.",
+          "fix": "Use specialized primitive interfaces: IntUnaryOperator, LongFunction, DoubleConsumer, etc. for better performance.",
+          "star": {
+            "s": "Stream of 10M numbers using Function<Integer,Integer> — slow due to boxing.",
+            "t": "Optimize.",
+            "a": "Switched to IntStream with IntUnaryOperator.",
+            "r": "No boxing. 3x faster for numeric pipeline."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,158 @@
+{
+  "id": "11",
+  "slug": "jdbc",
+  "title": "JDBC & Database Access",
+  "icon": "🗄️",
+  "accentColor": "#ca8a04",
+  "subsections": [
+    {
+      "id": "11.1",
+      "slug": "jdbc-core-connection-pooling",
+      "title": "JDBC Core & Connection Pooling",
+      "keyRule": "JDBC = Java Database Connectivity — the standard API for all relational DBs. Always use PreparedStatement (not Statement) to prevent SQL injection. Always close connections with try- with-resources. Never create new connections per request — use a connection pool (HikariCP is the fastest).",
+      "terms": [
+        {
+          "id": "11.1.preparedstatement-vs-statement",
+          "term": "PreparedStatement vs Statement",
+          "what": "Statement executes a raw SQL string. PreparedStatement precompiles SQL with ? placeholders for parameters — safer and faster.",
+          "why": "Building SQL with String concatenation (Statement) allows SQL injection attacks. PreparedStatement treats parameters as data, never as SQL.",
+          "how": "PreparedStatement ps = conn.prepareStatement('SELECT * FROM users WHERE id = ?'); ps.setLong(1, userId); ResultSet rs = ps.executeQuery();",
+          "where": "Every parameterized SQL query. Batch operations. Any query with user-provided input.",
+          "when": "ALWAYS use PreparedStatement. NEVER use Statement for queries with parameters. Only use Statement for static DDL or queries with no parameters.",
+          "issue": "Statement with string concat: 'SELECT * FROM users WHERE name = ''' + name + '''' — if name = '' OR '1'='1', returns all users. Classic SQL injection.",
+          "fix": "PreparedStatement parameterizes all inputs. The DB treats them as values, not SQL. No injection possible.",
+          "star": {
+            "s": "Login form vulnerable to SQL injection — '' OR '1'='1' bypasses password.",
+            "t": "Fix.",
+            "a": "Changed to PreparedStatement with ? parameter.",
+            "r": "SQL injection impossible. Login secure."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "11.1.connection-pooling-hikaricp",
+          "term": "Connection Pooling (HikariCP)",
+          "what": "Transaction groups multiple SQL operations so they ALL succeed or ALL fail together. ACID: Atomicity, Consistency, Isolation, Durability.",
+          "why": "Without transactions, partial updates corrupt data. Transfer money: debit one account, credit another — if credit fails, debit must be rolled back.",
+          "how": "conn.setAutoCommit(false); try { stmt1.execute(); stmt2.execute(); conn.commit(); } catch(Exception e) { conn.rollback(); }",
+          "where": "Any multi-step data operation: transfers, order placement, inventory updates, user registration.",
+          "when": "Use transactions for: any operation that updates multiple tables or rows that must stay consistent. In Spring, use @Transactional — much simpler.",
+          "issue": "Pool too small = requests queue waiting for connection = slow. Pool too large = DB overwhelmed = slow. Pool size mismatch with DB side.",
+          "fix": "Rule of thumb: pool size = (core_count * 2) + disk spindle count. Monitor pool wait time. Increase pool only if wait time is consistently high.",
+          "star": {
+            "s": "App slow under load — requests taking 2 seconds.",
+            "t": "Diagnose.",
+            "a": "HikariCP wait time 1800ms — pool size 5 too small for 100 concurrent users. Increased to 20.",
+            "r": "Wait time < 5ms. JDBC Transactions"
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "11.1.resultset",
+          "term": "ResultSet",
+          "what": "ResultSet holds the result of a SQL SELECT query. You iterate it row by row with rs.next(), and read each column with rs.getString(), rs.getInt(), etc.",
+          "why": "SQL returns tabular data. ResultSet provides cursor-based iteration over that data.",
+          "how": "while (rs.next()) { Long id = rs.getLong('id'); String name = rs.getString('name'); } Always close ResultSet, Statement, and Connection.",
+          "where": "Every SELECT query in JDBC code.",
+          "when": "Always close ResultSet in try-with-resources. For large datasets, use rs.setFetchSize() to fetch in batches instead of loading all rows into memory.",
+          "issue": "Loading 1 million rows into ResultSet without fetchSize = all 1M rows in memory = OOM.",
+          "fix": "ps.setFetchSize(500) — fetch 500 rows at a time. Or better, use Spring Data with pagination (Pageable) to limit result size.",
+          "star": {
+            "s": "Export report OOM on large table.",
+            "t": "Fix.",
+            "a": "Added rs.setFetchSize(1000). Process and write each batch without holding all in memory.",
+            "r": "Export any size table without OOM."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "11.0b",
+      "slug": "jdbc-extended",
+      "title": "JDBC Extended",
+      "keyRule": "DriverManager = simple connection factory for testing. DataSource = production connection pool. CallableStatement = stored procedures. executeBatch = bulk operations. ACID = Atomicity/Consistency/Isolation/Durability. Isolation levels control dirty/non-repeatable/phantom read phenomena.",
+      "terms": [
+        {
+          "id": "11.0b.drivermanager-datasource",
+          "term": "DriverManager / DataSource",
+          "what": "CallableStatement executes stored procedures in the database. Extends PreparedStatement. Supports IN, OUT, and INOUT parameters.",
+          "why": "When business logic lives in stored procedures, CallableStatement is how Java calls them.",
+          "how": "CallableStatement cs = con.prepareCall('{call get_customer(?, ?)}'); cs.setInt(1, customerId); cs.registerOutParameter(2, Types.VARCHAR); cs.execute(); String name = cs.getString(2);",
+          "where": "Legacy enterprise systems with stored procedures, Oracle PL/SQL calls, SQL Server stored proc calls.",
+          "when": "Use when calling database stored procedures. For new code, prefer business logic in Java and simple CRUD SQL.",
+          "issue": "CallableStatement tightly couples Java code to stored procedure signatures — hard to change either side independently.",
+          "fix": "Document stored procedure contracts. Version them. Consider moving logic to Java if possible.",
+          "star": {
+            "s": "Legacy Oracle system — customer data only accessible via stored proc GET_CUSTOMER(id, out name, out email).",
+            "t": "Call from Java.",
+            "a": "CallableStatement with registerOutParameter.",
+            "r": "Data retrieved correctly."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "11.0b.execute-vs-executequery-vs-executeupdate",
+          "term": "execute() vs executeQuery() vs executeUpdate()",
+          "what": "executeQuery() for SELECT — returns ResultSet. executeUpdate() for INSERT/UPDATE/DELETE — returns int (rows affected). execute() for any SQL — returns boolean (true=ResultSet, false=update count).",
+          "why": "Choosing the right method catches misuse errors. executeQuery() on an UPDATE would throw exception in some drivers.",
+          "how": "ResultSet rs = stmt.executeQuery('SELECT...'); int rows = stmt.executeUpdate('INSERT...'); boolean isResultSet = stmt.execute('...');",
+          "where": "All JDBC Statement and PreparedStatement usage.",
+          "when": "Always use the specific method: executeQuery for SELECTs, executeUpdate for DML. Use execute() only when query type is not known in advance.",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "11.0b.executebatch-addbatch",
+          "term": "executeBatch() / addBatch()",
+          "what": "ACID: Atomicity (all or nothing), Consistency (DB rules always satisfied), Isolation (transactions don't see each other's incomplete work), Durability (committed data survives crashes).",
+          "why": "ACID guarantees make database transactions reliable. Without it, concurrent transactions and crashes could leave data in inconsistent states.",
+          "how": "Atomicity: transaction commits entirely or rolls back entirely. Consistency: foreign keys, constraints always valid. Isolation: set by isolation level. Durability: write-ahead log ensures committed data survives crash.",
+          "where": "Relational databases (PostgreSQL, MySQL, Oracle). NoSQL often trades ACID for availability (BASE).",
+          "when": "Understand ACID when designing transactions, choosing isolation level, or evaluating database technology.",
+          "issue": "Long transactions can hold locks too long, reducing concurrency. High isolation levels can cause deadlocks.",
+          "fix": "Use savepoints sparingly. Release them when no longer needed. Prefer well- designed smaller transactions over complex savepoint logic.",
+          "star": {
+            "s": "Transaction that must save headers but allow row-level errors.",
+            "t": "Implement partial recovery.",
+            "a": "Savepoint before each row. On row error: rollback to savepoint, log error, continue.",
+            "r": "Partial import — valid rows saved, invalid logged. ACID Properties"
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "11.0b.isolation-levels-read-phenomena",
+          "term": "Isolation Levels & Read Phenomena",
+          "what": "Four isolation levels: READ_UNCOMMITTED, READ_COMMITTED, REPEATABLE_READ, SERIALIZABLE. Each trades concurrency for protection against read phenomena: dirty reads, non-repeatable reads, phantom reads.",
+          "why": "Choosing wrong isolation level causes incorrect data reads (too low) or performance bottlenecks (too high).",
+          "how": "READ_UNCOMMITTED: dirty reads possible. READ_COMMITTED (default in most DBs): no dirty reads. REPEATABLE_READ: no dirty or non-repeatable reads. SERIALIZABLE: full isolation — no phenomena.",
+          "where": "Spring @Transactional(isolation=REPEATABLE_READ). JDBC connection.setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE).",
+          "when": "Use READ_COMMITTED for most OLTP apps — good balance. Use REPEATABLE_READ for financial reads that must not change mid-transaction. Avoid SERIALIZABLE — too slow.",
+          "issue": "Dirty read: read uncommitted data from another transaction that rolls back. Non- repeatable read: same row read twice, different values. Phantom read: range query returns different rows on second read.",
+          "fix": "Set isolation level based on what you can tolerate. Dirty read: use READ_COMMITTED. Non-repeatable: REPEATABLE_READ. Phantom: SERIALIZABLE or application-level locking.",
+          "star": {
+            "s": "Financial report reads account balance twice — different values.",
+            "t": "Fix.",
+            "a": "Transaction isolation was READ_COMMITTED — another transaction updated in between. Changed to REPEATABLE_READ.",
+            "r": "Same balance throughout transaction."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    }
+  ]
+}

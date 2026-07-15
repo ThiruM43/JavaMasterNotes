@@ -1,0 +1,177 @@
+{
+  "id": "6",
+  "slug": "generics",
+  "title": "Generics",
+  "icon": "🔷",
+  "accentColor": "#6366f1",
+  "subsections": [
+    {
+      "id": "6.1",
+      "slug": "generics-fundamentals",
+      "title": "Generics Fundamentals",
+      "keyRule": "Generics provide compile-time type safety. List<String> guarantees only Strings — no cast needed, no ClassCastException at runtime. Type parameter erased at runtime (type erasure) — at runtime List<String> = List<Object>.",
+      "terms": [
+        {
+          "id": "6.1.generic-classes-methods",
+          "term": "Generic Classes & Methods",
+          "what": "At runtime, Java removes all generic type information — List<String> becomes List. This is 'type erasure'. Generic types only exist at compile time.",
+          "why": "Generics were added in Java 5 for backward compatibility. Old code using raw List still works. JVM does not need to know generic type at runtime.",
+          "how": "List<String> and List<Integer> are the same class at runtime — List.class. instanceof List<String> is impossible. Can only check instanceof List.",
+          "where": "Everywhere generics are used. Affects: reflection (cannot get generic type via reflection easily), varargs with generics, overloading.",
+          "when": "Type erasure matters when: using reflection to inspect types, creating generic arrays, overloading methods that differ only by generic type.",
+          "issue": "Cannot create a generic array: new T[] is illegal. Cannot do instanceof T. Cannot catch a generic exception type.",
+          "fix": "Pass Class<T> as a parameter when you need the type at runtime: <T> T fromJson(String json, Class<T> type). Jackson and Gson use this pattern.",
+          "star": {
+            "s": "Runtime ClassCastException when deserializing generic type.",
+            "t": "Fix.",
+            "a": "Passed Class<T> to deserializer method. Used cls.cast() for safe conversion.",
+            "r": "Type-safe deserialization."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "6.1.wildcards-extends-super",
+          "term": "Wildcards (? extends, ? super)",
+          "what": "Wildcards are flexible type bounds in generics. '? extends T' accepts T and any subclass. '? super T' accepts T and any superclass.",
+          "why": "Without wildcards, List<Animal> cannot accept a List<Dog> even though Dog IS-A Animal — generic types are invariant. Wildcards add flexibility.",
+          "how": "? extends T (upper bound) = read-only — you can read T but cannot add. ? super T (lower bound) = write-friendly — you can add T.",
+          "where": "Collection APIs, utility methods: Collections.copy(List<? super T> dest, List<? extends T> src).",
+          "when": "Remember PECS: Producer Extends, Consumer Super. If a list PRODUCES items for you to read — use extends. If it CONSUMES items you write — use super.",
+          "issue": "Using List<? extends T> and trying to add to it — compilation error. Wildcards with extends are read-only.",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "6.1.bounded-type-parameters",
+          "term": "Bounded Type Parameters",
+          "what": "<T extends Comparable<T>> means T must implement Comparable. This lets you call compareTo() on T inside a generic method.",
+          "why": "Without bounds, you can only call Object methods on T (equals, toString). Bounds unlock the methods of the bound type.",
+          "how": "public <T extends Number> double sum(List<T> list) { return list.stream().mapToDouble(Number::doubleValue).sum(); } — works for List<Integer>, List<Double>, etc.",
+          "where": "Sorting utilities, math utilities, any generic method needing specific capabilities from T.",
+          "when": "Add extends bound when your generic code needs to call methods on T beyond what Object provides.",
+          "issue": "Multiple bounds with two classes fail: <T extends A & B> only works when B is an interface. Cannot extend two classes.",
+          "fix": "<T extends Serializable & Comparable<T>> is valid (Serializable is interface). Cannot have two class bounds.",
+          "star": {
+            "s": "Generic sort method breaks at compile time on T.",
+            "t": "Fix.",
+            "a": "Changed to <T extends Comparable<T>> — T can now call compareTo().",
+            "r": "Compiles and works for any Comparable type."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "6.1b",
+      "slug": "generics-deep-dive",
+      "title": "Generics Deep Dive",
+      "keyRule": "Raw type = no type parameter — avoid in new code. Reifiable type = fully known at runtime. Non- reifiable type = erased at runtime (most generics). Unbounded wildcard <?> = any type, read-only. @SuppressWarnings('unchecked') — use sparingly with explanation.",
+      "terms": [
+        {
+          "id": "6.1b.raw-type",
+          "term": "Raw Type",
+          "what": "A raw type is a generic class or interface used without a type parameter. Example: List instead of List<String>. Existed before generics in Java 1.4.",
+          "why": "Raw types are allowed only for backward compatibility with pre-Java 5 code. They bypass type safety — compiler gives unchecked warnings.",
+          "how": "List list = new ArrayList(); // raw type. list.add('hello'); list.add(42); // no error — dangerous. String s = (String) list.get(1); // ClassCastException at runtime.",
+          "where": "Legacy codebases. Never in new code.",
+          "when": "Never use raw types in new code. Always parameterize: List<String>, Map<String,Integer>.",
+          "issue": "Raw types suppress all type checking. ClassCastException at runtime instead of compile error. Hard to debug.",
+          "fix": "Add type parameters everywhere. Use @SuppressWarnings('unchecked') only when you can prove type safety yourself.",
+          "star": {
+            "s": "Legacy code has raw type List — ClassCastException in production.",
+            "t": "Fix.",
+            "a": "Added proper type parameter List<Customer>. Compiler caught 3 wrong casts.",
+            "r": "Type-safe code, zero runtime ClassCastExceptions."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "6.1b.reifiable-vs-non-reifiable-types",
+          "term": "Reifiable vs Non- Reifiable Types",
+          "what": "Reifiable type: fully known at runtime — primitives, raw types, non-generic classes, unbound wildcards (List<?>). Non-reifiable: type info erased at runtime — most generics like List<String>.",
+          "why": "Because of type erasure, JVM cannot tell List<String> from List<Integer> at runtime. This limits what you can do with generics.",
+          "how": "",
+          "where": "",
+          "when": "",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "6.1b.unbounded-wildcard",
+          "term": "Unbounded Wildcard (<?>)",
+          "what": "<?> means 'list of some unknown type'. You can read from it as Object. You cannot add anything (except null). Used when the type doesn't matter.",
+          "why": "When your method just needs to iterate and read, using List<?> is more flexible than List<Object> — List<String> IS a List<?> but is NOT a List<Object>.",
+          "how": "void printAll(List<?> list) { for(Object o : list) { System.out.println(o); } } — accepts any List. Cannot call list.add('x') — compile error.",
+          "where": "Read-only operations on collections of unknown type. Utility methods that only inspect elements.",
+          "when": "Use <?> when reading any collection without caring about the type. Use <T> when you need to know and use the type.",
+          "issue": "Cannot add to a List<?> (except null) — compile error. Attempting to add causes confusion for beginners.",
+          "fix": "If you need to add elements, use List<T> with a bounded type parameter. List<?> is read-only.",
+          "star": {
+            "s": "Utility method that prints any list.",
+            "t": "Signature.",
+            "a": "void printAll(List<?> list) — accepts List<String>, List<Integer>, all lists.",
+            "r": "Most flexible signature. No casting required."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "6.1b.suppresswarnings-unchecked",
+          "term": "@SuppressWarnings (\"unchecked\")",
+          "what": "@SuppressWarnings('unchecked') suppresses compiler warnings about unchecked generic type operations. Used when you know the cast is safe but the compiler cannot verify it.",
+          "why": "Sometimes you must do unsafe casts for generic code — like (T[]) new Object[n]. The warning is valid but unavoidable in those cases.",
+          "how": "@SuppressWarnings('unchecked') T[] arr = (T[]) new Object[size]; — suppress warning on this line only.",
+          "where": "Generic array creation, legacy API integration, type token patterns.",
+          "when": "Use only when you have manually verified type safety. NEVER use it to silence warnings you don't understand.",
+          "issue": "Applying @SuppressWarnings at class or method level masks all unchecked warnings — real bugs hidden.",
+          "fix": "Apply @SuppressWarnings at the narrowest possible scope (single line or statement). Always add a comment explaining why the cast is safe.",
+          "star": {
+            "s": "Code review — @SuppressWarnings on entire class.",
+            "t": "Fix.",
+            "a": "Moved to exact unchecked lines. Added comment explaining why safe.",
+            "r": "Only intentional suppressions. Actual type bugs now visible."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "6.1b.generic-arrays-and-variance",
+          "term": "Generic Arrays and Variance",
+          "what": "Java arrays are covariant (String[] IS-A Object[]) but unsafe — you can assign a String[] to Object[] and put an Integer into it (ArrayStoreException). Generic collections are invariant — safer.",
+          "why": "This is a known Java design flaw from pre-generics era. Arrays check type at runtime (covariant + runtime check). Generics check at compile time (invariant).",
+          "how": "",
+          "where": "",
+          "when": "",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    }
+  ]
+}

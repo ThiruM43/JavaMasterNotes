@@ -1,0 +1,638 @@
+{
+  "id": "2",
+  "slug": "oop",
+  "title": "Object-Oriented Programming",
+  "icon": "🏗️",
+  "accentColor": "#7c3aed",
+  "subsections": [
+    {
+      "id": "2.1",
+      "slug": "four-pillars-of-oop",
+      "title": "Four Pillars of OOP",
+      "keyRule": "Encapsulation = hide data behind methods. Inheritance = reuse code from parent class. Polymorphism = one name, many behaviors. Abstraction = show what, hide how. All four work together in every well-designed Java class.",
+      "terms": [
+        {
+          "id": "2.1.encapsulation",
+          "term": "Encapsulation",
+          "what": "Encapsulation means wrapping data (fields) and behavior (methods) together inside a class, and controlling access using access modifiers (private/protected/public).",
+          "why": "Without encapsulation, any code can directly change any field — you lose control of your object's state. Encapsulation protects your object from invalid states.",
+          "how": "Make fields private. Provide public getters/setters with validation. Example: private int age; public void setAge(int age) { if(age < 0) throw new IllegalArgumentException(); this.age = age; }",
+          "where": "Every well-designed Java class. Spring beans, JPA entities, DTOs — all should encapsulate their state.",
+          "when": "Always. The only exception is records (Java 14+) where fields are final and public by design.",
+          "issue": "Public fields allow any code to set invalid values (age = -5). Breaking encapsulation makes code hard to test, debug, and refactor.",
+          "fix": "Private fields + public getters/setters with validation. Or use Builder pattern for complex construction. Lombok @Getter @Setter auto-generate.",
+          "star": {
+            "s": "Bug where user age becomes negative.",
+            "t": "Prevent.",
+            "a": "Field was public — any code could set it. Made private. Added validation in setter.",
+            "r": "Invalid ages impossible."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "2.1.inheritance",
+          "term": "Inheritance",
+          "what": "Inheritance lets a child class get all fields and methods of a parent class using the 'extends' keyword. The child reuses and extends the parent's behavior.",
+          "why": "Avoids code duplication. Common behavior goes in the parent class once — all child classes get it automatically.",
+          "how": "class Animal { void eat() {...} } class Dog extends Animal { void bark() {...} } — Dog has both eat() and bark(). Dog IS-A Animal.",
+          "where": "Class hierarchies: Vehicle→Car→ElectricCar, Exception→RuntimeException→YourException, JpaRepository chain in Spring Data.",
+          "when": "Use when a true IS-A relationship exists. Do NOT use inheritance just for code reuse — use composition instead. Prefer composition over inheritance.",
+          "issue": "Deep inheritance chains (5+ levels) make code hard to follow. Changes in parent break all children — fragile base class problem.",
+          "fix": "Keep inheritance shallow (max 2-3 levels). Use interfaces + composition for flexibility. 'Prefer composition over inheritance' is a core Java best practice.",
+          "star": {
+            "s": "Design review — inheritance chain 6 levels deep.",
+            "t": "Simplify.",
+            "a": "Flattened to 2 levels. Extracted shared behavior into helper classes (composition).",
+            "r": "Code much easier to understand and test."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "2.1.polymorphism",
+          "term": "Polymorphism",
+          "what": "Polymorphism means 'many forms'. One method name behaves differently depending on the actual object type. Two types: compile-time (overloading) and runtime (overriding).",
+          "why": "Write code that works with multiple types without knowing the exact type at compile time. The right method is called automatically based on the actual object.",
+          "how": "Runtime: Animal a = new Dog(); a.makeSound(); — calls Dog's makeSound() not Animal's. Compile-time: print(int), print(String) — compiler picks the right one.",
+          "where": "Every interface and abstract class usage. Spring's @Repository, @Service, @Controller are polymorphic — you code to the interface.",
+          "when": "Use runtime polymorphism (overriding + interfaces) for extensible, testable designs. Use overloading sparingly — too many overloads can be confusing.",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "2.1.abstraction",
+          "term": "Abstraction",
+          "what": "Abstraction means showing only what an object does, hiding how it does it. Users see the interface (what), not the implementation (how).",
+          "why": "Reduces complexity. You use a List without knowing if it is an ArrayList or LinkedList. You call service.findUser() without caring about the SQL behind it.",
+          "how": "Achieved through abstract classes and interfaces. define the WHAT (method signatures). Concrete classes implement the HOW.",
+          "where": "Every service interface in Spring. Repository layer hides database details. API contracts hide internal implementation.",
+          "when": "Abstract whenever the implementation might change or when multiple implementations exist. Inject interfaces, not concrete classes.",
+          "issue": "Over-abstraction adds unnecessary layers. If a class has only one implementation and never changes, the interface is overhead.",
+          "fix": "Add abstraction when there are multiple implementations OR when you need to mock for testing. Don't abstract everything just because you can.",
+          "star": {
+            "s": "Service class directly uses specific database driver code.",
+            "t": "Make testable and swappable.",
+            "a": "Extracted interface. Service uses interface. Tests inject mock.",
+            "r": "Fully testable. DB can be swapped."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "2.2",
+      "slug": "abstract-class-vs-interface",
+      "title": "Abstract Class vs Interface",
+      "keyRule": "'extends' = IS-A. 'has-a' = composition (preferred). super() calls parent constructor. super.method() calls parent method. final class = cannot extend. final method = cannot override. @Override catches typos at compile time.",
+      "terms": [
+        {
+          "id": "2.2.abstract-class",
+          "term": "Abstract Class",
+          "what": "An abstract class is a partially implemented class. It can have abstract methods (no body) AND concrete methods (with body). Cannot be instantiated directly.",
+          "why": "Provides a template with some code already written. Child classes inherit the concrete parts and must implement the abstract parts.",
+          "how": "abstract class Shape { abstract double area(); void printArea() { System.out.println(area()); } } — printArea() is inherited by all shapes for free.",
+          "where": "Class hierarchies where subclasses share code AND state. Template Method pattern. Base service or controller classes in Spring.",
+          "when": "Use abstract class when: subclasses share concrete code or fields, you want to force subclasses to implement certain methods, and you need constructors.",
+          "issue": "Abstract class locks you into single inheritance. A class can extend only ONE abstract class — limits flexibility.",
+          "fix": "If you only need a contract (no shared code), use interface instead. If you need shared code AND contract, abstract class is right.",
+          "star": {
+            "s": "5 payment processors all duplicate validation logic.",
+            "t": "Remove duplication.",
+            "a": "Created abstract PaymentProcessor with validate() concrete and process() abstract.",
+            "r": "50% code reduction. Validation logic in one place."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "2.2.interface",
+          "term": "Interface",
+          "what": "An interface defines a pure contract — a list of methods that implementing classes MUST provide. Before Java 8: no method bodies. Java 8+: default and static methods allowed.",
+          "why": "Interfaces enable multiple 'contracts' for one class. A class can implement 5 interfaces but extend only 1 class. Enables loose coupling and testability.",
+          "how": "interface Flyable { void fly(); } interface Swimmable { void swim(); } class Duck implements Flyable, Swimmable { ... } — Duck can do both.",
+          "where": "Spring @Repository, @Service interfaces. Java Collections (List, Map, Set). Functional interfaces for lambdas. Any API contract.",
+          "when": "Use interface when: defining a contract, enabling multiple implementations, enabling mocking in tests, or adding capabilities to unrelated classes.",
+          "issue": "Before Java 8, adding a new method to an interface broke all implementing classes. Still an issue without default methods.",
+          "fix": "Add new methods as 'default' methods in the interface — existing implementations get a default behavior and don't break.",
+          "star": {
+            "s": "Adding audit() method to Auditable interface breaks 20 implementing classes.",
+            "t": "Add without breaking.",
+            "a": "Made it a default method with basic impl. Classes that need custom audit override it.",
+            "r": "Zero compilation breaks."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "2.2.default-methods-java-8",
+          "term": "Default Methods (Java 8+)",
+          "what": "Default methods let interfaces have method bodies. Any class implementing the interface gets the default behavior automatically without adding code.",
+          "why": "Before Java 8, adding a method to an interface broke every implementing class. Default methods allow interface evolution without breaking changes.",
+          "how": "interface Logger { void log(String msg); default void logError(String msg) { log('ERROR: ' + msg); } } — implementing classes get logError() for free.",
+          "where": "Java 8 Collections API used default methods heavily to add forEach(), stream(), etc. to List/Map/Set without breaking existing code.",
+          "when": "Use default methods to add new capabilities to an existing interface without forcing all implementors to change. Or for optional behavior with a sensible default.",
+          "issue": "If a class implements two interfaces that both have a default method with the same name, compilation error — ambiguity.",
+          "fix": "Override the conflicting default method in the implementing class to resolve which one to use.",
+          "star": {
+            "s": "Need to add retry() to PaymentGateway interface. 15 implementations exist.",
+            "t": "Add without breaking.",
+            "a": "Made retry() a default method with 3-retry logic. Implementations override only if they need custom retry.",
+            "r": "No compilation breaks."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "2.2.abstract-class-vs-interface",
+          "term": "Abstract Class vs Interface",
+          "what": "Key differences: Abstract class can have instance fields, constructors, and concrete methods. Interface cannot have instance fields or constructors. Class extends ONE abstract class but implements MULTIPLE interfaces.",
+          "why": "Understanding the difference helps you pick the right tool for the right job — more flexibility vs more code sharing.",
+          "how": "Rule of thumb: Interface = CAN-DO contract (Flyable, Serializable, Runnable). Abstract class = IS-A relationship with shared code (Vehicle base class).",
+          "where": "Most modern Java design: interfaces for contracts, abstract classes for template patterns. Spring repositories use interfaces.",
+          "when": "Choose abstract class when subclasses genuinely share state and code. Choose interface when you need multiple type contracts or loose coupling.",
+          "issue": "New developers overuse abstract classes because they seem powerful — but they create tight coupling and limit flexibility.",
+          "fix": "Default to interfaces. Add an abstract class only when you have real code to share. Prefer composition over inheritance anyway.",
+          "star": {
+            "s": "Interview question: when to use abstract class vs interface?",
+            "t": "Answer clearly.",
+            "a": "Interface = contract for unrelated classes (Serializable). Abstract class = shared code for related classes (Animal). Java 8 closes the gap with default methods.",
+            "r": "Correct and complete answer."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "2.2.final-keyword-class-method-var",
+          "term": "final keyword (class / method / var)",
+          "what": "final on a class means no subclassing. final on a method means no overriding. final on a variable means assign once — never changed.",
+          "why": "Protects critical behavior. String is final — no one can make a fake String class. final method prevents subclasses from breaking a parent's guaranteed logic.",
+          "how": "final class String. final void criticalMethod(). final int MAX = 100; — all assignments after first = compile error.",
+          "where": "Immutable value objects, security-sensitive classes, constants (public static final), performance (JIT inlines final methods).",
+          "when": "Make a class final when you never want it extended and want to guarantee its behavior. Make local variables final when their value should not change after assignment.",
+          "issue": "Declaring everything final 'for safety' without reason makes code hard to test — you cannot mock a final class with standard Mockito.",
+          "fix": "Mockito 3.4+ can mock final classes with mockito-inline. Or extract an interface. Make final only what truly must not change.",
+          "star": {
+            "s": "Security class was subclassed and overridden to bypass auth check.",
+            "t": "Prevent.",
+            "a": "Made SecurityValidator final. No subclassing possible.",
+            "r": "Bypass impossible by design."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "2.2.override-annotation",
+          "term": "@Override annotation",
+          "what": "@Override tells the compiler: this method must override a parent method. If the method name or signature is wrong, compile error — not a silent new method.",
+          "why": "Without @Override, a typo like 'equals(Object0 o)' silently creates a new method instead of overriding Object.equals() — very hard to find bug.",
+          "how": "@Override public boolean equals(Object o) { ... } — compiler verifies the signature matches a parent. Remove @Override = no compile check.",
+          "where": "Every method intended to override a parent method or implement an interface. Always use — zero cost, huge safety benefit.",
+          "when": "Always. No exception. Even if you are 100% sure the signature is right — @Override is cheap insurance.",
+          "issue": "Forgetting @Override on toString() — misspelled as Tostring() — silently creates a useless method. Default Object.toString() still called.",
+          "fix": "Enable 'Missing @Override' warnings in your IDE and SonarQube. Add @Override to all intended overrides.",
+          "star": {
+            "s": "Object not printing correctly — custom toString() never called.",
+            "t": "Debug.",
+            "a": "Method was 'Tostring()' — wrong case. No @Override so no compile error. Added @Override. Fixed typo.",
+            "r": "toString() now called correctly."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "2.2.method-hiding-static-method",
+          "term": "Method Hiding (static method)",
+          "what": "In Java, instance methods are overridden (runtime polymorphism). Static methods are hidden — the version called depends on the declared type, not the actual object type.",
+          "why": "Understanding this prevents confusion when dealing with static methods in class hierarchies — common interview trap.",
+          "how": "class Parent { static void show() { print('Parent'); } } class Child extends Parent { static void show() { print('Child'); } } Parent p = new Child(); p.show() → prints 'Parent' (hiding, not overriding).",
+          "where": "Any static method that appears in both parent and child class. Static methods belong to the class, not instances.",
+          "when": "Avoid calling static methods through instance references — call through class name (Parent.show(), Child.show()). This makes hiding behavior obvious.",
+          "issue": "Calling Parent p = new Child(); p.show() expects 'Child' but gets 'Parent'. Method hiding does not use virtual dispatch.",
+          "fix": "Always call static methods via ClassName.method() — never via an instance. This prevents confusion from method hiding.",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "2.2.constructor-chain-this-super",
+          "term": "Constructor Chain (this() / super())",
+          "what": "IS-A is inheritance: Dog IS-A Animal. HAS-A is composition: Car HAS-A Engine. IS- A = extends/implements. HAS-A = field holding another object.",
+          "why": "Choosing wrong leads to bad design. 'Prefer composition over inheritance' is a core Java principle.",
+          "how": "IS-A: class Dog extends Animal. HAS-A: class Car { Engine engine; } — Car is not a kind of Engine, it has one.",
+          "where": "Every class design decision. Spring beans typically HAS-A dependency (injected via constructor).",
+          "when": "Use IS-A only for true type relationships. Use HAS-A when you want to reuse behavior without claiming to be a type of that thing.",
+          "issue": "IS-A misuse: Stack extends Vector in Java — Stack IS-NOT a Vector, it just reuses its methods. This is why java.util.Stack has wrong behavior (get(0), etc.).",
+          "fix": "Use HAS-A for code reuse. IS-A only when truly a subtype. The Stack mistake is why Deque is now recommended.",
+          "star": {
+            "s": "Design review: Employee extends Address.",
+            "t": "Flag issue.",
+            "a": "Employee IS- NOT an Address. Employee HAS-A Address. Changed to composition field.",
+            "r": "Correct model, flexible design."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "2.2.covariant-return-type",
+          "term": "Covariant Return Type",
+          "what": "Java allows an overriding method to return a more specific (subtype) return type than the parent method. This is covariant return type.",
+          "why": "More specific return types avoid unnecessary casts. Java 5+ supports this.",
+          "how": "class Animal { Animal create() { return new Animal(); } } class Dog extends Animal { @Override Dog create() { return new Dog(); } } — Dog is more specific than Animal.",
+          "where": "Factory methods in class hierarchies, builder patterns, cloning methods.",
+          "when": "Use covariant return when the override naturally returns a more specific type and callers benefit from not casting.",
+          "issue": "Forgetting @Override with covariant return type — compiler may not catch it as an override if you forget @Override.",
+          "fix": "Always use @Override. Covariant return is valid and compiler checks it correctly when @Override is present.",
+          "star": {
+            "s": "Callers casting Animal to Dog after calling create().",
+            "t": "Remove casts.",
+            "a": "Overrode create() in Dog to return Dog. Callers now get Dog without cast.",
+            "r": "Cleaner code, no runtime ClassCastException risk."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "2.2.dynamic-dispatch-runtime-polymorphism",
+          "term": "Dynamic Dispatch (Runtime Polymorphism)",
+          "what": "At runtime, Java calls the overridden method of the actual object's class, not the declared type. This is dynamic dispatch — the method is resolved at runtime.",
+          "why": "Enables polymorphism — you write code against an interface/parent and it works correctly for all subclasses.",
+          "how": "Animal a = new Dog(); a.speak() — compiler sees Animal.speak(). JVM at runtime sees the actual object is Dog. Calls Dog.speak(). This is the entire foundation of OOP.",
+          "where": "Every interface usage, every abstract method call, every Spring bean method call.",
+          "when": "Works automatically whenever a method is overridden. Static methods, private methods, and final methods do NOT participate in dynamic dispatch.",
+          "issue": "Calling a non-final method from a constructor executes the child's overridden version — child may not be fully initialized yet. Can cause NPE or wrong behavior.",
+          "fix": "Do not call overridable methods from constructors. Use a factory method or post- construction init() instead.",
+          "star": {
+            "s": "Interview: Animal a = new Dog(); a.eat() — which eat() is called?",
+            "t": "Explain.",
+            "a": "Dog.eat() — runtime type is Dog. Dynamic dispatch uses actual object type, not declared type.",
+            "r": "Demonstrates understanding of OOP."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "2.3",
+      "slug": "solid-principles",
+      "title": "SOLID Principles",
+      "keyRule": "S = Single Responsibility. O = Open/Closed. L = Liskov Substitution. I = Interface Segregation. D = Dependency Inversion. These five principles make code maintainable, testable, and extensible. Violating any one leads to fragile, hard-to-change code.",
+      "terms": [
+        {
+          "id": "2.3.single-responsibility-srp",
+          "term": "Single Responsibility (SRP)",
+          "what": "A class should have only ONE reason to change — one job. Not 'do everything'. Not 'utility class for all things'.",
+          "why": "When a class has one job, changing that job affects only that class. Multiple jobs = multiple reasons to change = more risk of breaking unrelated things.",
+          "how": "OrderService should process orders. It should NOT also send emails, log to files, AND validate payment. Break those into EmailService, OrderLogger, PaymentValidator.",
+          "where": "Every class in your codebase. Spring's @Service, @Repository, @Controller separation IS SRP applied at the layer level.",
+          "when": "If you describe a class with the word 'AND', it likely violates SRP. Split it.",
+          "issue": "God classes — one class doing 20 things — are the most common SRP violation. Hard to test, hard to change, impossible to understand.",
+          "fix": "Split by responsibility. Each class has one clear purpose. If a class is over 300 lines, it probably violates SRP.",
+          "star": {
+            "s": "UserManager class handles login, registration, email, and reporting.",
+            "t": "Refactor.",
+            "a": "Split into UserAuthService, UserRegistrationService, EmailService, UserReportService.",
+            "r": "Each class easy to test and change independently."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "2.3.open-closed-ocp",
+          "term": "Open/Closed (OCP)",
+          "what": "Classes should be open for extension (add new behavior) but closed for modification (don't change existing code). Add, don't edit.",
+          "why": "Changing existing code risks breaking existing tests and behavior. Adding new code is safer — existing tests still pass.",
+          "how": "Use polymorphism. Instead of if-else for each payment type, have a PaymentProcessor interface. Add a new payment type by adding a new class — no existing code changes.",
+          "where": "Strategy pattern, factory pattern, Spring beans with interfaces. Anywhere you might need to extend behavior in the future.",
+          "when": "Apply OCP when you anticipate extensions. Don't over-engineer if the behavior truly never changes.",
+          "issue": "if-else or switch-case blocks that grow with every new feature violate OCP — every new type requires editing existing code.",
+          "fix": "Replace if-else with polymorphism. Each 'type' is a class. Add new types by adding new classes, not editing existing switch.",
+          "star": {
+            "s": "addDiscount() has 10 if-else branches for each customer type.",
+            "t": "Refactor.",
+            "a": "Created DiscountStrategy interface. Each customer type is a class. New type = new class.",
+            "r": "Zero changes to existing code for new types."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "2.3.liskov-substitution-lsp",
+          "term": "Liskov Substitution (LSP)",
+          "what": "If S is a subtype of T, you must be able to use S wherever T is used without breaking the program. Subclass must honor the parent's contract.",
+          "why": "If subclasses break parent behavior, polymorphism becomes unreliable. Code that works with the parent type breaks when given a subclass.",
+          "how": "Classic violation: class Square extends Rectangle. Rectangle.setWidth() changes width only. But Square must keep width=height, so it overrides setWidth() to also set height — breaks Rectangle's contract.",
+          "where": "Every inheritance and interface implementation. Especially important in generic/abstract APIs.",
+          "when": "Any time you override a parent method, ask: does this still honor the parent's contract? Pre/post conditions must not weaken.",
+          "issue": "Overriding a method to throw UnsupportedOperationException violates LSP. Caller expects the method to work — not throw.",
+          "fix": "If the subclass cannot honor the parent's contract, inheritance is wrong. Use composition instead. Design contracts carefully before creating hierarchies.",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "2.3.interface-segregation-isp",
+          "term": "Interface Segregation (ISP)",
+          "what": "Do not force a class to implement methods it does not need. Split large interfaces into small focused ones.",
+          "why": "Fat interfaces force implementing classes to provide empty or fake implementations for methods they don't use — wastes code and confuses readers.",
+          "how": "Instead of one Animal interface with fly(), swim(), run() — split into Flyable, Swimmable, Runnable. Dog implements Runnable+Swimmable but not Flyable.",
+          "where": "Any interface with more than 4-5 methods. Check if all implementing classes really use all methods.",
+          "when": "Apply when you notice implementing classes have empty or throws-exception method bodies — sign they were forced to implement something they don't need.",
+          "issue": "Large interface like Worker with work(), eat(), sleep() — a Robot class forced to implement eat() and sleep() which make no sense.",
+          "fix": "Split Worker into Workable with work(). Robot only implements Workable. Humans implement Workable + Eatable + Sleepable.",
+          "star": {
+            "s": "Printer class implements AllInOne interface but throws for scan() and fax() — printer-only device.",
+            "t": "Fix ISP violation.",
+            "a": "Split into Printable, Scannable, Faxable. Printer implements only Printable.",
+            "r": "Clean, no fake implementations."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "2.3.dependency-inversion-dip",
+          "term": "Dependency Inversion (DIP)",
+          "what": "High-level modules should not depend on low-level modules. Both should depend on abstractions (interfaces). Don't depend on concrete classes — depend on interfaces.",
+          "why": "If high-level code directly uses a low-level class, changing the low-level class breaks the high-level class. Interface in between protects the high-level code.",
+          "how": "BAD: OrderService creates new MySQLOrderRepository(). GOOD: OrderService takes OrderRepository (interface) in constructor. Spring injects the real or mock implementation.",
+          "where": "Spring Dependency Injection is DIP in practice. @Autowired fields should always be interface types. Test with mock implementations.",
+          "when": "Always inject dependencies through constructors or interfaces. Never 'new' a concrete dependency inside a service class.",
+          "issue": "new ConcreteClass() inside a service = tight coupling. Cannot unit test without starting the real DB. Cannot swap implementations.",
+          "fix": "Inject via constructor: OrderService(OrderRepository repo). Annotate with @Autowired in Spring. Tests inject mocks. Production injects real DB implementation.",
+          "star": {
+            "s": "Service class untestable — does new OrderRepository() inside constructor.",
+            "t": "Make testable.",
+            "a": "Moved repository to constructor parameter. Spring @Autowired injects real. Tests inject Mockito mock.",
+            "r": "Full unit test coverage without DB."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "2.4",
+      "slug": "design-patterns",
+      "title": "Design Patterns",
+      "keyRule": "Creational: how objects are created (Singleton, Factory, Builder). Structural: how objects are composed (Decorator, Proxy, Adapter). Behavioral: how objects communicate (Strategy, Observer, Command, Template Method). Know one real Java/Spring example for each in interviews.",
+      "terms": [
+        {
+          "id": "2.4.singleton-pattern",
+          "term": "Singleton Pattern",
+          "what": "Singleton ensures only ONE instance of a class exists in the entire JVM. All code that needs it gets the same instance.",
+          "why": "Some resources must be shared — database connection pool, configuration, logging system. Creating multiple instances wastes resources or causes bugs.",
+          "how": "",
+          "where": "",
+          "when": "",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "2.4.factory-pattern",
+          "term": "Factory Pattern",
+          "what": "Factory creates objects for you based on a type or condition — you ask for the object, Factory decides which concrete class to instantiate.",
+          "why": "Decouples object creation from usage. The caller does not need to know which concrete class to use — just asks the factory.",
+          "how": "NotificationFactory.create('EMAIL') → EmailNotification. NotificationFactory.create('SMS') → SmsNotification. Caller just uses Notification interface.",
+          "where": "Spring's ApplicationContext is a factory. JDBC DriverManager.getConnection() is a factory. Document parsers based on file type.",
+          "when": "Use when: the exact class to create depends on runtime data, or when creation logic is complex and should be centralized.",
+          "issue": "Factory with large if-else/switch violates OCP — adding a new type requires editing the factory.",
+          "fix": "Use registry pattern: Map<String, Supplier<Notification>> registry. Register each type. factory.create(type) does map.get(type).get(). Adding new type = adding to registry.",
+          "star": {
+            "s": "Adding new report format requires editing ReportFactory switch.",
+            "t": "Make extensible.",
+            "a": "Changed to Map<String, Supplier<Report>> registry. New format = new entry in registry.",
+            "r": "OCP followed. Zero changes to factory code."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "2.4.builder-pattern",
+          "term": "Builder Pattern",
+          "what": "Builder lets you create complex objects step by step. Instead of a constructor with 10 parameters, you call methods for each property you want to set.",
+          "why": "Constructors with many parameters are hard to read and error-prone (wrong order). Builder makes construction readable and safe.",
+          "how": "User user = User.builder().name('Alice').age(30).email('a@b.com').build(); — clear, readable. Missing optional fields get defaults. Builder validates on build().",
+          "where": "Lombok @Builder generates it. HttpRequest.newBuilder() in Java 11. UriComponentsBuilder in Spring. Any class with 4+ constructor parameters.",
+          "when": "Use when: more than 4 parameters in a constructor, some parameters are optional, need to validate after all params are set.",
+          "issue": "Forgetting to call build() gives you the Builder, not the object. Mutable Builder state can be problematic if shared.",
+          "fix": "Make build() validate required fields. Lombok @Builder generates it with less code. Check IDE warnings if you assign Builder result without calling build().",
+          "star": {
+            "s": "Order constructor has 8 parameters — easy to pass them in wrong order.",
+            "t": "Improve API.",
+            "a": "Added @Builder (Lombok). Order.builder().customerId(c).items(items).total(t).build().",
+            "r": "Readable, order-independent, validated."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "2.4.strategy-pattern",
+          "term": "Strategy Pattern",
+          "what": "Strategy lets you swap algorithms at runtime. Define a family of algorithms, put each in a class, make them interchangeable through an interface.",
+          "why": "Instead of one big class with if-else for each algorithm, each algorithm is its own class. Swap them at runtime without changing the calling code.",
+          "how": "",
+          "where": "",
+          "when": "",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "2.4.observer-pattern",
+          "term": "Observer Pattern",
+          "what": "Observer lets objects subscribe to events. When the subject changes, it notifies all subscribers automatically without knowing who they are.",
+          "why": "Decouples event producer from consumers. Adding new reactions to an event requires only a new subscriber — no changes to the event producer.",
+          "how": "Subject has List<Observer> observers. On change, calls observer.update() for each. Observer implements the update() method.",
+          "where": "Spring ApplicationEvents (@EventListener). GUI event listeners. Domain events in DDD. Kafka consumers are Observers at scale.",
+          "when": "Use when multiple parts of the system react to the same event and should not depend on each other.",
+          "issue": "Too many observers can make event flow hard to trace — 'I have no idea what order things happen.' Also, observers can throw and block others.",
+          "fix": "Use Spring's @EventListener with @Async for non-critical observers. Use Kafka for cross-service event broadcasting. Log event dispatch for tracing.",
+          "star": {
+            "s": "After order placed, 5 things need to happen: email, inventory, loyalty points, analytics, audit.",
+            "t": "Decouple.",
+            "a": "Publish OrderPlacedEvent. 5 @EventListener methods.",
+            "r": "Each handler independent. Easy to add #6 without touching order logic."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "2.4.decorator-pattern",
+          "term": "Decorator Pattern",
+          "what": "Decorator adds behavior to an object dynamically by wrapping it with another object that has the same interface. Stack decorators for multiple additions.",
+          "why": "Alternative to inheritance for adding behavior. More flexible — combine decorators in any order at runtime.",
+          "how": "InputStream → BufferedInputStream(FileInputStream) → wraps FileInputStream and adds buffering. Same interface, new behavior added by wrapping.",
+          "where": "Java I/O streams are all decorators. Spring Security filter chain. HTTP request/response wrappers. Caching layers around repository calls.",
+          "when": "Use when you need to add behavior to individual objects without affecting others, or when subclassing would create too many combinations.",
+          "issue": "Stacking many decorators makes debugging hard — many layers of indirection.",
+          "fix": "Keep decorator chains short. Use logging at key decorator boundaries. Spring AOP is a cleaner approach for cross-cutting concerns like caching and security.",
+          "star": {
+            "s": "Need to add caching and logging to an existing service without changing it.",
+            "t": "Add non-invasively.",
+            "a": "Created CachingOrderService and LoggingOrderService decorators wrapping OrderService interface.",
+            "r": "Zero changes to original. Behavior added via wrapping."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "2.5",
+      "slug": "structural-behavioral-patterns",
+      "title": "Structural & Behavioral Patterns",
+      "keyRule": "Structural patterns organize how objects/classes are composed. Behavioral patterns define how objects communicate and share responsibility. Know: Proxy (control access), Adapter (interface conversion), Facade (simplify API), Template Method (skeleton algorithm), Command (encapsulate request), Chain of Responsibility (pass along chain).",
+      "terms": [
+        {
+          "id": "2.5.proxy-pattern",
+          "term": "Proxy Pattern",
+          "what": "Proxy is a placeholder that controls access to another object. The proxy has the same interface as the real object — callers don't know they are talking to a proxy.",
+          "why": "Add logic before/after method calls without changing the real object: security checks, caching, lazy initialization, logging.",
+          "how": "interface Service { void doWork(); } class ServiceProxy implements Service { private Service real; void doWork() { log(); real.doWork(); log(); } }",
+          "where": "Spring AOP is proxy-based — @Transactional, @Cacheable, @Async all work by wrapping beans in proxy objects. JDBC connection pool proxies. Hibernate lazy loading.",
+          "when": "Use proxy when: adding cross-cutting concerns without modifying the target, lazy initialization, access control.",
+          "issue": "Spring proxy only intercepts calls made from outside the bean. Calling @Transactional method from within the same bean bypasses the proxy — no transaction!",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "2.5.adapter-pattern",
+          "term": "Adapter Pattern",
+          "what": "Adapter converts one interface into another that the client expects. Like a power adapter — same power, different plug shape.",
+          "why": "When you need to use a class that has an incompatible interface. Instead of changing either side, write an Adapter.",
+          "how": "interface Target { void request(); } class LegacyService { void oldRequest() {...} } class Adapter implements Target { LegacyService ls = new LegacyService(); void request() { ls.oldRequest(); } }",
+          "where": "Integrating legacy systems, third-party libraries, bridging between two incompatible APIs.",
+          "when": "When you cannot modify the existing class (legacy, third-party) but need to fit it into a new interface.",
+          "issue": "Adapters add an extra layer — too many adapters for the same thing indicates bad original API design.",
+          "fix": "Document adapters clearly. Use them surgically at integration boundaries only.",
+          "star": {
+            "s": "Legacy payment API has completely different method signatures than new system.",
+            "t": "Integrate without rewrite.",
+            "a": "Adapter class wraps legacy service, implements new PaymentGateway interface.",
+            "r": "New system uses legacy API through clean interface."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "2.5.facade-pattern",
+          "term": "Facade Pattern",
+          "what": "Facade provides a simple, unified interface to a complex subsystem. Hides complexity. Callers use the facade — they don't know how many classes are involved behind it.",
+          "why": "Reduces dependencies and complexity for callers. Makes subsystems easier to use and understand.",
+          "how": "class OrderFacade { void placeOrder(Order o) { inventory.reserve(o); payment.charge(o); shipping.schedule(o); email.confirm(o); } } — caller just calls placeOrder().",
+          "where": "Service layer in Spring that combines multiple repositories and services. SDK entry points. API gateways.",
+          "when": "Use when: a complex subsystem needs a simple interface for common use cases, or when you want to layer subsystems.",
+          "issue": "Facade can become a God object if it does too much. If it grows to 50 methods, it is just another complex class.",
+          "fix": "Keep facade focused. Each facade for one domain. Don't expose every capability — only common use cases.",
+          "star": {
+            "s": "Controller calls 5 different services for one operation.",
+            "t": "Simplify.",
+            "a": "OrderFacade bundles all 5. Controller calls one method.",
+            "r": "Controller simple, facade testable independently."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "2.5.template-method-pattern",
+          "term": "Template Method Pattern",
+          "what": "Template Method defines the skeleton of an algorithm in a base class, letting subclasses fill in specific steps without changing the algorithm's structure.",
+          "why": "The overall algorithm stays consistent. Only the variable parts change per subclass. No code duplication for the fixed parts.",
+          "how": "abstract class DataProcessor { final void process() { readData(); processData(); writeData(); } abstract void processData(); } — readData/writeData are inherited, processData is custom.",
+          "where": "Spring's JdbcTemplate, RestTemplate are Template Method pattern. Any framework 'template' class.",
+          "when": "Use when multiple classes share the same algorithm structure but differ in specific steps. Put common steps in abstract parent, let children override only what varies.",
+          "issue": "Template Method ties subclasses to the parent's algorithm structure — hard to change the order of steps without affecting all subclasses.",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "2.5.command-pattern",
+          "term": "Command Pattern",
+          "what": "Command encapsulates a request as an object. This allows: queuing, logging, undoing requests, and passing actions as objects.",
+          "why": "Decouples the sender of a request from the receiver. The sender doesn't need to know HOW the request is executed.",
+          "how": "interface Command { void execute(); void undo(); } class SaveCommand implements Command { void execute() { save(); } void undo() { rollback(); } } — commands stored in a list for undo.",
+          "where": "Undo/redo systems, transaction log, macro recording, GUI actions, message queues.",
+          "when": "Use when: you need undo/redo, command queuing, command logging, or need to parameterize actions.",
+          "issue": "Too many tiny command classes for simple operations adds overhead.",
+          "fix": "For simple cases, use lambdas: Runnable command = () -> save(); queue.add(command); — lambda IS a command.",
+          "star": {
+            "s": "Text editor needs undo/redo.",
+            "t": "Implement.",
+            "a": "Command interface with execute/undo. Each action is a Command. Stack<Command> undoStack. Undo = pop + call undo().",
+            "r": "Unlimited undo/redo with minimal change to editor."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "2.5.chain-of-responsibility",
+          "term": "Chain of Responsibility",
+          "what": "Chain of Responsibility passes a request along a chain of handlers. Each handler decides to handle it or pass it to the next. No one handler must handle everything.",
+          "why": "Decouples senders from receivers. Allows dynamic chains. Multiple handlers can process a request independently.",
+          "how": "abstract class Handler { Handler next; void handle(Request r) { if(canHandle(r)) doHandle(r); else if(next != null) next.handle(r); } }",
+          "where": "Spring Security filter chain (each filter handles auth/authz step by step). HTTP request processing. Logging levels. Support tier escalation.",
+          "when": "Use when: more than one handler might process a request, the handler is not known at design time, or you want to configure processing dynamically.",
+          "issue": "Request can fall off the end of the chain if no handler can handle it — silent no- op.",
+          "fix": "Add a default/fallback handler at the end of the chain. Log unhandled requests.",
+          "star": {
+            "s": "Support tickets routed through level 1, 2, 3 support manually.",
+            "t": "Automate routing.",
+            "a": "Chain of Responsibility — each level checks if it can resolve, passes up if not.",
+            "r": "Automatic escalation, no missed tickets."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,367 @@
+{
+  "id": "12",
+  "slug": "jpa-hibernate",
+  "title": "JPA & Hibernate",
+  "icon": "🗃️",
+  "accentColor": "#9333ea",
+  "subsections": [
+    {
+      "id": "12.1",
+      "slug": "jpa-fundamentals-entity-lifecycle",
+      "title": "JPA Fundamentals & Entity Lifecycle",
+      "keyRule": "JPA = Java Persistence API (spec). Hibernate = most popular JPA implementation. Entity lifecycle: Transient (not managed) → Persistent (managed by EntityManager) → Detached (was managed) → Removed. Changes to Persistent entities auto-saved on transaction commit — 'dirty checking'.",
+      "terms": [
+        {
+          "id": "12.1.entity-table",
+          "term": "@Entity & @Table",
+          "what": "@Entity marks a Java class as a JPA entity — a class that maps to a database table. @Table specifies the exact table name.",
+          "why": "Without @Entity, JPA does not manage the class. @Entity tells Hibernate: 'manage this class, map it to a table, auto-persist changes'.",
+          "how": "@Entity @Table(name='users') public class User { @Id @GeneratedValue Long id; @Column(name='full_name') String fullName; }",
+          "where": "Every domain class that has a corresponding DB table in your app.",
+          "when": "Use @Entity for persistent domain objects. Use @Embeddable for value objects (address, money) embedded in an entity.",
+          "issue": "Missing @Entity on a class used in a JPA repository = 'Not a managed type' exception at startup.",
+          "fix": "Add @Entity and @Id to every persistent class. Ensure it has a no-arg constructor (JPA requires it for proxy creation).",
+          "star": {
+            "s": "JPA repository not working — 'Not a managed type'.",
+            "t": "Diagnose.",
+            "a": "@Entity annotation missing. Added @Entity and @Id.",
+            "r": "Repository works."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "12.1.id-generation-strategies",
+          "term": "@Id & Generation Strategies",
+          "what": "@Id marks the primary key field. @GeneratedValue specifies how the ID is generated: IDENTITY (auto-increment), SEQUENCE (DB sequence), UUID, TABLE.",
+          "why": "Every JPA entity must have a primary key. Generation strategy determines how unique IDs are created.",
+          "how": "@Id @GeneratedValue(strategy=GenerationType.IDENTITY) Long id — MySQL auto-increment. SEQUENCE — better for PostgreSQL with batch inserts. UUID — good for distributed systems.",
+          "where": "Every @Entity class must have @Id.",
+          "when": "Use IDENTITY for MySQL. Use SEQUENCE for PostgreSQL (more efficient batch inserts). Use UUID for distributed systems where you need ID before DB insert.",
+          "issue": "IDENTITY strategy requires a DB roundtrip per insert — cannot batch inserts efficiently. For bulk inserts of 10,000 rows, this is slow.",
+          "fix": "Use SEQUENCE with allocationSize=50 — Hibernate pre-allocates 50 IDs at a time and hands them out without DB calls. Batch inserts become fast.",
+          "star": {
+            "s": "Bulk import of 50,000 records takes 5 minutes.",
+            "t": "Speed up.",
+            "a": "IDENTITY strategy caused 50,000 DB roundtrips for IDs. Changed to SEQUENCE with allocationSize=50. Enabled JDBC batch.",
+            "r": "5 minutes → 30 seconds."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "12.1.lazy-vs-eager-loading",
+          "term": "Lazy vs Eager Loading",
+          "what": "Lazy loading = related entities loaded only when accessed (on demand). Eager loading = related entities loaded immediately with the parent query.",
+          "why": "Lazy loading avoids loading unused data — better performance. But loading a lazy association outside a transaction causes LazyInitializationException.",
+          "how": "@OneToMany(fetch=FetchType.LAZY) — default for collections. @ManyToOne(fetch=FetchType.EAGER) — default for single entities. Override per-query with JOIN FETCH.",
+          "where": "All entity relationships: @OneToMany, @ManyToOne, @ManyToMany, @OneToOne.",
+          "when": "Use LAZY everywhere by default. Eagerly load only when you always need the association. Never change global default to EAGER — causes N+1 and performance issues.",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "12.1.n-1-problem",
+          "term": "N+1 Problem",
+          "what": "N+1 is a performance trap: one query gets N parent records, then N more queries fetch each child collection — total N+1 queries instead of 1.",
+          "why": "Lazy loading looks safe but when you iterate N parents and access their collections, each access triggers a separate query.",
+          "how": "50 orders loaded → loop accesses order.getItems() → 50 separate queries for items = 51 queries total. Should be 2 (one for orders, one for all items with IN clause).",
+          "where": "Any @OneToMany or @ManyToMany with lazy loading accessed inside loops. Very common in REST endpoints that serialize entity graphs.",
+          "when": "Always watch for N+1 in any loop that accesses lazy associations. Enable SQL logging in dev to detect: spring.jpa.show-sql=true.",
+          "issue": "N+1 can make a page load that should take 5ms take 500ms or more under real data volumes.",
+          "fix": "1) JOIN FETCH: 'SELECT o FROM Order o JOIN FETCH o.items' — loads both in one query. 2) @EntityGraph on the repository method. 3) Batch loading with @BatchSize(size=20). 4) Use DTO projections.",
+          "star": {
+            "s": "Product listing page slows under load.",
+            "t": "Diagnose.",
+            "a": "Spring show-sql shows 1 + 200 queries for 200 products and their categories. Added JOIN FETCH.",
+            "r": "201 queries → 1 query. Page 40x faster."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "12.1.transactional-jpa",
+          "term": "@Transactional (JPA)",
+          "what": "@Transactional on a Spring method starts a transaction at the beginning and commits (or rolls back) at the end. Dirty checking saves any changes to persistent entities automatically.",
+          "why": "Without @Transactional, Hibernate cannot track entity changes or manage session lifecycle. Also groups multiple operations into one atomic unit.",
+          "how": "@Transactional public void updateUser(Long id, String name) { User user = repo.findById(id).get(); user.setName(name); // no save() call needed — dirty checking auto-saves on commit }",
+          "where": "Every service method that writes to DB. @Transactional(readOnly=true) for queries — enables read optimizations.",
+          "when": "Service layer should own transaction boundaries. Do NOT put @Transactional on controller or repository methods. readOnly=true for all queries.",
+          "issue": "@Transactional self-invocation: calling a @Transactional method from the SAME class bypasses the proxy — no transaction starts.",
+          "fix": "Call @Transactional methods from a different bean. Or inject self-reference (use carefully). Or restructure to avoid self-call.",
+          "star": {
+            "s": "User balance update and audit log must be atomic.",
+            "t": "Implement.",
+            "a": "@Transactional service method does both. If audit log fails, balance update rolls back.",
+            "r": "Either both succeed or neither."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "12.1.jpql-criteria-api",
+          "term": "JPQL & Criteria API",
+          "what": "JPQL (JPA Query Language) is SQL-like but works on entity classes and fields, not table/column names. Criteria API is a type-safe, programmatic query builder.",
+          "why": "JPQL is database-independent — the same query works on MySQL, PostgreSQL, Oracle. Criteria API prevents typos in field names at compile time.",
+          "how": "@Query('SELECT u FROM User u WHERE u.email = :email') — JPQL. CriteriaBuilder cb = em.getCriteriaBuilder(); CriteriaQuery<User> cq = cb.createQuery(User.class); — Criteria API.",
+          "where": "Spring Data JPA repositories. Any complex query with joins, aggregations, or conditional clauses.",
+          "when": "",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "12.1.first-second-level-cache",
+          "term": "First & Second Level Cache",
+          "what": "L1 Cache = Hibernate Session cache — per-request. Objects fetched once are cached for the session duration. L2 Cache = shared across sessions — needs explicit configuration (EhCache, Redis).",
+          "why": "L1 cache prevents duplicate DB queries within one request. L2 cache avoids repeated DB queries for the same data across requests.",
+          "how": "L1 is automatic — within one @Transactional method, findById(1) twice = one DB query. L2 needs: @Cache(usage=READ_WRITE) on entity + cache provider.",
+          "where": "L1 = always active. L2 = reference data (country list, config, product catalog) that rarely changes.",
+          "when": "L1 is always on. Enable L2 for: rarely-changing reference data, data fetched many times per second, read-heavy entities.",
+          "issue": "L2 cache serves stale data if DB updated directly (not through JPA). Bypassed with native SQL also bypasses cache.",
+          "fix": "Always update data through JPA — cache gets evicted. For L2 with direct DB updates, add explicit cache eviction calls or short TTL.",
+          "star": {
+            "s": "Country list (200 records) fetched on every API request — DB query every time.",
+            "t": "Cache it.",
+            "a": "Added @Cache(READ_ONLY) on Country entity + EhCache config.",
+            "r": "First request hits DB, all subsequent from cache. DB load for country reduced to near zero."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "12.0b",
+      "slug": "jpa-extended",
+      "title": "JPA Extended",
+      "keyRule": "ORM maps Java objects to DB tables. EntityManager manages entity lifecycle. @MappedSuperclass for shared base class fields. @Embeddable for value objects embedded in entity tables. @Inheritance for class hierarchies. Cascade types control which operations propagate from parent to child. @EntityGraph solves N+1 for specific queries.",
+      "terms": [
+        {
+          "id": "12.0b.orm-concept",
+          "term": "ORM Concept",
+          "what": "ORM (Object-Relational Mapping) maps Java objects to database tables automatically. JPA is the Java ORM standard. Hibernate is the most popular JPA implementation.",
+          "why": "Without ORM, developers write boilerplate SQL and ResultSet mapping for every field. ORM automates this, letting you work with objects.",
+          "how": "@Entity class User maps to 'user' table. EntityManager.persist(user) = INSERT. EntityManager.find(User.class, id) = SELECT. Changes to attached entity = UPDATE automatically.",
+          "where": "Data persistence layer in Spring Boot apps. Spring Data JPA builds on JPA with repositories.",
+          "when": "Use JPA for standard CRUD. For complex queries, use JPQL, Criteria API, or native SQL. For read-heavy reporting, consider plain JDBC or QueryDSL.",
+          "issue": "JPA magic (auto dirty checking, lazy loading, cascades) can cause unexpected SQL or performance issues if you don't understand what's happening.",
+          "fix": "Enable SQL logging (spring.jpa.show-sql=true) during development. Understand what JPA does before letting it do it.",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "12.0b.entitymanager-lifecycle",
+          "term": "EntityManager Lifecycle",
+          "what": "EntityManager is the JPA API for all persistence operations. persist(), find(), merge(), remove(), detach(), flush(), refresh(). Each operation changes entity lifecycle state.",
+          "why": "Understanding EntityManager methods prevents data corruption and unexpected behavior.",
+          "how": "em.persist(entity) — NEW → MANAGED (will be INSERTed). em.find(cls,id) — loads entity → MANAGED. em.merge(detached) — DETACHED → MANAGED (copy). em.remove(entity) — MANAGED → REMOVED (will be DELETEd). em.flush() — writes pending changes to DB now.",
+          "where": "Spring Data JPA hides most EntityManager usage. You use it directly in custom repositories or complex operations.",
+          "when": "Know merge() vs persist(): persist() fails for detached entities. merge() is for updating detached entities returned from API calls.",
+          "issue": "Calling persist() on a detached entity (one that came from a different EntityManager or transaction) throws 'detached entity passed to persist'.",
+          "fix": "Use merge() for entities that may have been detached. Use persist() only for brand new entities.",
+          "star": {
+            "s": "'detached entity passed to persist' error.",
+            "t": "Fix.",
+            "a": "Entity was loaded in one transaction, passed to another. Changed persist() to merge().",
+            "r": "Works correctly."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "12.0b.column-transient",
+          "term": "@Column / @Transient",
+          "what": "@Column customizes the mapping: name, nullable, length, unique, updatable. @Transient marks a field to NOT be persisted — excluded from DB mapping.",
+          "why": "Default column names may differ from Java convention. @Transient lets you have computed or temporary fields in entity without DB columns.",
+          "how": "@Column(name='user_email', nullable=false, unique=true, length=255) String email; @Transient String displayName; // not in DB — computed in getter.",
+          "where": "Entity classes that need custom column names (DB uses snake_case, Java uses camelCase).",
+          "when": "Use @Column when: DB column name differs from field name, need length/nullable constraints, or need unique constraint.",
+          "issue": "@Transient field initialized in constructor — after loading from DB, the field is reset to null/default since JPA doesn't populate it.",
+          "fix": "Compute @Transient fields lazily in getter: if(displayName==null) displayName = firstName + ' ' + lastName;",
+          "star": {
+            "s": "Entity has computed 'fullName' field but JPA tries to save it to DB — column not found.",
+            "t": "Fix.",
+            "a": "Added @Transient.",
+            "r": "Field excluded from DB operations. Computed on demand."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "12.0b.embeddable-embedded",
+          "term": "@Embeddable / @Embedded",
+          "what": "@Embeddable marks a class as an embeddable value object. @Embedded includes it in the owning entity's table. No separate table — fields are columns in the parent table.",
+          "why": "Value objects (Address, Money, DateRange) share no identity — they belong to an entity. Embed them to avoid unnecessary join tables.",
+          "how": "@Embeddable class Address { String street; String city; } @Entity class User { @Embedded Address address; } — address fields become columns in USER table.",
+          "where": "Addresses, monetary amounts, date ranges, phone numbers, coordinates — any value object.",
+          "when": "Use @Embeddable when value object does not need its own identity and will always be part of an entity.",
+          "issue": "Two @Embedded fields of same @Embeddable type in one entity causes column name conflict.",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "12.0b.mappedsuperclass",
+          "term": "@MappedSuperclass",
+          "what": "@MappedSuperclass marks a class whose mappings are applied to its subclasses, but it has no table of its own. Common fields (id, createdAt, updatedAt) go in the superclass.",
+          "why": "Avoids repeating common audit fields (createdAt, updatedAt, createdBy) in every entity class.",
+          "how": "@MappedSuperclass abstract class BaseEntity { @Id @GeneratedValue Long id; LocalDateTime createdAt; } @Entity class User extends BaseEntity { ... } — User gets id and createdAt.",
+          "where": "Auditing base class shared by all entities, common fields like version, createdAt, updatedAt.",
+          "when": "Use when multiple entities share common fields. Combine with JPA Auditing (@EnableJpaAuditing, @CreatedDate, @LastModifiedDate) for automatic population.",
+          "issue": "@MappedSuperclass cannot be queried directly — only through subclass entities.",
+          "fix": "For polymorphic queries across entity types, use @Inheritance instead of @MappedSuperclass.",
+          "star": {
+            "s": "15 entity classes each repeat id, createdAt, updatedAt.",
+            "t": "Remove duplication.",
+            "a": "@MappedSuperclass BaseEntity with those fields. All entities extend it.",
+            "r": "Fields removed from 15 classes. One place to change."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "12.0b.inheritance-strategies",
+          "term": "@Inheritance Strategies",
+          "what": "@Inheritance defines how a class hierarchy maps to DB. Three strategies: SINGLE_TABLE (all subclasses in one table), TABLE_PER_CLASS (each subclass has own table), JOINED (parent table + subclass table joined).",
+          "why": "Need to persist a class hierarchy — Vehicle, Car, Truck. Database doesn't have inheritance — need a strategy.",
+          "how": "SINGLE_TABLE: @Inheritance(strategy=InheritanceType.SINGLE_TABLE) @DiscriminatorColumn(name='type'). JOINED: @Inheritance(strategy=InheritanceType.JOINED). TABLE_PER_CLASS: @Inheritance(strategy=InheritanceType.TABLE_PER_CLASS).",
+          "where": "Any entity class hierarchy. Most common: SINGLE_TABLE for performance. JOINED for normalized schema.",
+          "when": "SINGLE_TABLE: best performance (no joins), wastes space with nulls. JOINED: normalized, slower queries. TABLE_PER_CLASS: fastest for single type, cannot query polymorphically without UNION.",
+          "issue": "SINGLE_TABLE with many subclasses creates a wide table with many nullable columns — schema gets messy.",
+          "fix": "JOINED strategy for normalized design. SINGLE_TABLE for performance-critical small hierarchies.",
+          "star": {
+            "s": "Design inheritance for Vehicle→Car, Vehicle→Truck.",
+            "t": "Choose strategy.",
+            "a": "SINGLE_TABLE if vehicles always queried together and types are few. JOINED if schema must be clean and types differ significantly.",
+            "r": "Reasoned choice with trade-offs."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "12.0b.onetoone-manytomany",
+          "term": "@OneToOne / @ManyToMany",
+          "what": "@OneToOne: each entity relates to exactly one of the other. @ManyToMany: each entity relates to multiple of the other (requires join table).",
+          "why": "Model complex relationships. @OneToOne for profile→user. @ManyToMany for student↔course.",
+          "how": "@OneToOne: @JoinColumn(name='profile_id') Profile profile; @ManyToMany: @JoinTable(name='student_course', joinColumns=..., inverseJoinColumns=...) Set<Course> courses;",
+          "where": "User↔Profile (1:1), Student↔Course (M:M), Product↔Category (M:M).",
+          "when": "",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "12.0b.cascade-types",
+          "term": "Cascade Types",
+          "what": "Cascade types control which operations propagate from parent to child entity: PERSIST, MERGE, REMOVE, REFRESH, DETACH, ALL. Without cascade, you must manually manage each related entity.",
+          "why": "When you save an Order, you usually want its OrderItems saved too — CascadeType.PERSIST does this automatically.",
+          "how": "@OneToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE}) List<OrderItem> items; — persist and merge cascade. CascadeType.ALL = all operations cascade.",
+          "where": "Parent-child entity relationships: Order→OrderItem, Blog→Comment, User→Address.",
+          "when": "Use cascade for true parent-child relationships where child cannot exist without parent. Avoid cascade REMOVE on shared entities.",
+          "issue": "CascadeType.REMOVE on a shared entity (like Category referenced by many Products) deletes the Category when one Product is deleted.",
+          "fix": "Only use REMOVE cascade when child truly cannot exist without the specific parent. Use orphanRemoval for one-parent relationships.",
+          "star": {
+            "s": "Deleting one product accidentally deletes the shared category.",
+            "t": "Fix.",
+            "a": "Removed CascadeType.REMOVE. Products are not the parent of Category.",
+            "r": "Categories unaffected when products deleted."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "12.0b.batchsize-entitygraph",
+          "term": "@BatchSize / @EntityGraph",
+          "what": "@BatchSize(size=20) tells Hibernate to load lazy collections in batches of 20 instead of one per entity — reduces N+1 queries. @EntityGraph specifies which associations to fetch eagerly for a specific query.",
+          "why": "N+1 problem: loading 100 orders then accessing each order's items = 101 queries. @BatchSize reduces to ceil(100/20)+1 = 6 queries. @EntityGraph = control eager loading per query.",
+          "how": "@BatchSize(size=20) List<Item> items; — lazy but batched. @EntityGraph(attributePaths={'items','customer'}) in repository method — fetches items and customer in JOIN.",
+          "where": "Any lazy-loaded collection in entity. @EntityGraph on Spring Data JPA repository methods.",
+          "when": "@BatchSize: easy fix for N+1 when specific query tuning not needed. @EntityGraph: targeted fix for specific use cases that need specific associations.",
+          "issue": "@EntityGraph eagerly fetching large collections causes CartesianProduct — huge result sets.",
+          "fix": "Use @EntityGraph with subgraph for targeted fetching. For large collections, use separate JPQL query with JOIN FETCH instead.",
+          "star": {
+            "s": "Report page loads 100 orders — takes 30 seconds.",
+            "t": "Fix N+1.",
+            "a": "Added @BatchSize(size=50) on order items.",
+            "r": "101 queries → 3 queries. Load time: 30s → 2s."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "12.0b.jpa-lifecycle-callbacks",
+          "term": "JPA Lifecycle Callbacks",
+          "what": "JPA lifecycle callbacks: @PrePersist, @PostPersist, @PreUpdate, @PostUpdate, @PreRemove, @PostRemove, @PostLoad. Methods annotated with these are called at the corresponding lifecycle events.",
+          "why": "Auto-set timestamps, auto-populate audit fields, validate before save, trigger side effects — without explicit service code.",
+          "how": "@PrePersist void onCreate() { this.createdAt = LocalDateTime.now(); } @PreUpdate void onUpdate() { this.updatedAt = LocalDateTime.now(); }",
+          "where": "",
+          "when": "",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "12.0b.named-query-modifying-pagination",
+          "term": "Named Query / @Modifying / Pagination",
+          "what": "Named Query: @NamedQuery pre-compiles JPQL at startup — validated early. @Modifying: marks a query as update/delete — required for non-SELECT JPQL. Pagination: Pageable parameter with Page<T> return.",
+          "why": "Named queries fail fast at startup if JPQL is wrong. @Modifying allows bulk updates. Pagination prevents loading millions of rows into memory.",
+          "how": "@Modifying @Query('UPDATE User u SET u.active = false WHERE u.lastLogin < :date') void deactivateOldUsers(@Param('date') LocalDate date); Pageable p = PageRequest.of(0, 20); Page<User> page = repo.findAll(p);",
+          "where": "Spring Data JPA repositories. Bulk operations. Paged REST endpoints.",
+          "when": "Use @Modifying for bulk updates. Always paginate API endpoints that return lists. Use @NamedQuery for commonly-used complex queries.",
+          "issue": "@Modifying without @Transactional throws TransactionRequiredException.",
+          "fix": "Always combine @Modifying with @Transactional. Also clear the persistence context: @Modifying(clearAutomatically=true).",
+          "star": {
+            "s": "Bulk deactivation of 1M old accounts via loop takes 2 hours.",
+            "t": "Optimize.",
+            "a": "@Modifying @Query UPDATE in one statement.",
+            "r": "2 hours → 3 seconds."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,383 @@
+{
+  "id": "8",
+  "slug": "streams",
+  "title": "Streams API & Optional",
+  "icon": "🌊",
+  "accentColor": "#0d9488",
+  "subsections": [
+    {
+      "id": "8.1",
+      "slug": "stream-fundamentals",
+      "title": "Stream Fundamentals",
+      "keyRule": "Stream is a pipeline of operations on a sequence of elements. NOT a data structure — elements are consumed, not stored. Lazy — nothing executes until a terminal operation. Three parts: source → intermediate ops (filter/map/sorted) → terminal op (collect/forEach/count). Stream can only be consumed ONCE.",
+      "terms": [
+        {
+          "id": "8.1.stream-pipeline",
+          "term": "Stream Pipeline",
+          "what": "A Stream pipeline = data source + zero or more intermediate operations + one terminal operation. Think assembly line — data flows through, each stage transforms it.",
+          "why": "Streams replace verbose for-loops with declarative, readable pipelines. Operations compose naturally without intermediate collections.",
+          "how": "list.stream().filter(e -> e.getSalary() > 50000).map(Employee::getName).sorted().collect(Collectors.toList());",
+          "where": "Any collection processing, data transformation, aggregation, search, grouping.",
+          "when": "Use Streams for collection operations. Use traditional loops when: you need to break early with exact index, or when mutable state inside the loop is needed.",
+          "issue": "Calling stream() on the same Stream reference twice — throws IllegalStateException (stream already consumed).",
+          "fix": "Never reuse a Stream. Call .stream() again from the source collection if you need to process again.",
+          "star": {
+            "s": "Interview: what is a Stream and how is it lazy?",
+            "t": "Explain.",
+            "a": "Stream is a pipeline. Lazy means intermediate operations do nothing until a terminal op is called — filter/map don't execute until collect/forEach triggers the pipeline.",
+            "r": "Correct, clear."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "8.1.filter-map",
+          "term": "filter() & map()",
+          "what": "filter() keeps elements that match a Predicate. map() transforms each element using a Function, changing its type or value.",
+          "why": "The most common Stream operations. filter() reduces the dataset. map() transforms it.",
+          "how": "filter(e -> e.isActive()) keeps only active employees. map(Employee::getName) converts Employee to String name. Chain: filter then map.",
+          "where": "Every data processing pipeline. REST responses, search results, report generation.",
+          "when": "Use filter() before map() for efficiency — filter first reduces elements, then map() processes fewer elements.",
+          "issue": "Using map() to produce a Stream inside a Stream creates Stream<Stream<T>> — nested streams. Hard to process.",
+          "fix": "Use flatMap() to flatten nested streams: list.stream().flatMap(order -> order.getItems().stream()) — gives all items from all orders in one flat stream.",
+          "star": {
+            "s": "Get all product names from all orders.",
+            "t": "Implement.",
+            "a": "orders.stream().flatMap(o -> o.getItems().stream()).map(Item::getName).distinct().collect(toList()).",
+            "r": "Flat list of unique product names."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "8.1.collect-collectors",
+          "term": "collect() & Collectors",
+          "what": "collect() is a terminal operation that gathers Stream elements into a result — a List, Set, Map, String, or any custom container.",
+          "why": "Streams produce nothing until collected. collect() is how you get your result.",
+          "how": "toList(), toSet(), toMap(keyFn, valueFn), joining(', '), groupingBy(fn), counting(), summingInt(fn), partitioningBy(pred).",
+          "where": "End of every Stream pipeline that needs a collection result.",
+          "when": "Use toList() for most cases. groupingBy() for SQL GROUP BY equivalent. joining() for CSV/string output. counting() for frequency maps.",
+          "issue": "toMap() throws IllegalStateException if two keys map to the same value — duplicate key conflict.",
+          "fix": "Use toMap(keyFn, valueFn, mergeFunction) — third parameter resolves duplicates: (v1,v2) -> v1 keeps first, (v1,v2) -> v1+v2 merges.",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "8.1.reduce-count",
+          "term": "reduce() & count()",
+          "what": "reduce() combines all elements into a single result using a BinaryOperator. count() returns number of elements. Both are terminal operations.",
+          "why": "reduce() is the building block for aggregations — sum, product, max, min. count() is the simplest aggregation.",
+          "how": "stream.reduce(0, Integer::sum) → sum of all integers. stream.count() → number. stream.mapToInt(Employee::getSalary).sum() — specialized numeric stream is faster.",
+          "where": "Totals, aggregations, finding max/min, concatenating strings.",
+          "when": "Use specialized streams (IntStream, LongStream) for numeric operations — mapToInt().sum() is faster than reduce(0,Integer::sum) because no boxing.",
+          "issue": "reduce() on an empty stream without identity throws NoSuchElementException if using the single-argument version.",
+          "fix": "Use reduce(identity, accumulator) — provide a starting value (0 for sum, 1 for product). Returns the identity if stream is empty.",
+          "star": {
+            "s": "Sum of all order totals.",
+            "t": "Efficient implementation.",
+            "a": "orders.stream().mapToDouble(Order::getTotal).sum() — uses primitive DoubleStream. No boxing.",
+            "r": "Fast, correct."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "8.1.sorted-distinct-limit-skip",
+          "term": "sorted(), distinct(), limit(), skip()",
+          "what": "Optional is a container that either holds a value or is empty. It is a better return type than null for 'value might not exist'.",
+          "why": "Null returns cause NullPointerExceptions. Optional forces callers to acknowledge the possibility of no value — prevents NPE.",
+          "how": "Optional<User> user = repo.findById(id); user.isPresent(), user.get(), user.orElse(defaultUser), user.orElseGet(supplier), user.orElseThrow(), user.map(User::getName).",
+          "where": "Repository findById(), search operations, config lookups, any method that might not find a value.",
+          "when": "Use Optional as return type from methods. Do NOT use as field type or method parameter — poor performance and semantics.",
+          "issue": "Optional.get() on an empty Optional throws NoSuchElementException. Calling get() without isPresent() check is the same as unguarded null dereference.",
+          "fix": "Never use optional.get() without checking. Use orElse(), orElseGet(), orElseThrow(), or map() instead. These are safe chaining methods. 📌 Note: Optional.of(null) throws NullPointerException. Use Optional.ofNullable(value) when value might be null.",
+          "star": {
+            "s": "Service returns null for missing user. Callers get NPE.",
+            "t": "Fix API.",
+            "a": "Changed return type to Optional<User>. Callers use orElseThrow(UserNotFoundException::new).",
+            "r": "Explicit contract — callers must handle absent case."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "8.1.parallel-streams",
+          "term": "Parallel Streams",
+          "what": "Parallel streams split data into chunks and process them on multiple CPU threads simultaneously using the ForkJoinPool.",
+          "why": "For CPU-intensive operations on large datasets, parallelism can dramatically reduce processing time.",
+          "how": "list.parallelStream() or stream.parallel(). Internally uses ForkJoinPool.commonPool() with threads = number of CPUs. Merge results at end.",
+          "where": "Large dataset processing: batch transformations, statistical calculations, image processing.",
+          "when": "Use parallel streams when: data is large (10,000+ elements), operation is CPU-intensive (not I/O), order does not matter, operations are stateless and independent.",
+          "issue": "Parallel streams on small datasets are SLOWER than sequential — thread coordination overhead exceeds savings. Also, shared mutable state in parallel stream = race conditions.",
+          "fix": "Benchmark before using parallel. Never use stateful operations in parallel streams. For I/O- bound tasks, use CompletableFuture with custom executor instead.",
+          "star": {
+            "s": "1 million record price calculation taking 8 seconds.",
+            "t": "Speed up.",
+            "a": "Changed stream() to parallelStream(). Stateless operations.",
+            "r": "8 seconds → 2 seconds on 4-core machine."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "8.0",
+      "slug": "stream-creation-methods",
+      "title": "Stream Creation Methods",
+      "keyRule": "Create streams from: Collection.stream(), Arrays.stream(), Stream.of(), Stream.generate() (infinite), Stream.iterate() (infinite), IntStream.range() (int ranges). Infinite streams need limit() or takeWhile() to terminate.",
+      "terms": [
+        {
+          "id": "8.0.stream-of-arrays-stream",
+          "term": "Stream.of() / Arrays.stream()",
+          "what": "Stream.of(a,b,c) creates a stream from explicit values. Arrays.stream(arr) creates a stream from an array. Both create finite sequential streams.",
+          "why": "Not all data lives in Collections. You may need a stream from a few values or from an array.",
+          "how": "Stream<String> s = Stream.of('a','b','c'); Stream<Integer> nums = Arrays.stream(new int[]{1,2,3}).boxed(); IntStream ints = Arrays.stream(new int[]{1,2,3});",
+          "where": "Test data, combining small sets of known values, converting arrays to streams.",
+          "when": "Use Stream.of() for small literal sets. Use Arrays.stream() for converting arrays to streams.",
+          "issue": "Stream.of(array) gives Stream<int[]> for int[] — not Stream<Integer>. Must use Arrays.stream(intArray).",
+          "fix": "For primitive arrays: always use Arrays.stream(intArray) to get IntStream. Use .boxed() to convert to Stream<Integer>.",
+          "star": {
+            "s": "Need to process int[] as stream.",
+            "t": "Create stream correctly.",
+            "a": "Arrays.stream(intArr) → IntStream. .boxed() for Stream<Integer>.",
+            "r": "Correct stream type. No boxing mistakes."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "8.0.stream-generate-stream-iterate",
+          "term": "Stream.generate() / Stream.iterate()",
+          "what": "Stream.generate(Supplier) creates an infinite stream from a Supplier. Stream.iterate(seed, UnaryOperator) creates an infinite stream starting from seed, each element derived from previous.",
+          "why": "For creating infinite sequences: Fibonacci, UUIDs, random numbers, counter sequences.",
+          "how": "Stream.generate(UUID::randomUUID).limit(5) — 5 random UUIDs. Stream.iterate(0, n->n+1).limit(10) — 0 to 9. Java 9: Stream.iterate(0, n<100, n->n+1) — with predicate to stop.",
+          "where": "Random data generation, sequence generation, simulation, test data factories.",
+          "when": "Use generate() for stateless generation (each element independent). Use iterate() for stateful sequences (each depends on previous).",
+          "issue": "Infinite stream without limit() or takeWhile() runs forever — hangs the program.",
+          "fix": "Always add .limit(n) or .takeWhile(predicate) to infinite streams.",
+          "star": {
+            "s": "Need Fibonacci sequence as a stream.",
+            "t": "Implement.",
+            "a": "Stream.iterate(new long[]{0,1}, f -> new long[]{f[1], f[0]+f[1]}).map(f -> f[0]).limit(20).",
+            "r": "Clean functional Fibonacci without recursion."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "8.0.intstream-range-rangeclosed",
+          "term": "IntStream.range() / rangeClosed()",
+          "what": "IntStream.range(start, end) creates an int stream from start (inclusive) to end (exclusive). rangeClosed(start, end) includes end.",
+          "why": "Common need: iterate over index ranges, sum ranges, generate numeric sequences — without boxing to Integer.",
+          "how": "IntStream.range(0, 10).forEach(System.out::println); // 0-9. IntStream.rangeClosed(1,5).sum() → 15. IntStream.range(0, list.size()).mapToObj(i -> list.get(i));",
+          "where": "Index-based stream operations, sum/average over ranges, replace traditional for(int i=0; i<n; i++) loops.",
+          "when": "Use IntStream.range() instead of a for loop when you want functional-style index iteration.",
+          "issue": "IntStream.range() is half-open [start, end). Forgetting this causes off-by-one errors.",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "8.2b",
+      "slug": "stream-operations-extended",
+      "title": "Stream Operations Extended",
+      "keyRule": "peek() = debug without modifying. anyMatch/allMatch/noneMatch = short-circuit boolean terminals. mapToInt/Long/Double = switch to primitive stream, avoid boxing. Collectors.partitioningBy = split into two groups (true/false). Collectors.counting = count per group.",
+      "terms": [
+        {
+          "id": "8.2b.peek",
+          "term": "peek()",
+          "what": "peek() is an intermediate operation that performs an action on each element as it passes through the stream, without modifying the element. For debugging.",
+          "why": "Lets you inspect stream elements at any point in the pipeline without breaking the chain.",
+          "how": "list.stream().filter(x->x>5).peek(x->log.debug('After filter: {}', x)).map(x- >x*2).collect(toList());",
+          "where": "Debugging stream pipelines, logging transformation steps, performance tracing.",
+          "when": "Use peek() during development for debugging. Remove or comment out in production — peek() inside a lazy stream may not execute as expected.",
+          "issue": "peek() with side effects in production can be unreliable — lazy evaluation and short-circuit operations may skip some elements.",
+          "fix": "For production logging, use a map() that logs and returns the original element. peek() is best kept in development/debug code.",
+          "star": {
+            "s": "Stream pipeline produces wrong output — hard to trace where.",
+            "t": "Debug.",
+            "a": "Added .peek(e -> log.debug('element: {}', e)) between each step. Found filter removing too many elements. Fixed predicate.",
+            "r": "Bug found instantly."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "8.2b.anymatch-allmatch-nonematch",
+          "term": "anyMatch / allMatch / noneMatch",
+          "what": "anyMatch(predicate): true if any element matches. allMatch(predicate): true if all match. noneMatch(predicate): true if none match. All are short-circuit terminal operations.",
+          "why": "Check collection membership or conditions without iterating the entire stream — short-circuits as soon as answer is known.",
+          "how": "list.stream().anyMatch(s -> s.startsWith('A')); list.stream().allMatch(n -> n > 0); list.stream().noneMatch(String::isEmpty);",
+          "where": "Validation checks, membership tests, condition verifications on collections.",
+          "when": "Use instead of filter().count() > 0 or filter().findFirst().isPresent() — these are clearer and more efficient.",
+          "issue": "allMatch() and noneMatch() return true for empty streams — 'vacuous truth'. This surprises beginners.",
+          "fix": "If empty stream is possible and would change your logic, add an isEmpty check before streaming.",
+          "star": {
+            "s": "Validate that all items in order are in stock.",
+            "t": "Check efficiently.",
+            "a": "boolean allInStock = order.getItems().stream().allMatch(item -> inventory.has(item));",
+            "r": "Short-circuits on first out-of-stock. Efficient."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "8.2b.maptoint-maptolong-maptodouble",
+          "term": "mapToInt / mapToLong / mapToDouble",
+          "what": "mapToInt/Long/Double converts a Stream<T> to an IntStream/LongStream/DoubleStream — primitive streams that support sum(), average(), min(), max() directly.",
+          "why": "Stream<Integer> cannot call .sum() directly. mapToInt converts to IntStream which has sum(), average(), range statistics — and avoids boxing. TERM MEANING",
+          "how": "int total = orders.stream().mapToInt(Order::getQuantity).sum(); double avg = scores.stream().mapToDouble(Student::getScore).average().orElse(0);",
+          "where": "Summing, averaging, finding min/max of numeric fields in a collection of objects.",
+          "when": "Use mapToInt/Long/Double whenever doing numeric aggregation — avoids boxing overhead and adds numeric methods.",
+          "issue": "Not using mapToInt for numeric operations means using reduce(0, Integer::sum) which boxes everything.",
+          "fix": "Replace stream.map(o -> o.getCount()).reduce(0, Integer::sum) with stream.mapToInt(o -> o.getCount()).sum() — cleaner and faster.",
+          "star": {
+            "s": "Sum all order amounts in a stream of Order objects.",
+            "t": "Efficient one- liner.",
+            "a": "orders.stream().mapToLong(Order::getAmountCents).sum().",
+            "r": "No boxing, direct sum, clean API."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "8.2b.collectors-partitioningby-and-counting",
+          "term": "Collectors.partitioningBy() and counting()",
+          "what": "Spliterator (Splittable Iterator) is used by streams internally for parallel splitting. It can split a source into two parts for parallel processing.",
+          "why": "Parallel streams need to divide work. Spliterator knows how to split the data source (List, array, etc.) into independent chunks.",
+          "how": "You rarely use Spliterator directly. Internally: Stream.parallel() asks source's Spliterator to split. ForkJoinPool processes each part. merge results.",
+          "where": "Custom data source for streams, understanding parallel stream internals, creating custom stream sources.",
+          "when": "Implement Spliterator when creating a custom stream source. Otherwise it's internal to the stream API.",
+          "issue": "Not marking Spliterator as SIZED or ORDERED correctly leads to suboptimal parallel performance.",
+          "fix": "For custom Spliterator, set characteristics correctly (SIZED, SUBSIZED, ORDERED, SORTED, DISTINCT, IMMUTABLE).",
+          "star": {
+            "s": "Interview: how does parallel stream split work?",
+            "t": "Explain.",
+            "a": "Each Collection provides a Spliterator. Parallel stream calls trySplit() recursively. ForkJoinPool workers process each split. Results merged.",
+            "r": "Shows deep stream knowledge."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "8.4b",
+      "slug": "optional-deep-dive",
+      "title": "Optional Deep Dive",
+      "keyRule": "Optional.of(value) — value must not be null. Optional.ofNullable(value) — null-safe. Optional.empty() — explicitly empty. Check with isPresent()/isEmpty(). Transform with",
+      "terms": [
+        {
+          "id": "8.4b.optional-of-ofnullable-empty",
+          "term": "Optional.of() / ofNullable() / empty()",
+          "what": "Optional.of(v) wraps a non-null value — throws NPE if null. Optional.ofNullable(v) wraps value OR empty if null. Optional.empty() explicitly represents no value.",
+          "why": "Precise Optional creation: of() documents 'this must not be null', ofNullable() handles uncertain values.",
+          "how": "Optional<String> safe = Optional.ofNullable(maybeNull); Optional<String> definite = Optional.of(notNull); Optional<String> none = Optional.empty();",
+          "where": "Method return types, wrapper for nullable results, combining with stream filter.",
+          "when": "Use ofNullable() when wrapping values that might be null. Use of() when you know the value is never null (documents intent). Use empty() to return 'no result' explicitly.",
+          "issue": "Optional.of(null) throws NullPointerException immediately — not the intent of using Optional.",
+          "fix": "Use Optional.ofNullable() when the value might be null. Use Optional.of() only when you are 100% sure the value is non-null.",
+          "star": {
+            "s": "Method returns null for 'not found'.",
+            "t": "Change to Optional.",
+            "a": "return Optional.ofNullable(repository.findById(id)); — clearly communicates 'may not exist'.",
+            "r": "Callers handle absence explicitly."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "8.4b.optional-isempty-ispresent",
+          "term": "Optional.isEmpty() / isPresent()",
+          "what": "isPresent() returns true if Optional has a value. isEmpty() (Java 11+) returns true if Optional is empty. Both check if value exists.",
+          "why": "Before using the value, you must check if it's there.",
+          "how": "Optional<User> user = findUser(id); if(user.isPresent()) { process(user.get()); } // Java 11+: if(user.isEmpty()) { return notFound; }",
+          "where": "Any Optional usage before calling get(). Though prefer ifPresent() / orElse() over isPresent() + get().",
+          "when": "Use isPresent()/isEmpty() when you need to branch on presence. For transformations, prefer map/flatMap which handle empty automatically.",
+          "issue": "Anti-pattern: optional.isPresent() ? optional.get() : default — defeats Optional purpose. Same as null check.",
+          "fix": "Use optional.orElse(default) instead. Even better: optional.map(transform).orElse(default).",
+          "star": {
+            "s": "Code: if(opt.isPresent()) { return opt.get().getName(); } else { return 'unknown'; }",
+            "t": "Improve.",
+            "a": "return opt.map(User::getName).orElse('unknown');",
+            "r": "Idiomatic Optional usage."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "8.4b.optional-ifpresent-ifpresentorelse",
+          "term": "Optional.ifPresent() / ifPresentOrElse()",
+          "what": "ifPresent(consumer) runs the consumer if value present — ignores if empty. ifPresentOrElse(consumer, emptyAction) (Java 9+) runs consumer if present, emptyAction if empty.",
+          "why": "Cleaner alternative to isPresent() + get() for side effects — no chance of forgetting get() or calling get() when empty.",
+          "how": "opt.ifPresent(user -> log.info('Found: {}', user.getName())); opt.ifPresentOrElse(user -> sendEmail(user), () -> log.warn('User not found'));",
+          "where": "Logging, sending notifications, caching — side effects on optional values.",
+          "when": "Use ifPresent() for single side effects. Use ifPresentOrElse() when you need to react to both cases.",
+          "issue": "ifPresent() is void — cannot be used in method chains for transformations.",
+          "fix": "For transformations, use map()/flatMap(). For side effects only, use ifPresent()/ifPresentOrElse().",
+          "star": {
+            "s": "Need to log when user found and warn when not.",
+            "t": "Clean code.",
+            "a": "opt.ifPresentOrElse(u -> log.info('User found: {}', u), () -> log.warn('User not found')).",
+            "r": "Both cases handled cleanly."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "8.4b.optional-flatmap-filter",
+          "term": "Optional.flatMap() / filter()",
+          "what": "flatMap(f) applies a function that returns Optional and flattens — avoids Optional<Optional<T>>. filter(predicate) returns empty Optional if value doesn't match.",
+          "why": "",
+          "how": "",
+          "where": "",
+          "when": "",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "8.4b.optional-orelseget-orelsethrow",
+          "term": "Optional.orElseGet() / orElseThrow()",
+          "what": "orElse(value) always evaluates the fallback. orElseGet(Supplier) evaluates lazily — only if empty. orElseThrow(Supplier) throws the given exception if empty.",
+          "why": "orElse(expensiveCall()) always calls expensiveCall, even when value is present — wasteful. orElseGet() only calls the supplier when needed.",
+          "how": "String name = opt.orElse('Unknown'); // always creates 'Unknown' string. String name = opt.orElseGet(this::generateDefault); // only called if empty. String name = opt.orElseThrow(() -> new NotFoundException(id));",
+          "where": "Default values, fallback computation, mandatory values where absence is an error.",
+          "when": "Use orElse() for cheap constant defaults. Use orElseGet() for expensive computations. Use orElseThrow() for mandatory values.",
+          "issue": "opt.orElse(expensiveDBCall()) — DB call happens even when Optional has a value. Wastes resources.",
+          "fix": "opt.orElseGet(() -> expensiveDBCall()) — DB call only when Optional is empty.",
+          "star": {
+            "s": "Performance issue: DB fallback called even when cache hits.",
+            "t": "Fix.",
+            "a": "Changed orElse(db.lookup()) to orElseGet(() -> db.lookup()).",
+            "r": "DB called only on cache miss. Performance improved."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "name": "Java Master Interview Notes",
+  "short_name": "Java Notes",
+  "description": "Interactive Java interview study app with 339 topics, highlights, notes and flashcards",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fdf8f0",
+  "theme_color": "#c2410c",
+  "orientation": "any",
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☕</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    { "name": "Flashcards", "url": "/flashcards", "description": "Practice with flashcards" },
+    { "name": "Progress", "url": "/progress", "description": "View my progress" },
+    { "name": "Bookmarks", "url": "/bookmarks", "description": "My bookmarks" }
+  ]
+}

@@ -1,0 +1,429 @@
+{
+  "id": "5",
+  "slug": "jvm-gc",
+  "title": "JVM Internals & Garbage Collection",
+  "icon": "🔧",
+  "accentColor": "#059669",
+  "subsections": [
+    {
+      "id": "5.1",
+      "slug": "jvm-architecture-class-loading",
+      "title": "JVM Architecture & Class Loading",
+      "keyRule": "JVM = Class Loader + Runtime Data Areas (Heap, Stack, Metaspace, PC Registers) + Execution Engine (Interpreter + JIT + GC). Class loading: Bootstrap → Extension → Application ClassLoader. Classes loaded once per ClassLoader — duplicate loaders = duplicate classes.",
+      "terms": [
+        {
+          "id": "5.1.class-loader",
+          "term": "Class Loader",
+          "what": "Class Loader finds and loads .class files into JVM memory. Three built-in loaders: Bootstrap (rt.jar/JDK), Extension (ext/ directory), Application (your classpath).",
+          "why": "JVM does not load all classes at startup — classes are loaded on first use (lazy loading). Class Loaders make this possible.",
+          "how": "Parent delegation: when Application ClassLoader asked for a class, it asks Parent (Extension), which asks Parent (Bootstrap) first. If Bootstrap cannot find it, it comes back down. Prevents you from overriding java.lang.String.",
+          "where": "Every class load in JVM uses this chain. Custom ClassLoaders are used by: application servers (Tomcat), OSGi, hot-reload tools (JRebel).",
+          "when": "Custom ClassLoader needed when: loading classes from non-standard location, hot reloading, or class isolation in containers.",
+          "issue": "Same class loaded by two different ClassLoaders = two distinct classes in JVM — instanceof returns false even if same name. Causes ClassCastException.",
+          "fix": "Ensure only one ClassLoader loads a class. Common in application servers — check ClassLoader hierarchy in web.xml or container config.",
+          "star": {
+            "s": "ClassCastException on 'instanceof' check that seems correct.",
+            "t": "Diagnose.",
+            "a": "Same class loaded by parent ClassLoader and webapp ClassLoader — two classes. Fixed ClassLoader config in Tomcat.",
+            "r": "One class, no exception."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "5.1.jvm-memory-areas",
+          "term": "JVM Memory Areas",
+          "what": "JVM has several memory areas: Heap (objects), Stack (method frames per thread), Metaspace (class metadata), PC Register (current instruction per thread), Native Method Stack (native code).",
+          "why": "Understanding the areas helps you diagnose the right type of OOM, tune the right JVM flags, and reason about thread safety.",
+          "how": "Heap: -Xmx, -Xms. Metaspace: -XX:MaxMetaspaceSize. Stack: -Xss. PC Register and Native Stack are small and rarely tuned.",
+          "where": "Every running Java application uses all these areas. JVM flags control their sizes.",
+          "when": "Tune these when: diagnosing OOM errors (know which area), optimizing startup memory, sizing containers/pods.",
+          "issue": "'OOM: Java heap space' vs 'OOM: Metaspace' vs 'OOM: unable to create native thread' — different areas, different causes, different fixes.",
+          "fix": "'Heap space': increase -Xmx or fix memory leak. 'Metaspace': increase - XX:MaxMetaspaceSize or fix class loader leak. 'Native thread': reduce thread count or increase OS process limit.",
+          "star": {
+            "s": "App throws OOM but heap looks fine in monitoring.",
+            "t": "Diagnose right area.",
+            "a": "Checked Metaspace — 100% full. Many plugins loading duplicate classes. Set - XX:MaxMetaspaceSize=512m and fixed class loader leak.",
+            "r": "Stable memory."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "5.2",
+      "slug": "garbage-collection-algorithms",
+      "title": "Garbage Collection Algorithms",
+      "keyRule": "GC Types: Serial (single thread, for small apps), Parallel (multi-thread, high throughput), G1GC (balanced, default Java 9+), ZGC/Shenandoah (low pause, Java 11+). Key metrics: throughput (% time not in GC) and pause time (stop-the-world duration). Choose based on your app's priorities.",
+      "terms": [
+        {
+          "id": "5.2.g1gc-garbage-first",
+          "term": "G1GC (Garbage First)",
+          "what": "ZGC (Z Garbage Collector) is a low-latency GC with pause times under 1 millisecond regardless of heap size — even terabyte heaps.",
+          "why": "Some apps need consistent sub-millisecond latency — trading systems, real-time games, latency-sensitive microservices. G1GC cannot guarantee this.",
+          "how": "ZGC does almost all work concurrently with application threads. Uses colored pointers and load barriers. Pause time is nearly constant regardless of heap size.",
+          "where": "High-frequency trading, real-time systems, large-heap apps needing predictable latency.",
+          "when": "Use ZGC for: latency SLA under 10ms, heaps over 32GB, any latency-critical app. Note: slightly lower throughput than Parallel GC.",
+          "issue": "ZGC requires more CPU and memory overhead than G1GC — running concurrent GC threads has cost.",
+          "fix": "ZGC on Java 15+ is production-ready. Enable with -XX:+UseZGC. Monitor CPU overhead and ensure your environment has enough CPUs for concurrent GC.",
+          "star": {
+            "s": "Financial app has GC pause spikes of 500ms — unacceptable for trading.",
+            "t": "Eliminate pauses.",
+            "a": "Switched to ZGC (-XX:+UseZGC).",
+            "r": "Max pause < 2ms. Trading SLA met."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "5.2.young-vs-old-generation",
+          "term": "Young vs Old Generation",
+          "what": "Heap is split into Young Generation (new objects) and Old Generation (long-lived objects). Most objects die young — collected quickly in Young Gen (Minor GC). Survivors promoted to Old Gen.",
+          "why": "Most objects are very short-lived (method-local, temporary). Collecting them separately is fast. Mixing old and new in same space wastes time collecting long-lived objects repeatedly.",
+          "how": "Young Gen: Eden + two Survivor spaces (S0, S1). New objects go to Eden. Minor GC copies survivors to S0/S1. After N survivals (default 15), promoted to Old Gen. Old Gen collected by Major/Full GC — slow.",
+          "where": "G1GC still has Young/Old concept but in regions. Understanding this helps tune - XX:NewRatio and -XX:SurvivorRatio.",
+          "when": "Tune generation sizes when: Minor GC happens too frequently (Young Gen too small), or objects promote too fast (Survivor space too small).",
+          "issue": "Objects promote to Old Gen too quickly — too many survivors fill Survivor space. Old Gen fills up faster, requiring expensive Full GC.",
+          "fix": "Increase Survivor space: -XX:SurvivorRatio=8. Increase Young Gen: - XX:NewRatio=2 (young:old = 1:2). Or increase -Xmx to give more total heap.",
+          "star": {
+            "s": "Frequent Full GC causing 2-second pauses every minute.",
+            "t": "Diagnose.",
+            "a": "GC log shows objects promoted to Old Gen immediately — Survivor space full. Increased Young Gen.",
+            "r": "Full GC every 30 minutes instead of 1 minute. Pauses rare."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "5.2.gc-tuning-key-flags",
+          "term": "GC Tuning (key flags)",
+          "what": "GC flags control heap sizes, GC algorithm, and behavior. Right flags make the difference between a stable app and OOM or pause-heavy app.",
+          "why": "Default JVM settings are conservative. Production apps need explicit tuning for their specific workload.",
+          "how": "Key flags: -Xmx4g (max heap 4GB), -Xms1g (start 1GB), -XX:+UseG1GC (G1), - XX:MaxGCPauseMillis=200 (target pause), -Xlog:gc* (GC logging), - XX:+HeapDumpOnOutOfMemoryError (dump on crash).",
+          "where": "JVM startup flags in Dockerfile, shell scripts, application server config, Kubernetes resource limits.",
+          "when": "Set flags before any production deployment. Review GC logs regularly. Never go to production without explicit -Xmx.",
+          "issue": "Not setting -Xmx = JVM uses up to 25% of physical RAM — unpredictable in containers. Container kills process when memory limit exceeded without warning.",
+          "fix": "In Docker: -Xmx should be 75% of container memory limit. Java 10+ auto-detects container limits. Use -XX:MaxRAMPercentage=75 for dynamic sizing.",
+          "star": {
+            "s": "Kubernetes pod killed by OOM killer despite Java OOM never thrown.",
+            "t": "Diagnose.",
+            "a": "JVM heap was 25% of physical RAM but container limit was 512MB — JVM used too much. Added -XX:MaxRAMPercentage=75.",
+            "r": "JVM respects container limit. No more pod kills."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "5.2.memory-leak-common-causes",
+          "term": "Memory Leak (common causes)",
+          "what": "Memory leak in Java means objects are still referenced (reachable) but are no longer needed — GC cannot collect them. Memory grows until OOM.",
+          "why": "Java GC is not magic — it only collects unreachable objects. If old code holds a reference to an object 'just in case', that object lives forever.",
+          "how": "Common causes: 1) Static collections that grow (static Map never cleared). 2) Non- closed resources (streams, connections). 3) Listeners not unregistered. 4) ThreadLocal not removed.",
+          "where": "Long-running services: web apps, microservices, batch processors.",
+          "when": "Diagnose when: memory grows steadily over time, heap dump shows same object type growing, app runs fine for hours then crashes.",
+          "issue": "Memory leaks are slow — might take hours or days to manifest. Hard to catch in short tests.",
+          "fix": "1) -XX:+HeapDumpOnOutOfMemoryError — capture dump on crash. 2) Eclipse MAT to analyze — find dominator tree. 3) WeakHashMap or Caffeine cache for automatic eviction. 4) Always unregister listeners. 5) Remove ThreadLocal after request.",
+          "star": {
+            "s": "Memory grows 10MB per hour — stable for days then OOM.",
+            "t": "Find leak.",
+            "a": "Eclipse MAT heap dump showed EventListeners accumulating — listeners added on each API call, never removed. Fixed lifecycle.",
+            "r": "Memory stable."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "5.1b",
+      "slug": "jvm-memory-areas-extended",
+      "title": "JVM Memory Areas Extended",
+      "keyRule": "",
+      "terms": [
+        {
+          "id": "5.1b.method-area-metaspace",
+          "term": "Method Area (Metaspace)",
+          "what": "Method Area (called Metaspace in Java 8+) stores class-level data: class structure, method bytecode, static variables, constant pool. Shared across all threads.",
+          "why": "Class metadata must be stored somewhere outside the Heap — one copy per class, not per instance.",
+          "how": "Metaspace grows dynamically in native memory (no fixed PermGen limit like before Java 8). Tune with -XX:MaxMetaspaceSize=512m.",
+          "where": "Every class loaded adds to Metaspace. Dynamic proxy generation (Spring AOP, Hibernate, CGLIB) creates many classes.",
+          "when": "Check Metaspace when: 'OOM: Metaspace' errors, monitoring shows Metaspace growing, or many frameworks load dynamic classes.",
+          "issue": "Frameworks generating proxy classes at runtime (Spring, Hibernate, Mockito) can fill Metaspace. ClassLoader leaks in hot-reload scenarios.",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "5.1b.pc-register-program-counter",
+          "term": "PC Register (Program Counter)",
+          "what": "Each thread has its own PC (Program Counter) Register — holds the address of the JVM instruction currently executing. For native methods, PC is undefined.",
+          "why": "Enables thread context switching — when scheduler pauses a thread and resumes it, PC tells JVM where to continue execution.",
+          "how": "PC is managed entirely by JVM — developers have no direct control or access. Each thread's PC advances through bytecode.",
+          "where": "Implicit in every thread. GC does not touch PC. Thread dumps show the current execution point which corresponds to PC.",
+          "when": "Purely internal JVM mechanism. You never tune it. Relevant only for understanding JVM internals in interviews.",
+          "issue": "Not a cause of any common production issue — purely internal.",
+          "fix": "N/A — no tuning needed.",
+          "star": {
+            "s": "Interview: what does each thread have its own copy of in JVM?",
+            "t": "Answer.",
+            "a": "Stack, PC Register, and Native Method Stack. Heap and Method Area are shared.",
+            "r": "Correct architecture knowledge."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "5.1b.native-method-stack",
+          "term": "Native Method Stack",
+          "what": "Native Method Stack is the call stack for native (non-Java) methods invoked via JNI (Java Native Interface). Separate from the Java Stack.",
+          "why": "When Java calls C/C++ code through JNI, the native code needs its own stack. JVM maintains it separately.",
+          "how": "Automatic — used when your code or a library calls native methods. java.io, java.net, many JDK internals use JNI underneath.",
+          "where": "JNI calls, native libraries (OpenSSL, database drivers using native protocols), JVM internal operations.",
+          "when": "Relevant when debugging native crashes (JVM crash log shows native stack traces), or investigating memory usage from native libraries.",
+          "issue": "Native code crash (SIGSEGV, SIGBUS) shows as JVM crash with hs_err_pid file — different debugging approach than Java exceptions.",
+          "fix": "Check hs_err_pid log for native crash. Update native library version. Check JNI code for memory management errors.",
+          "star": {
+            "s": "JVM crashes with no Java exception — hs_err_pid file.",
+            "t": "Diagnose.",
+            "a": "Native library (OpenSSL old version) has buffer overflow. Updated to current version.",
+            "r": "No more native crashes."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "5.2b",
+      "slug": "gc-deep-dive",
+      "title": "GC Deep Dive",
+      "keyRule": "GC phases: Mark (find reachable objects via GC roots) → Sweep (reclaim unreachable) → Compact (defragment). Stop-The-World pauses happen when GC must freeze threads. TLAB (Thread-Local Allocation Buffer) speeds allocation by giving each thread its own Eden slice.",
+      "terms": [
+        {
+          "id": "5.2b.gc-roots",
+          "term": "GC Roots",
+          "what": "GC Roots are the starting points for GC reachability analysis. An object is live (not garbage) if it is reachable from any GC Root via a chain of references.",
+          "why": "GC needs a starting point. It starts from roots and marks everything reachable as live. Anything not reachable = garbage.",
+          "how": "GC Roots include: 1) Local variables in method frames. 2) Static fields. 3) JNI references. 4) Active threads themselves. 5) Synchronized monitors.",
+          "where": "",
+          "when": "",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "5.2b.mark-and-sweep-compaction",
+          "term": "Mark and Sweep / Compaction",
+          "what": "Three GC phases: Mark = traverse from GC roots, mark all reachable objects as live. Sweep = reclaim memory of all unmarked objects. Compact = move live objects together, eliminate fragmentation.",
+          "why": "Sweep alone leaves 'holes' in memory — fragmentation. Compact solves this but requires moving objects and updating all references.",
+          "how": "Mark: traverse object graph, set flag. Sweep: walk heap, free unmarked. Compact: slide live objects to one end of heap. Serial GC does all three. G1GC compacts incrementally.",
+          "where": "All garbage collectors use some form of mark-sweep. Compact is done by G1GC, ZGC, Shenandoah in concurrent phases.",
+          "when": "Compaction matters when: heap is fragmented (many small holes), large object allocations fail despite 'enough' free memory.",
+          "issue": "Compaction requires updating all references to moved objects — expensive. This is a major source of pause time.",
+          "fix": "G1GC and ZGC compact concurrently or incrementally to minimize pause. ZGC uses colored pointers to track moved objects without stop-the-world.",
+          "star": {
+            "s": "Large object allocations fail despite showing 2GB free heap.",
+            "t": "Diagnose.",
+            "a": "Heap fragmentation — free space in many small pieces. Switched to G1GC with compaction.",
+            "r": "Large allocations succeed."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "5.2b.stop-the-world-stw",
+          "term": "Stop-The-World (STW)",
+          "what": "Stop-The-World pause: GC freezes ALL application threads for a GC phase. No code runs during STW. Users see latency spike.",
+          "why": "Some GC phases require consistent view of the heap — cannot have application threads moving objects while GC marks them.",
+          "how": "JVM sends a safepoint signal. All threads reach a safepoint and stop. GC runs. JVM releases. Threads resume.",
+          "where": "All GC algorithms have some STW. G1GC STW is milliseconds. ZGC STW is sub- millisecond. Serial/Parallel GC STW is seconds.",
+          "when": "Monitor STW pause time in GC logs: [GC Pause Young/Mixed/Full ...ms]. Optimize when pauses cause latency SLA violations.",
+          "issue": "Full GC on a 32GB heap can pause for 10-30 seconds — catastrophic for latency-sensitive services.",
+          "fix": "Move to G1GC or ZGC. Reduce heap fragmentation. Reduce object allocation rate. Fix memory leaks that force Full GC.",
+          "star": {
+            "s": "P99 latency spikes to 5 seconds every hour.",
+            "t": "Correlate.",
+            "a": "GC logs show Full GC of 32GB heap taking 4 seconds at same interval. Switched to ZGC.",
+            "r": "Max pause < 5ms. P99 drops to 200ms."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "5.2b.tlab-thread-local-allocation-buffer",
+          "term": "TLAB (Thread- Local Allocation Buffer)",
+          "what": "TLAB gives each thread a private slice of Eden space for object allocation. Threads allocate into their TLAB without any synchronization — fast allocation.",
+          "why": "Without TLAB, every 'new' object requires synchronized access to the shared Eden space — massive contention. TLAB eliminates this.",
+          "how": "Each thread gets a TLAB from Eden. Allocates within it via simple pointer bump — O(1), no lock. When TLAB is full, requests a new one from Eden (rare synchronized step).",
+          "where": "",
+          "when": "",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "5.2b.serial-gc-parallel-gc-cms",
+          "term": "Serial GC / Parallel GC / CMS",
+          "what": "Serial GC: single thread, Stop-The-World — for small/desktop apps. Parallel GC: multiple threads, Stop-The-World — max throughput for batch. CMS: concurrent mark- sweep — low pause, deprecated in Java 9+.",
+          "why": "Different workloads need different GC trade-offs: throughput vs latency vs memory.",
+          "how": "-XX:+UseSerialGC — serial (one thread). -XX:+UseParallelGC — parallel (default before Java 9). -XX:+UseConcMarkSweepGC — CMS (deprecated). For new apps: G1GC (-XX:+UseG1GC) or ZGC.",
+          "where": "Serial: local dev/testing. Parallel: batch jobs that don't care about pause. CMS: old low-latency apps. G1GC: most production. ZGC: ultra-low latency.",
+          "when": "Choose GC based on: latency requirements, heap size, and whether throughput or pause time is more important.",
+          "issue": "CMS deprecated and removed in Java 14. Using -XX:+UseConcMarkSweepGC on Java 14+ = error.",
+          "fix": "Migrate CMS applications to G1GC or ZGC. G1GC covers most CMS use cases with better stability.",
+          "star": {
+            "s": "Batch job GC taking 30% of CPU.",
+            "t": "Optimize.",
+            "a": "Switched to Parallel GC. More GC threads.",
+            "r": "GC time reduced to 8% of total. Batch job 25% faster."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "5.2b.shenandoah-gc-epsilon-gc",
+          "term": "Shenandoah GC / Epsilon GC",
+          "what": "Shenandoah: concurrent GC by Red Hat, extremely low pause (sub-millisecond), available since Java 12 (OpenJDK). Epsilon: no-op GC — does NOT collect garbage. For testing and allocation-free apps.",
+          "why": "Shenandoah: alternative to ZGC for ultra-low latency. Epsilon: measure GC overhead, test allocation-free code, or short-lived batch jobs where GC never needed.",
+          "how": "-XX:+UseShenandoahGC — enable Shenandoah. -XX:+UseEpsilonGC — enable Epsilon (will OOM when heap full).",
+          "where": "Shenandoah: latency-critical microservices. Epsilon: performance benchmarks, allocation-analysis tools, test environments.",
+          "when": "Shenandoah: same use cases as ZGC — sub-1ms pauses. Epsilon: ONLY when you know heap will not fill during app lifetime.",
+          "issue": "Epsilon GC: heap fills and JVM crashes with OOM — no collection ever happens.",
+          "fix": "Only use Epsilon when you have measured that the app does not exceed heap capacity. All other cases: use G1GC or ZGC.",
+          "star": {
+            "s": "Interview: name two low-pause GC options in modern Java.",
+            "t": "Answer.",
+            "a": "ZGC and Shenandoah — both aim for sub-millisecond pauses. Both concurrent. ZGC uses colored pointers, Shenandoah uses Brooks forwarding pointer.",
+            "r": "Shows GC ecosystem knowledge."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "5.3",
+      "slug": "reference-types-memory",
+      "title": "Reference Types & Memory",
+      "keyRule": "Reference strength: Strong > Soft > Weak > Phantom. Strong: never collected. Soft: collected when low memory. Weak: collected at next GC. Phantom: after finalization. finalize() is deprecated — avoid. Use Cleaner (Java 9+) for resource cleanup.",
+      "terms": [
+        {
+          "id": "5.3.weakreference",
+          "term": "WeakReference",
+          "what": "A WeakReference holds a reference that GC can collect at any time during the next GC cycle, regardless of memory pressure.",
+          "why": "For caches where entries should disappear when no longer strongly referenced elsewhere — automatic eviction without explicit code.",
+          "how": "WeakReference<BigObject> ref = new WeakReference<>(object); BigObject obj = ref.get(); if(obj == null) { /* was collected */ }",
+          "where": "WeakHashMap (keys are weak — entries auto-removed when key not referenced). Caches. Canonicalization maps. String.intern() internals.",
+          "when": "Use WeakReference for caches where the cached object should be collected if no one is using it. Always check get() for null.",
+          "issue": "WeakReference cleared very aggressively — data may disappear too soon under load. Cache hit rate can drop.",
+          "fix": "For caches, SoftReference is usually better — collected only under memory pressure, not at every GC.",
+          "star": {
+            "s": "Cache returns null unexpectedly.",
+            "t": "Diagnose.",
+            "a": "WeakReference cleared every GC cycle even with plenty of memory. Changed to SoftReference.",
+            "r": "Cache retains entries until memory pressure. Hit rate improved."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "5.3.softreference",
+          "term": "SoftReference",
+          "what": "SoftReference is collected only when JVM is under memory pressure (low heap). JVM guarantees to collect all SoftReferences before throwing OutOfMemoryError.",
+          "why": "Perfect for memory-sensitive caches — entries stay as long as memory is available, evicted when memory gets tight.",
+          "how": "SoftReference<Image> ref = new SoftReference<>(image); Image img = ref.get(); if(img == null) { img = loadFromDisk(); ref = new SoftReference<>(img); }",
+          "where": "Image caches, document caches, compiled regex caches, any memory-sensitive cache.",
+          "when": "Use SoftReference for caches you want to stay as long as possible without risking OOM.",
+          "issue": "SoftReferences cleared aggressively when -Xmx is small. With a small heap, they get very little benefit.",
+          "fix": "Set -Xmx appropriately. Consider Caffeine cache with maximumSize + expireAfterAccess for production caches — better performance than manual SoftReference.",
+          "star": {
+            "s": "Image editor OOM loading large images.",
+            "t": "Cache images without OOM risk.",
+            "a": "SoftReference cache. Images stay in memory until JVM needs space.",
+            "r": "No OOM. Images evicted gracefully when needed."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "5.3.phantomreference",
+          "term": "PhantomReference",
+          "what": "PhantomReference.get() always returns null — you cannot access the object. Enqueued in a ReferenceQueue after object is finalized. Used for cleanup after finalization.",
+          "why": "Safe alternative to finalize() — get notification AFTER object is gone, then clean up native resources.",
+          "how": "ReferenceQueue<MyObj> queue = new ReferenceQueue<>(); PhantomReference<MyObj> ref = new PhantomReference<>(obj, queue); // When obj is GCd: queue.remove() unblocks.",
+          "where": "Native memory cleanup, file descriptor cleanup, any resource that needs post-GC cleanup.",
+          "when": "Use PhantomReference (or Java 9's Cleaner) for native resource cleanup. Never use finalize().",
+          "issue": "PhantomReference processing requires a background thread polling the ReferenceQueue — extra complexity.",
+          "fix": "Java 9+ Cleaner is easier: Cleaner.create(); cleaner.register(obj, cleanupAction); — Cleaner handles the background thread.",
+          "star": {
+            "s": "Interview: how to safely clean up off-heap memory when Java object is GCd?",
+            "t": "Answer.",
+            "a": "PhantomReference + ReferenceQueue OR Java 9 Cleaner. finalize() is deprecated. Cleaner is the modern approach.",
+            "r": "Expert knowledge."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "5.3.finalize-deprecated",
+          "term": "finalize() (Deprecated)",
+          "what": "finalize() is a method called by GC before collecting an object — intended for cleanup. It is deprecated since Java 9 and should never be used in new code.",
+          "why": "finalize() has serious problems: non-deterministic timing, can resurrect objects, slows GC, cannot guarantee execution. Caused countless bugs.",
+          "how": "@Override protected void finalize() { // NEVER DO THIS. resource.close(); } — bad. Use try-with-resources or Cleaner instead.",
+          "where": "Should never appear in new code. May appear in old legacy code — a warning sign.",
+          "when": "Never. Use try-with-resources for cleanup, AutoCloseable for resource classes, or Cleaner for post-GC native cleanup.",
+          "issue": "finalize() may not be called at all. Object may be resurrected in finalize(). GC pauses increase because GC must track finalizable objects.",
+          "fix": "Implement AutoCloseable. Use try-with-resources. For post-GC native cleanup, use Java 9 Cleaner.",
+          "star": {
+            "s": "Legacy class uses finalize() to close file handles. File handles leak.",
+            "t": "Fix.",
+            "a": "Implemented AutoCloseable. Changed callers to try-with-resources. Removed finalize().",
+            "r": "File handles closed deterministically."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "5.3.heap-dump-analysis",
+          "term": "Heap Dump Analysis",
+          "what": "A heap dump is a snapshot of all objects in the JVM heap at a moment in time. Used to diagnose memory leaks, OOM, and excessive object creation.",
+          "why": "When you have an OOM or growing memory, you need to see exactly what objects are in memory and what is holding them alive.",
+          "how": "Get heap dump: 1) Auto: -XX:+HeapDumpOnOutOfMemoryError. 2) Manual: jmap - dump:format=b,file=heap.hprof <pid>. Analyze with: Eclipse Memory Analyzer (MAT), VisualVM, or JProfiler.",
+          "where": "Production post-mortem, performance investigation, memory leak diagnosis.",
+          "when": "Analyze heap dump when: memory grows without bound, OOM happens, specific object count grows unexpectedly.",
+          "issue": "Heap dump from a 32GB heap = 32GB file. Hard to transfer and analyze.",
+          "fix": "Use MAT's 'Leak Suspects Report' — it automatically identifies the biggest memory consumers and suspect paths. Focus on the dominator tree.",
+          "star": {
+            "s": "OOM every night at 3am.",
+            "t": "Diagnose.",
+            "a": "- XX:+HeapDumpOnOutOfMemoryError. Dump collected. MAT showed HttpSession holding 2M cached objects from background job never expiring. Fixed TTL.",
+            "r": "No OOM since."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    }
+  ]
+}

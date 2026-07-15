@@ -1,0 +1,410 @@
+{
+  "id": "19",
+  "slug": "system-design",
+  "title": "System Design",
+  "icon": "🏛️",
+  "accentColor": "#1d4ed8",
+  "subsections": [
+    {
+      "id": "19.1",
+      "slug": "scalability-design-patterns",
+      "title": "Scalability & Design Patterns",
+      "keyRule": "System design interviews test: how to scale a system to millions of users. Key concepts: horizontal scaling, caching, database sharding, load balancing, message queues, CAP theorem. Always start with requirements, then estimate scale, then design.",
+      "terms": [
+        {
+          "id": "19.1.horizontal-vs-vertical-scaling",
+          "term": "Horizontal vs Vertical Scaling",
+          "what": "Sharding splits one large database table across multiple DB servers — each server holds a subset of the rows (a shard). Horizontal scaling for the database layer.",
+          "why": "Single DB server has limits (disk, CPU, connections). Sharding distributes data across many servers — scales write capacity and storage.",
+          "how": "Shard key (e.g., userId % 4) determines which shard. userId=0-24: shard 0. 25-49: shard 1. etc. Each shard is a separate DB instance.",
+          "where": "User data, order data at massive scale. MongoDB, Cassandra, DynamoDB handle sharding natively.",
+          "when": "Add sharding when: single DB is at capacity, write volume exceeds single DB limit, data size exceeds single server disk.",
+          "issue": "Cache invalidation is hard — stale data served after DB update. Cache thundering herd — cache expires, thousands of requests hit DB simultaneously.",
+          "fix": "Short TTLs for frequently changing data. Use write-through for critical data. Add 'cache warming' on startup. Use probabilistic early expiration to prevent thundering herd.",
+          "star": {
+            "s": "Product page very slow under load.",
+            "t": "Cache products.",
+            "a": "Spring @Cacheable on product service. 5-minute TTL. On product update, @CacheEvict.",
+            "r": "DB load reduced 90%. Page response from 200ms to 5ms. Database Sharding"
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "19.1.load-balancer",
+          "term": "Load Balancer",
+          "what": "Load balancer distributes incoming traffic across multiple server instances. Prevents any single instance from being overwhelmed.",
+          "why": "Single server = single point of failure + limited capacity. Load balancer distributes load and provides high availability.",
+          "how": "Round-robin (default), least connections, IP hash (sticky sessions). Health checks: remove unhealthy instances automatically. AWS ALB, Nginx, HAProxy.",
+          "where": "In front of every horizontally scaled service tier. Web tier, API tier, microservices.",
+          "when": "Always use a load balancer for production. Even for single instance — makes scaling easy. Enables zero-downtime deployments.",
+          "issue": "Sticky sessions (IP hash) ties user to one server — if that server goes down, user's session is lost.",
+          "fix": "Store sessions externally (Redis). Use round-robin — any server can handle any user. No server-side session state.",
+          "star": {
+            "s": "During deployment, some users get errors.",
+            "t": "Zero-downtime deploy.",
+            "a": "Load balancer with health checks. Deploy one instance at a time (rolling deploy). LB drains connections before taking instance out.",
+            "r": "No user-visible downtime."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "19.1.cap-theorem",
+          "term": "CAP Theorem",
+          "what": "CAP: Consistency (all nodes see same data), Availability (every request gets a response), Partition tolerance (system works despite network partition). You can only guarantee two of three.",
+          "why": "Forces you to think about trade-offs in distributed systems. No system can have perfect consistency, availability, AND partition tolerance simultaneously.",
+          "how": "CP (Consistency + Partition): HBase, ZooKeeper — sacrifices availability during partition. AP (Availability + Partition): DynamoDB, Cassandra — sacrifices strict consistency (eventual consistency). CA systems: traditional single-server DB (no partition tolerance).",
+          "where": "Distributed system design decisions: choosing between MySQL (CP) and Cassandra (AP).",
+          "when": "For financial systems (need strong consistency): CP. For social media, analytics (can tolerate eventual consistency): AP. Real systems are more nuanced — PACELC theorem extends CAP.",
+          "issue": "Claiming a system is 'CA' in a distributed environment — network partitions WILL happen. CA is not realistic in distributed systems.",
+          "fix": "Design for partition tolerance always. Choose C vs A based on your use case.",
+          "star": {
+            "s": "Interview: design a payment system.",
+            "t": "Choose DB considering CAP.",
+            "a": "CP system (strong consistency) — cannot lose a transaction or show wrong balance. Accept reduced availability over wrong data.",
+            "r": "Demonstrates understanding of trade-offs."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "19.1.message-queue-async-decoupling",
+          "term": "Message Queue (async decoupling)",
+          "what": "Message queue decouples services — producer sends message and continues. Consumer processes asynchronously. Queue holds messages until consumed.",
+          "why": "Synchronous service calls create tight coupling. If consumer is slow/down, producer slows/fails too. Queue absorbs spikes and isolates failures.",
+          "how": "Producer → Queue (Kafka/SQS/RabbitMQ) → Consumer. Producer does not wait for consumer. Queue persists messages during consumer downtime.",
+          "where": "Order placed → queue → inventory update, email, loyalty points (all async). Background jobs, event-driven microservices.",
+          "when": "Use queues when: operations can be async, consumer slower than producer (back- pressure), one event must trigger multiple consumers.",
+          "issue": "If consumer fails and no retry/DLQ configured — messages silently lost.",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "20.1",
+      "slug": "clean-code-performance",
+      "title": "Clean Code & Performance",
+      "keyRule": "Clean code = readable, simple, intention-revealing. Good names > comments. Short methods > long methods. One responsibility per method. Fail fast with early returns. Avoid magic numbers — use named constants. Review code with the question: 'Will I understand this in 6 months?'",
+      "terms": [
+        {
+          "id": "20.1.clean-code-principles",
+          "term": "Clean Code Principles",
+          "what": "SOLID principles applied in real code: inject dependencies, one responsibility per class, code to interfaces, small interfaces, extend via composition not modification.",
+          "why": "SOLID code is easy to test (DI), easy to extend (OCP), easy to change (SRP), safe to refactor (LSP).",
+          "how": "SRP: OrderService only processes orders — not sends emails (EmailService does that). DIP: inject OrderRepository interface. OCP: add new discount type by adding new class.",
+          "where": "Service design, class design, API design. Spring application architecture follows SOLID naturally.",
+          "when": "Apply consciously when designing classes. Review violations during code review.",
+          "issue": "A class that violates SRP is a sign it has too many dependencies — sign in constructor with 8 injected dependencies.",
+          "fix": "If constructor has more than 4-5 dependencies, the class likely does too much. Split responsibility.",
+          "star": {
+            "s": "OrderService has 8 injected dependencies.",
+            "t": "Refactor.",
+            "a": "Split: OrderValidationService, OrderPricingService, OrderPersistenceService, OrderNotificationService. Each has 2-3 dependencies.",
+            "r": "Each independently testable."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "20.1.performance-optimization",
+          "term": "Performance Optimization",
+          "what": "Systematic process: measure first (profiler), identify bottleneck, fix the bottleneck, measure again. Never optimize without measurement.",
+          "why": "Premature optimization wastes time on the wrong thing. Measurement reveals the actual bottleneck — usually not where you expect.",
+          "how": "Tools: JProfiler, YourKit, async-profiler, Spring Boot Actuator /metrics. Steps: benchmark baseline → profile → find hotspot → fix → benchmark again.",
+          "where": "Performance issues in: DB queries (N+1, missing index), serialization, string building, algorithmic complexity.",
+          "when": "Optimize when: measured evidence of performance problem. Not before. Profile first — 80% of time is spent in 20% of code.",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "20.1.logging-best-practices",
+          "term": "Logging Best Practices",
+          "what": "Logging records runtime behavior for debugging and monitoring. Good logging makes production issues diagnosable. Bad logging either hides problems or floods with noise.",
+          "why": "In production, logging is often the only visibility you have. Cannot attach debugger to production. Logs must tell the full story.",
+          "how": "Use SLF4J + Logback/Log4j2. Levels: ERROR (needs immediate action), WARN (potential problem), INFO (normal events), DEBUG (dev only). Parameterized: log.info('User {} logged in', userId) not String concat.",
+          "where": "Service entry/exit points, external calls (request+response), business events (order placed), error handling (with full exception).",
+          "when": "INFO for business events. DEBUG for technical details (disabled in production). Always log exceptions with full stack trace: log.error('Failed', e). Never swallow exceptions silently.",
+          "issue": "log.error('Failed: ' + e.getMessage()) — loses stack trace. String concatenation in disabled log level still runs.",
+          "fix": "log.error('Failed to process order {}', orderId, e) — third argument is the Throwable, logs full stack trace. Parameterized logging is lazy — no string building if level disabled.",
+          "star": {
+            "s": "Production exception 'Failed to save' with no stack trace — impossible to debug.",
+            "t": "Fix logging.",
+            "a": "Found catch block logging e.getMessage() only. Changed to log.error('Failed to save user {}', userId, e).",
+            "r": "Full stack trace in logs. Issues diagnosable."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "20.2",
+      "slug": "maven-docker-ci-cd",
+      "title": "Maven, Docker & CI/CD",
+      "keyRule": "Maven/Gradle = build tools (compile, test, package). Docker = containerize your app into a portable image. CI/CD = automate build, test, and deploy on every commit. These three together form the modern Java delivery pipeline.",
+      "terms": [
+        {
+          "id": "20.2.maven-build-lifecycle",
+          "term": "Maven & Build Lifecycle",
+          "what": "Maven is a build tool and dependency manager. It compiles code, runs tests, packages into JAR/WAR, and manages third-party dependencies from repositories.",
+          "why": "Without a build tool, managing 50+ dependencies manually (version conflicts, transitive deps) is impossible. Maven handles this with pom.xml.",
+          "how": "mvn package — compile + test + create JAR. mvn test — compile + test. mvn clean — delete target/. mvn dependency:tree — see dependency tree. Lifecycle: validate → compile → test → package → verify → install → deploy.",
+          "where": "Every Java project. pom.xml defines all dependencies, build plugins, and project structure.",
+          "when": "Use Maven or Gradle. Gradle is faster (incremental builds, parallel tasks). Maven is more common in enterprise. Both are fine.",
+          "issue": "Dependency version conflicts: two libraries need different versions of the same transitive dependency.",
+          "fix": "mvn dependency:tree to find conflicts. Use <dependencyManagement> to force a specific version for all transitive dependencies.",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "20.2.docker-containerization",
+          "term": "Docker & Containerization",
+          "what": "Kubernetes (K8s) orchestrates Docker containers at scale — manages deployment, scaling, rolling updates, health checks, and self-healing.",
+          "why": "Running 50 microservices manually is impossible. Kubernetes automates: restart crashed containers, scale on load, rolling deploy with no downtime.",
+          "how": "Deployment YAML specifies: Docker image, replicas, resource limits, health checks. Service YAML exposes the app. Apply: kubectl apply -f deployment.yaml.",
+          "where": "Every modern cloud deployment. GKE (Google), EKS (Amazon), AKS (Azure) are managed Kubernetes.",
+          "when": "Use Kubernetes when: multiple microservices, need auto-scaling, need zero- downtime deploys, cloud-native architecture.",
+          "issue": "Not setting resource limits (CPU/memory) on pods — one misbehaving pod takes down the entire node.",
+          "fix": "Always set resources: requests (guaranteed) and limits (maximum) for every pod. JVM -Xmx must be less than pod memory limit.",
+          "star": {
+            "s": "One pod consuming all node memory causes other pods to be killed.",
+            "t": "Fix.",
+            "a": "Set resource limits on all pods. Set Java -XX:MaxRAMPercentage=75 to respect container limit.",
+            "r": "Pods isolated. No more neighbor evictions."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "20.2.health-checks-actuator",
+          "term": "Health Checks & Actuator",
+          "what": "Spring Boot Actuator provides production-ready endpoints: /health, /metrics, /info, /loggers, /threaddump, /heapdump. Kubernetes uses /health for liveness and readiness probes.",
+          "why": "Kubernetes needs to know if your app is healthy. /actuator/health tells it. Metrics endpoints feed monitoring dashboards (Prometheus + Grafana).",
+          "how": "Add spring-boot-actuator dependency. /actuator/health — up/down. /actuator/metrics — JVM, HTTP, DB metrics. Expose to Prometheus for monitoring.",
+          "where": "Every Spring Boot app in production. Kubernetes config references health endpoint for probes.",
+          "when": "Always add Actuator. Secure /actuator endpoints (not publicly accessible). Expose metrics to Prometheus.",
+          "issue": "Liveness probe failing because app initializing slowly — Kubernetes kills the container before it is ready.",
+          "fix": "Use separate readiness probe (is app ready to serve?) vs liveness probe (is app alive?). Readiness probe can fail during startup. Add startupProbe for slow-starting apps.",
+          "star": {
+            "s": "Kubernetes killing pods during startup — app takes 30 seconds to initialize.",
+            "t": "Fix.",
+            "a": "Added startupProbe with failureThreshold=30 (allows 30s). ReadinessProbe separate from LivenessProbe.",
+            "r": "Pods given time to start. No premature kills."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "19.2b",
+      "slug": "redis-deep-dive",
+      "title": "Redis Deep Dive",
+      "keyRule": "Redis: in-memory key-value store. TTL for expiry. LRU eviction when memory full. Sentinel for HA failover. Cluster for horizontal scaling. Pub/Sub for messaging. SETNX for distributed locks. Beware cache stampede with jitter. Spring @Cacheable for transparent caching.",
+      "terms": [
+        {
+          "id": "19.2b.redis-ttl-eviction-policies",
+          "term": "Redis TTL / Eviction Policies",
+          "what": "TTL (Time-To-Live): EXPIRE key 3600 — key auto-deleted after N seconds. Eviction policies control what to delete when memory is full: allkeys-lru (evict least recently used from all keys), volatile-lru (evict LRU from keys with TTL), noeviction (reject writes — safer).",
+          "why": "TTL prevents stale data. Eviction prevents OOM when cache grows beyond memory limit.",
+          "how": "EXPIRE key 300. TTL key → remaining seconds. Eviction: set maxmemory-policy allkeys-lru in redis.conf.",
+          "where": "All cache entries should have TTL. Eviction policy for session caches, general caches.",
+          "when": "Always set TTL on cache entries. Choose eviction based on use: allkeys-lru for general cache, volatile-lru when only some keys should be evictable.",
+          "issue": "No TTL + noeviction policy = Redis fills up and throws OOM error for all writes.",
+          "fix": "Set appropriate TTL for all cache entries. Set eviction policy. Monitor Redis memory usage.",
+          "star": {
+            "s": "Redis fills up — new cache writes fail.",
+            "t": "Fix.",
+            "a": "Added EXPIRE to all cache SET operations. Set maxmemory-policy allkeys-lru.",
+            "r": "Old entries evicted automatically. Redis never full."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "19.2b.redis-sentinel-cluster",
+          "term": "Redis Sentinel / Cluster",
+          "what": "Redis Sentinel: monitors master, detects failure, performs automatic failover to replica. High availability. Redis Cluster: data sharded across multiple nodes — horizontal scaling beyond single-node memory.",
+          "why": "Single Redis = single point of failure. Sentinel for HA. Cluster for data larger than one node.",
+          "how": "Sentinel: 3 sentinel processes monitor master. If master down, sentinels elect new master from replicas. Cluster: data split across 16384 hash slots distributed across nodes.",
+          "where": "Production Redis setups. Sentinel for most apps. Cluster for truly large datasets (>100GB).",
+          "when": "Use Sentinel for HA. Use Cluster when data exceeds single node capacity.",
+          "issue": "Redis Cluster: multi-key operations (MGET, MSET) only work if all keys are in the same slot (same hash tag).",
+          "fix": "Use hash tags {userId}:session and {userId}:cart to force related keys to same slot.",
+          "star": {
+            "s": "Redis single node — one failure = all cache gone.",
+            "t": "Add HA.",
+            "a": "Redis Sentinel with 1 master + 2 replicas + 3 sentinels.",
+            "r": "Automatic failover. No cache downtime on node failure."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "19.2b.redis-pub-sub-streams",
+          "term": "Redis Pub/Sub / Streams",
+          "what": "Redis Pub/Sub: publish to channel, subscribers receive — not durable, no acknowledgment. Redis Streams: durable log with consumer groups, acknowledgments — like lightweight Kafka.",
+          "why": "Pub/Sub for real-time notifications where loss is acceptable. Streams for reliable message delivery where each message must be processed.",
+          "how": "Pub/Sub: PUBLISH channel message. SUBSCRIBE channel. Streams: XADD stream * key value. XREADGROUP GROUP mygroup consumer STREAMS stream.",
+          "where": "Pub/Sub: real-time chat, live notifications, score updates. Streams: reliable event processing, audit logs.",
+          "when": "Pub/Sub: fire-and-forget real-time events. Streams: when you need delivery guarantees but Kafka is too heavy.",
+          "issue": "Pub/Sub: if subscriber not connected when message published, message is lost forever.",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "19.2b.distributed-lock-cache-stampede",
+          "term": "Distributed Lock / Cache Stampede",
+          "what": "Distributed lock: SET key value NX PX timeout — atomic set-if-not-exists with expiry. Cache stampede: all cache entries expire simultaneously — all requests hit DB at once.",
+          "why": "Distributed lock for leader election, resource exclusion across services. Cache stampede protection for high-traffic systems.",
+          "how": "Lock: SET lock:resource uuid NX PX 30000. If null → locked by others. Release: if (get(lock)==uuid) del(lock). Stampede fix: random TTL jitter (TTL + random(0,300s)).",
+          "where": "Distributed lock: payment deduplication, job scheduling, critical section across services. Stampede: product pages, homepage, any popular cached data.",
+          "when": "Use distributed lock for cross-service mutual exclusion. Use jitter to prevent stampede on regularly refreshed caches.",
+          "issue": "Lock expiry before operation completes — another process gets lock while first still holding it.",
+          "fix": "Extend lock TTL if operation is running longer than expected. Use Redisson library — handles lock extension automatically.",
+          "star": {
+            "s": "Cache for product page set to expire every midnight — all 1M users hit DB simultaneously at midnight.",
+            "t": "Fix.",
+            "a": "Added ±30 minute random jitter to TTL.",
+            "r": "Expiries spread over 1-hour window. DB load normalized."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "19.2b.spring-cacheable-cacheevict",
+          "term": "Spring @Cacheable / @CacheEvict",
+          "what": "@Cacheable: method result cached on first call, subsequent calls return cached value. @CacheEvict: removes cache entry. @CachePut: always updates cache. Backed by Redis, Ehcache, Caffeine.",
+          "why": "Transparent caching — add annotation, Spring handles cache logic. No manual get/set/evict code.",
+          "how": "@Cacheable(value='users', key='#id') User findUser(Long id). @CacheEvict(value='users', key='#user.id') void updateUser(User user). Spring auto- configures Redis if spring-data-redis is on classpath.",
+          "where": "Service methods returning data that is: read frequently, expensive to compute, rarely changes.",
+          "when": "Use @Cacheable for expensive reads. Add @CacheEvict on all write methods that invalidate cached data.",
+          "issue": "@CacheEvict missed — data updated in DB but old value still in cache. Users see stale data.",
+          "fix": "Add @CacheEvict on ALL write operations for cached data. Or use @Caching to combine multiple cache operations.",
+          "star": {
+            "s": "Product page slow — DB hit on every request.",
+            "t": "Cache.",
+            "a": "@Cacheable(value='products', key='#id') on findProduct(). @CacheEvict on updateProduct().",
+            "r": "95% requests served from cache. Page load: 500ms → 20ms."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "19.3b",
+      "slug": "database-design",
+      "title": "Database Design",
+      "keyRule": "",
+      "terms": [
+        {
+          "id": "19.3b.normalization-denormalization",
+          "term": "Normalization / Denormalization",
+          "what": "Normalization: organize tables to reduce redundancy (1NF → 2NF → 3NF). Denormalization: intentional redundancy for read performance — duplicate data to avoid joins.",
+          "why": "Normalized DB: consistent, no update anomalies. Denormalized: fewer joins = faster reads for reporting/analytics.",
+          "how": "3NF: no transitive dependencies. Customer table has customer columns only. Address in separate table. Denormalized: reporting table has customer + address + order columns all together.",
+          "where": "",
+          "when": "",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "19.3b.index-types-composite-covering",
+          "term": "Index Types: Composite / Covering",
+          "what": "Composite index: index on multiple columns (col1, col2). Order matters — queries filtering on col1 use the index; col2 alone does not. Covering index: index contains all columns needed by query — no table row access.",
+          "why": "Right index = O(log n) query. Wrong or missing index = full table scan = O(n).",
+          "how": "CREATE INDEX idx_user_dept ON users(department_id, hire_date) — queries on department_id use this. CREATE INDEX idx_cover ON orders(customer_id, status, total) — covers SELECT status,total WHERE customer_id=?",
+          "where": "High-traffic query paths, foreign keys, columns in WHERE/ORDER BY/GROUP BY.",
+          "when": "Add index based on actual slow queries (EXPLAIN output). Do NOT add indexes speculatively — too many indexes slow writes.",
+          "issue": "Too many indexes: each INSERT/UPDATE must update all indexes — slows writes significantly.",
+          "fix": "Index only what you measure is slow. Composite index order: highest selectivity first. Remove unused indexes.",
+          "star": {
+            "s": "ORDER query with WHERE customer_id AND status takes 2 seconds.",
+            "t": "Index.",
+            "a": "Composite index (customer_id, status). EXPLAIN shows index scan.",
+            "r": "Query: 2s → 10ms."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "19.3b.explain-optimistic-vs-pessimistic-lock",
+          "term": "EXPLAIN / Optimistic vs Pessimistic Lock",
+          "what": "EXPLAIN shows query execution plan — whether index is used, estimated rows, join type. Optimistic locking: @Version in JPA — update fails if another transaction changed the row. Pessimistic locking: SELECT FOR UPDATE — DB row lock.",
+          "why": "EXPLAIN reveals full table scans before they hit production. Optimistic locking: no DB lock held — better concurrency. Pessimistic locking: guarantees no concurrent modification — safe but slow.",
+          "how": "EXPLAIN ANALYZE SELECT ... — shows actual timing. @Version Long version; on entity — JPA checks version matches on UPDATE. @Lock(PESSIMISTIC_WRITE) on query — holds row lock until commit.",
+          "where": "EXPLAIN: query tuning, index verification. Optimistic: high-read low-write scenarios. Pessimistic: financial transactions, inventory deduction.",
+          "when": "Use optimistic locking by default. Switch to pessimistic only when concurrent conflicts are frequent and optimistic retry is too expensive.",
+          "issue": "Optimistic locking: high contention = many OptimisticLockExceptions = many retries = slow.",
+          "fix": "For high-contention (multiple users updating same row): pessimistic lock. For low- contention: optimistic.",
+          "star": {
+            "s": "Inventory deduction race condition — overselling.",
+            "t": "Fix.",
+            "a": "Pessimistic locking: SELECT ... FOR UPDATE on inventory row. Update only if quantity >= requested.",
+            "r": "No overselling. Concurrent purchases serialized."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "19.3b.read-replica-polyglot-persistence",
+          "term": "Read Replica / Polyglot Persistence",
+          "what": "Read replica: separate DB instance synced from primary — serves reads only, offloads read traffic from primary. Polyglot persistence: use different DB technologies for different services.",
+          "why": "Read replica: most apps are read-heavy. Separate read and write paths for scalability. Polyglot: use the right DB for each use case — relational for transactions, Redis for cache, MongoDB for documents.",
+          "how": "",
+          "where": "",
+          "when": "",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    }
+  ]
+}

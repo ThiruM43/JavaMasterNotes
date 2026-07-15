@@ -1,0 +1,9 @@
+node_modules/
+.next/
+out/
+.env
+.env.local
+*.log
+pdf_content.txt
+scripts/__pycache__/
+*.pyc

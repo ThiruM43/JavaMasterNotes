@@ -1,0 +1,467 @@
+{
+  "id": "1",
+  "slug": "core-java",
+  "title": "Core Java Fundamentals",
+  "icon": "☕",
+  "accentColor": "#d97706",
+  "subsections": [
+    {
+      "id": "1.1",
+      "slug": "jdk-vs-jre-vs-jvm",
+      "title": "JDK vs JRE vs JVM",
+      "keyRule": "JDK = JRE + Compiler + Dev Tools. JRE = JVM + Libraries. JVM = bytecode engine. Need JDK to build, JRE to run. JVM is inside both.",
+      "terms": [
+        {
+          "id": "1.1.jdk-java-development-kit",
+          "term": "JDK (Java Development Kit)",
+          "what": "JDK is the complete developer toolkit. Think of it as a full workshop — compiler, debugger, jar tool, and more — everything to build Java.",
+          "why": "Without JDK you cannot compile .java files. Every developer machine and CI build server needs it.",
+          "how": "Includes: javac (compiler), jdb (debugger), jar (packager), javadoc (docs), and the full JRE inside. Install from Oracle or OpenJDK.",
+          "where": "Developer laptops, CI/CD build servers. NOT needed on production servers unless you compile code at runtime.",
+          "when": "Use JDK when writing, compiling, debugging. Do NOT install on production — it exposes dev tools unnecessarily.",
+          "issue": "Installing JRE instead of JDK = 'javac not found' error. Very common on new dev machine setup.",
+          "fix": "Run 'javac -version'. If missing, install full JDK. In Java 9+, JDK and JRE are merged — install JDK everywhere.",
+          "star": {
+            "s": "New dev machine built without JDK.",
+            "t": "Fix build failure.",
+            "a": "Checked 'javac - version' — missing. Installed JDK 21.",
+            "r": "Build pipeline works, developer productive."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "1.1.jre-java-runtime-environment",
+          "term": "JRE (Java Runtime Environment)",
+          "what": "JRE is the minimum needed to RUN a Java app. It has the JVM engine + Java standard libraries. No compiler, no dev tools.",
+          "why": "Production servers only need to run code, not compile it. JRE is smaller, lower attack surface, faster to deploy.",
+          "how": "Contains JVM + rt.jar (class libraries). Run apps with 'java -jar myapp.jar'. Cannot use 'javac' — no compiler.",
+          "where": "Production servers, end-user machines, Docker images that only run apps.",
+          "when": "Use JRE for production-only deployments. Note: In Java 11+, Oracle no longer ships standalone JRE — use full JDK or create a custom runtime with jlink.",
+          "issue": "Java 11+ removed standalone JRE. Teams using old deployment scripts that install 'JRE only' will fail.",
+          "fix": "On Java 11+: use full JDK, or use jlink to create a minimal custom runtime image with only the modules your app needs — often smaller than old JRE.",
+          "star": {
+            "s": "Docker image too large.",
+            "t": "Reduce size.",
+            "a": "Used JDK in build stage, then jlink to create minimal JRE with only needed modules in run stage.",
+            "r": "Image reduced from 350MB to 80MB."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "1.1.jvm-java-virtual-machine",
+          "term": "JVM (Java Virtual Machine)",
+          "what": "JVM is the engine that runs Java bytecode on any OS. It is why Java is 'write once, run anywhere' — same .class file runs on Windows, Linux, Mac.",
+          "why": "Without JVM, you would need to recompile Java for every operating system. JVM handles the OS translation for you.",
+          "how": "Steps: 1) Class Loader loads .class files. 2) Bytecode Verifier checks safety. 3) Execution Engine runs code (interpreter + JIT for hot code). 4) GC manages memory.",
+          "where": "Inside every JRE and JDK. You tune it with JVM flags: -Xmx (max heap), -Xms (start heap), -XX:+UseG1GC (GC type).",
+          "when": "Think about JVM when: tuning memory, diagnosing crashes, choosing GC algorithm, or analyzing startup time.",
+          "issue": "Default JVM settings are for general use — not production. Default heap is too small for most real apps.",
+          "fix": "Always set -Xmx and -Xms explicitly. Example: -Xmx2g -Xms512m. Enable GC logging with -Xlog:gc* to tune GC behavior.",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "1.1.bytecode",
+          "term": "Bytecode",
+          "what": "Bytecode is the intermediate code stored in .class files — between your Java source and native machine code. JVM reads and executes it.",
+          "why": "Bytecode makes Java platform-independent. Compile once on any OS, run anywhere that has a JVM.",
+          "how": "'javac Hello.java' creates Hello.class with bytecode. Inspect with 'javap -c Hello.class'. JVM interprets it or JIT-compiles hot paths.",
+          "where": "Inside .class and .jar files. Also manipulated by frameworks — Spring and Hibernate use bytecode manipulation (ASM, Javassist) to add behavior at runtime.",
+          "when": "You care about bytecode when: debugging framework magic, doing performance tuning, or dealing with decompilation security concerns.",
+          "issue": "Anyone can decompile your .jar back to readable Java using JD-GUI or CFR. Business logic is exposed.",
+          "fix": "Use ProGuard or Allatori for obfuscation. For critical logic, use server-side APIs instead of shipping logic in the client JAR.",
+          "star": {
+            "s": "Security audit finds JAR decompilable — payment logic exposed.",
+            "t": "Protect code.",
+            "a": "Added ProGuard to Maven build.",
+            "r": "Decompiled output unreadable. Risk eliminated."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "1.1.jit-compiler",
+          "term": "JIT Compiler",
+          "what": "JIT (Just-In-Time) is the JVM's speed optimizer. It watches which methods run most ('hot code') and compiles them to native machine code on the fly.",
+          "why": "Pure bytecode interpretation is slow. JIT makes hot methods run at near-native speed after warmup — often 10-100x faster than interpretation.",
+          "how": "JVM interprets first. After ~10,000 calls, JIT kicks in and compiles that method to native code. Future calls run the native version — no interpretation overhead.",
+          "where": "Works automatically inside JVM. Tune with -XX:CompileThreshold. Observe with - XX:+PrintCompilation.",
+          "when": "Think about JIT when: app is slow during startup but fast after warmup (normal), testing short-lived code that never warms up, or using serverless/Lambda where cold start hurts.",
+          "issue": "Serverless and short-lived containers suffer — app never fully warms up so JIT never kicks in for all methods.",
+          "fix": "GraalVM Native Image pre-compiles to native binary — no JIT warmup needed. Spring Boot 3 + GraalVM is the modern solution for fast cold start.",
+          "star": {
+            "s": "AWS Lambda function takes 5 seconds cold start.",
+            "t": "Reduce to under 1 second.",
+            "a": "Compiled Spring Boot app to GraalVM native image.",
+            "r": "Cold start dropped to 300ms."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "1.2",
+      "slug": "stack-vs-heap-memory",
+      "title": "Stack vs Heap Memory",
+      "keyRule": "Stack = per-thread, holds method frames + local vars, auto-freed. Heap = shared, holds all objects, managed by GC. Stack is thread-safe by nature. Heap is shared — needs synchronization.",
+      "terms": [
+        {
+          "id": "1.2.stack-memory",
+          "term": "Stack Memory",
+          "what": "Stack is each thread's private scratch pad. Stores method call frames — local variables, method parameters, return address. Auto-freed when method finishes.",
+          "why": "Stack tracks exactly where the program is: which method called which, with what values. Without it, returning from a method would be impossible.",
+          "how": "LIFO — last in, first out. Method call = push frame. Method return = pop frame. All locals in that frame disappear. Fast — just move a pointer.",
+          "where": "",
+          "when": "",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "1.2.heap-memory",
+          "term": "Heap Memory",
+          "what": "Heap is the shared memory pool where ALL Java objects live. Every 'new Something()' creates an object in the Heap. All threads share it.",
+          "why": "Objects need to outlive method calls and be shared between threads. Stack is too temporary — Heap gives objects a longer, managed lifetime.",
+          "how": "'new' allocates in Heap. Object lives as long as something references it. GC finds unreachable objects and frees their memory. Tune with -Xms (start) and -Xmx (max).",
+          "where": "Global — all threads share one Heap. Always set -Xmx in production or JVM uses a small default and crashes under load.",
+          "when": "Tune Heap when: you see OutOfMemoryError, GC pauses are too long, or memory grows without limit over time (leak).",
+          "issue": "Heap too small = OOM. Heap too large = GC pause is longer when it does run. Getting the balance right requires profiling.",
+          "fix": "Profile first with VisualVM or JProfiler. Set -Xmx to ~70% of available RAM. Use G1GC or ZGC for heaps over 4GB to keep pause times low. 📌 Note: Heap has Young Generation (new objects) and Old Generation (long-lived objects). Most GC happens in Young Gen — fast. Old Gen GC is slow.",
+          "star": {
+            "s": "App memory grows 100MB per hour and crashes at night.",
+            "t": "Find leak.",
+            "a": "Enabled -XX:+HeapDumpOnOutOfMemoryError. Analysed dump in Eclipse MAT. Found static Map accumulating user sessions. Added size limit + TTL.",
+            "r": "Memory stable."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "1.2.outofmemoryerror",
+          "term": "OutOfMemoryError",
+          "what": "OOM means JVM tried to allocate memory and had nothing left. Most common: 'Java heap space' — too many live objects. GC cannot free enough.",
+          "why": "GC only frees unreachable objects. If code holds references too long, memory fills up and nothing can be freed.",
+          "how": "JVM tries GC multiple times before giving up. If still out of memory, throws java.lang.OutOfMemoryError. App crashes unless caught (you should not catch OOM — fix the root cause).",
+          "where": "Can happen anywhere that creates objects. Most common in: caches without eviction, batch processing, session storage, static collections.",
+          "when": "OOM in production usually means: memory leak, -Xmx too small, or sudden traffic spike with no back-pressure.",
+          "issue": "Silent memory leaks that fill heap over hours — very hard to catch before they cause a crash. OOM can corrupt state if partially-created objects exist.",
+          "fix": "1) Add -XX:+HeapDumpOnOutOfMemoryError to always capture a dump on crash. 2) Load dump into Eclipse MAT. 3) Find dominator tree — the biggest object graph. 4) Fix the code that holds references too long. 📌 Note: OOM types: 'Java heap space' (most common), 'GC overhead limit exceeded' (GC running >98% of time), 'Metaspace' (too many classes), 'unable to create native thread' (too many threads).",
+          "star": {
+            "s": "Production crashes every night at 2am with OOM.",
+            "t": "Root cause + permanent fix.",
+            "a": "Added heap dump on OOM. Dump showed HttpSession objects never expiring. Set session timeout.",
+            "r": "No OOM since."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "1.2.stackoverflowerror",
+          "term": "StackOverflowError",
+          "what": "StackOverflowError means the call stack ran out of space — too many nested method calls without returning. Most common cause: infinite recursion.",
+          "why": "",
+          "how": "",
+          "where": "",
+          "when": "",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "1.3",
+      "slug": "primitives-vs-wrapper-classes",
+      "title": "Primitives vs Wrapper Classes",
+      "keyRule": "8 primitives (int, long, double, boolean, byte, short, float, char) = stack stored, no GC, no null. Wrappers (Integer, Long…) = Heap objects, support null, work in Collections. Integer caches -128 to 127. Always use .equals() for wrapper comparison.",
+      "terms": [
+        {
+          "id": "1.3.autoboxing-unboxing",
+          "term": "Autoboxing / Unboxing",
+          "what": "Autoboxing = Java auto-converts primitive to wrapper. Unboxing = wrapper back to primitive. Java does this invisibly when needed.",
+          "why": "Collections only accept objects. Autoboxing lets you put int into List<Integer> without manual conversion. Unboxing lets you do math on wrapper objects.",
+          "how": "list.add(5) → Java calls Integer.valueOf(5) internally. Integer x = map.get(key); int y = x * 2 → Java calls x.intValue() internally.",
+          "where": "Collections, method parameters, arithmetic mixing primitives and wrappers, ternary expressions with mixed types.",
+          "when": "Convenient for clean code. AVOID in tight loops — every autobox creates an object. Use primitive arrays or streams for bulk numeric work.",
+          "issue": "Unboxing a null wrapper throws NullPointerException. Example: Integer n = map.get(key); return n > 0; — crashes when key not found (n is null).",
+          "fix": "Null-check before unboxing: if (n != null && n > 0). Or use map.getOrDefault(key, 0) to avoid null entirely.",
+          "star": {
+            "s": "NullPointerException on simple arithmetic line.",
+            "t": "Debug.",
+            "a": "map.get() returned null for unknown user. Unboxing null = NPE. Added getOrDefault.",
+            "r": "No more NPE."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "1.3.integer-cache-128-to-127",
+          "term": "Integer Cache (-128 to 127)",
+          "what": "Java pre-creates Integer objects for -128 to 127 and reuses them. Integer.valueOf(100) always returns the same cached object.",
+          "why": "Small integers are used constantly. Caching them saves memory and speeds up creation.",
+          "how": "Integer a = 127; Integer b = 127; a == b → true (same cached object). Integer a = 128; Integer b = 128; a == b → false (two new objects). a.equals(b) → true (same value).",
+          "where": "Applies to Integer, Byte, Short, Long (-128 to 127), Character (0 to 127), Boolean. Does NOT apply if you use new Integer().",
+          "when": "This is a classic interview trap. Matters when comparing wrapper values with ==.",
+          "issue": "Code 'if (a == b)' works for small numbers but silently returns false for numbers outside cache range. Very hard bug to spot.",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "1.3.parseint-valueof",
+          "term": "parseInt() / valueOf()",
+          "what": "Integer.parseInt(\"42\") returns primitive int 42. Integer.valueOf(\"42\") returns Integer wrapper object. Both convert String to number.",
+          "why": "User input, config files, query params, and DB strings all arrive as text. You need to convert to numbers before doing math.",
+          "how": "Integer.parseInt(\"100\") → int 100. Integer.valueOf(\"100\") → Integer 100 (uses cache for small values). Both throw NumberFormatException for invalid input.",
+          "where": "HTTP request params, config properties, CSV parsing, command-line args, any String-to-number conversion.",
+          "when": "Use parseInt() when you need a primitive. Use valueOf() when you need a wrapper (e.g., to store in a collection). Always wrap in try-catch for user input.",
+          "issue": "NumberFormatException for null, empty string, decimals ('3.14'), or non-numeric text. Uncaught = app crash on bad input.",
+          "fix": "try { int val = Integer.parseInt(input); } catch(NumberFormatException e) { return 400 bad request; }. Or use Apache Commons NumberUtils.toInt(str, defaultValue) for safe parsing.",
+          "star": {
+            "s": "API crashes when user sends ?count=abc.",
+            "t": "Handle gracefully.",
+            "a": "Wrapped parseInt in try-catch. Return HTTP 400 with clear error message.",
+            "r": "API handles bad input cleanly."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "1.3.max-value-min-value",
+          "term": "MAX_VALUE / MIN_VALUE",
+          "what": "Integer.MAX_VALUE = 2,147,483,647. Integer.MIN_VALUE = -2,147,483,648. Adding 1 to MAX_VALUE wraps silently to MIN_VALUE — this is integer overflow.",
+          "why": "Knowing limits prevents silent overflow bugs. Also used in algorithms as initial sentinel values (set min = MAX_VALUE so any real value beats it).",
+          "how": "int x = Integer.MAX_VALUE + 1; // x = -2147483648 — no exception, silent overflow. Use long or BigInteger for large numbers.",
+          "where": "Algorithms (find min/max), boundary validation, ID generation, accumulating large totals.",
+          "when": "Use long instead of int when values might exceed 2 billion. Use BigDecimal for money — never float or double.",
+          "issue": "Integer overflow is completely silent — no exception. Causes wrong results in price calculations, date math, item counts.",
+          "fix": "Use long for large numbers. Use Math.addExact(a, b) — throws ArithmeticException on overflow. For money: always BigDecimal.",
+          "star": {
+            "s": "E-commerce site shows negative cart total for large orders.",
+            "t": "Debug.",
+            "a": "int totalPrice was overflowing past MAX_VALUE. Changed to long.",
+            "r": "Correct totals for all sizes."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "1.4",
+      "slug": "string-stringbuilder-stringbuffer",
+      "title": "String, StringBuilder, StringBuffer",
+      "keyRule": "String = immutable (every change = new object), thread-safe, use for keys/constants. StringBuilder = mutable, fast, NOT thread-safe — use in loops. StringBuffer = mutable, thread- safe, slower — use only for shared buffers. NEVER use String + in loops.",
+      "terms": [
+        {
+          "id": "1.4.string-immutability",
+          "term": "String Immutability",
+          "what": "Once a String is created, its content never changes. Any operation that looks like a change (concat, replace, trim) creates a brand new String.",
+          "why": "Immutability makes String thread-safe automatically — no synchronization needed. Safe as HashMap key — key cannot change after insertion.",
+          "how": "String s = 'Hello'; s = s + ' World'; — the original 'Hello' still exists in memory unchanged. A new 'Hello World' is created and s points to it. Old one becomes garbage.",
+          "where": "Use String for: Map keys, constants, config values, method parameters that callers should not corrupt. String is final — cannot be subclassed.",
+          "when": "Use String when data must not change. Do NOT use String + in any loop — that is always StringBuilder territory.",
+          "issue": "String + in a loop: 10,000 iterations = 10,000 objects created + copied. Each iteration copies all previous content into new object. O(n²) time and memory.",
+          "fix": "StringBuilder sb = new StringBuilder(); for loops use sb.append(). Call sb.toString() once at end. One object instead of thousands.",
+          "star": {
+            "s": "Report generation takes 60 seconds for 50,000 rows.",
+            "t": "Optimize.",
+            "a": "Found String + in loop. Replaced with StringBuilder.",
+            "r": "Dropped to 3 seconds."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "1.4.string-pool",
+          "term": "String Pool",
+          "what": "A special Heap area where Java stores one copy of each unique string literal. Same literal text is never stored twice.",
+          "why": "Programs reuse the same strings constantly — path names, config keys, field names. Pool avoids creating millions of duplicate objects.",
+          "how": "String a = 'Java'; String b = 'Java'; — a and b point to SAME pool object. a == b is true. new String('Java') bypasses pool — new object. a == new String('Java') is false.",
+          "where": "Pool is in Heap since Java 7 (was in PermGen before). Manually add to pool with str.intern().",
+          "when": "Pool works automatically for literals. Only call intern() if you have millions of runtime duplicate strings and need to reduce memory (rare — measure first).",
+          "issue": "Using == to compare strings works in tests (both literals = pool) but fails in production (DB/API strings = not in pool). Classic authentication bug.",
+          "fix": "ALWAYS use .equals() for String content comparison. Use Objects.equals(a, b) for null safety.",
+          "star": {
+            "s": "Login works in tests but fails in production.",
+            "t": "Debug.",
+            "a": "Found 'if (inputPassword == storedPassword)'. Production strings from DB not in pool. Changed to .equals().",
+            "r": "Login works everywhere."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "1.4.stringbuilder",
+          "term": "StringBuilder",
+          "what": "StringBuilder is a mutable character buffer. You can append, insert, delete, and reverse without creating new objects for each operation.",
+          "why": "String is immutable — every + creates a new object. StringBuilder modifies an internal char array in place — fast and memory efficient.",
+          "how": "StringBuilder sb = new StringBuilder(); sb.append('Hello'); sb.append(' '); sb.append('World'); String result = sb.toString(); — one final object. Methods: append(), insert(), delete(), reverse(), replace().",
+          "where": "Use in: loops building strings, SQL/JSON/XML builders, report generation, any place you concatenate 3+ parts, especially in loops.",
+          "when": "Default choice for all string building. Use String for simple fixed text. Use StringBuffer only when multiple threads share the same buffer.",
+          "issue": "Sharing one StringBuilder between threads causes data corruption — threads overwrite each other with no exception.",
+          "fix": "Never share StringBuilder between threads. Create a new one per thread. Or use StringBuffer if sharing is truly needed.",
+          "star": {
+            "s": "Code review: String sql = ''; for(String col : cols) { sql += col + ','; }",
+            "t": "Optimize.",
+            "a": "Replace with StringBuilder.",
+            "r": "O(n) instead of O(n²). Fast for any column count."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "1.4.stringbuffer",
+          "term": "StringBuffer",
+          "what": "StringBuffer is the thread-safe version of StringBuilder. Every method is synchronized — only one thread at a time.",
+          "why": "Prevents data corruption when multiple threads write to the same string buffer.",
+          "how": "Same API as StringBuilder but every method has 'synchronized'. Slower because of locking overhead.",
+          "where": "Use only when multiple threads genuinely share one buffer. Rare in modern code — most string building is per-thread.",
+          "when": "Default: use StringBuilder. Only switch to StringBuffer if multiple threads must write to same buffer. Most modern code avoids this pattern entirely.",
+          "issue": "Using StringBuffer in single-threaded code pays synchronization overhead for nothing — slower with no benefit.",
+          "fix": "Use StringBuilder everywhere unless you have a proven multi-thread sharing requirement.",
+          "star": {
+            "s": "Team uses StringBuffer everywhere 'to be safe'.",
+            "t": "Explain and fix.",
+            "a": "StringBuffer is only needed for shared multi-thread buffers — rare. Replaced all single- thread use with StringBuilder.",
+            "r": "Code faster, cleaner."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "1.4.equals-vs-string",
+          "term": "equals() vs == (String)",
+          "what": "== checks if two String variables point to the same object in memory. .equals() checks if two Strings have the same characters. For Strings, always use .equals().",
+          "why": "Same content can be stored in different String objects (especially runtime strings from DB, API, user input). == gives wrong answer for these.",
+          "how": "'hello' == 'hello' → true (both from String pool). new String('hello') == new String('hello') → false (different objects). Both .equals() calls → true.",
+          "where": "Every place in code that compares string values — if statements, assertions, contains checks.",
+          "when": "ALWAYS .equals() for content. == only for intentional reference identity check (very rare for strings).",
+          "issue": "== works in unit tests (literals = pool) but fails silently in production (runtime strings). Causes authentication failures, search errors, wrong conditional logic.",
+          "fix": "Global code search for 'String == comparisons'. Replace all with .equals() or Objects.equals(a, b). SonarQube rule S4973 catches this automatically.",
+          "star": {
+            "s": "Password reset fails randomly.",
+            "t": "Debug.",
+            "a": "'if (token == storedToken)' using ==. Works for cached literals, fails for DB-loaded tokens. Changed to .equals().",
+            "r": "Reset works reliably."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "1.5",
+      "slug": "equals-and-hashcode-contract",
+      "title": "equals() and hashCode() Contract",
+      "keyRule": "",
+      "terms": [
+        {
+          "id": "1.5.equals-contract",
+          "term": "equals() contract",
+          "what": "equals() defines when two objects are 'the same'. It must follow 5 rules: reflexive (a=a), symmetric (a=b then b=a), transitive, consistent, null-safe (a.equals(null) = false).",
+          "why": "",
+          "how": "",
+          "where": "",
+          "when": "",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "1.5.hashcode-contract",
+          "term": "hashCode() contract",
+          "what": "hashCode() returns an integer bucket index for the object. HashMap uses it for fast O(1) lookup. Contract: equal objects MUST have equal hashCodes.",
+          "why": "Without hashCode, HashMap would have to compare every key with equals() — O(n) per lookup. hashCode gives an index — O(1) lookup then equals() confirms.",
+          "how": "@Override public int hashCode() { return Objects.hash(id, name); } — use the SAME fields as equals(). Objects.hash() uses prime multiplication for good distribution.",
+          "where": "Override in every class where you override equals(). Same fields in both.",
+          "when": "Must override hashCode anytime you override equals. Missing hashCode is one of the most common Java bugs.",
+          "issue": "Override equals() on name+id but hashCode() on name only → two objects same name different id can collide → incorrect behavior.",
+          "fix": "Use exactly the same fields in both. Use Objects.hash(field1, field2, ...). IDE auto-generation ensures this.",
+          "star": {
+            "s": "Customer objects stored in HashMap but get() returns null.",
+            "t": "Debug.",
+            "a": "equals() uses customerId, hashCode() uses default memory address. Different objects = different bucket = not found. Added hashCode() with same field.",
+            "r": "Lookups work."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "1.5.broken-contract-equals-no-hashcode",
+          "term": "Broken Contract (equals no hashCode)",
+          "what": "The most dangerous Java bug — override equals() but not hashCode(). Equal objects get different hashCodes. They go to different buckets. HashMap cannot find them.",
+          "why": "This breaks the fundamental assumption HashMap relies on. The object is in the map physically but invisible to the API.",
+          "how": "Put employee1 in map. Later create employee2 with same ID. equals() says equal. But hashCode() returns memory address (different). get(employee2) looks in wrong bucket. Returns null.",
+          "where": "Custom domain objects used as Map keys. Entities in caches. Session objects in HashMaps.",
+          "when": "This bug appears whenever you put an object in a Map/Set using one instance and retrieve with a different instance (even if 'equal').",
+          "issue": "Objects disappear with no exception — just null or wrong result. Extremely hard to debug because the object IS there.",
+          "fix": "1) Always override both. 2) Lombok @EqualsAndHashCode generates both together. 3) SonarQube rule S1206 flags 'equals without hashCode'. 4) Unit test: put → get → assert not null.",
+          "star": {
+            "s": "Session cache returns null for valid sessions intermittently.",
+            "t": "Find root cause.",
+            "a": "Session class had equals() but default hashCode(). New session object (same ID) = different bucket. Fixed with @EqualsAndHashCode.",
+            "r": "Cache works correctly."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "1.5.lombok-equalsandhashcode",
+          "term": "Lombok @EqualsAndHashCode",
+          "what": "Lombok annotation that auto-generates equals() and hashCode() at compile time. Write the annotation, Lombok writes the methods.",
+          "why": "Manual equals/hashCode is repetitive and error-prone. Lombok removes boilerplate and ensures both are always generated together.",
+          "how": "@EqualsAndHashCode on class = uses all non-static non-transient fields. @EqualsAndHashCode(of={'id'}) = uses only id field. @Data includes this plus getters, setters, toString.",
+          "where": "DTOs, value objects, all POJOs. Be careful with JPA @Entity — see note.",
+          "when": "Standard practice in Spring Boot projects. Always prefer over manual code.",
+          "issue": "JPA @Entity with @EqualsAndHashCode on 'id' field: id is null before saving to DB. Using null in hashCode causes issues when entity is in a Set before persist.",
+          "fix": "For JPA entities: use @EqualsAndHashCode(of={'businessId'}) where businessId is a natural key (UUID, business code) that exists before saving. Not the auto-generated DB ID.",
+          "star": {
+            "s": "Team wasting time on equals/hashCode in 50+ DTO classes.",
+            "t": "Standardize.",
+            "a": "Added Lombok. Put @EqualsAndHashCode on all DTOs.",
+            "r": "300+ lines boilerplate removed. Contract always correct."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,185 @@
+{
+  "id": "14",
+  "slug": "testing",
+  "title": "Testing",
+  "icon": "🧪",
+  "accentColor": "#2563eb",
+  "subsections": [
+    {
+      "id": "14.0b",
+      "slug": "junit-5-extended",
+      "title": "JUnit 5 Extended",
+      "keyRule": "JUnit 5 advanced: @Disabled=skip. @DisplayName=custom test name. @Nested=grouped tests with context. @ParameterizedTest=data-driven. @RepeatedTest=run N times. @Tag=filtering. Assumptions=skip on condition. assertThrows/assertAll/assertTimeout for special assertions.",
+      "terms": [
+        {
+          "id": "14.0b.disabled-displayname-nested",
+          "term": "@Disabled / @DisplayName / @Nested",
+          "what": "@ParameterizedTest runs the same test with different inputs. Sources: @ValueSource (literals), @CsvSource (CSV rows), @MethodSource (method returning stream), @EnumSource, @NullAndEmptySource.",
+          "why": "Test boundary conditions, multiple inputs, edge cases without copy-pasting test methods.",
+          "how": "@ParameterizedTest @ValueSource(ints={0,-1,Integer.MAX_VALUE}) void testEdgeCases(int input) {...} @ParameterizedTest @CsvSource({'Alice,25','Bob,30'}) void test(String name, int age) {...}",
+          "where": "Validation logic, boundary testing, format parsing, calculation tests.",
+          "when": "Use when you need to test same logic with many inputs. Reduces test boilerplate significantly.",
+          "issue": "@MethodSource method must be static (unless @TestInstance(PER_CLASS)). Forgetting static = test fails to run.",
+          "fix": "Make @MethodSource methods static: static Stream<Arguments> dataProvider() { ... }",
+          "star": {
+            "s": "10 copy-paste tests for email validation with different inputs.",
+            "t": "Refactor.",
+            "a": "@ParameterizedTest @CsvSource with valid/invalid emails.",
+            "r": "One test method, 10 cases. Failures show which input fails."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "14.0b.assertthrows-assertall-asserttimeout",
+          "term": "assertThrows / assertAll / assertTimeout",
+          "what": "assertThrows: verifies exception thrown — returns exception for further checks. assertAll: runs all assertions regardless of failures — sees all failures. assertTimeout: verifies method completes within time.",
+          "why": "assertThrows replaces try-catch in tests. assertAll shows ALL failures instead of stopping at first. assertTimeout catches slow methods.",
+          "how": "Exception ex = assertThrows(IllegalArgumentException.class, () -> service.create(null)); assertEquals('Name required', ex.getMessage()); assertAll('user', () - > assertEquals(..), () -> assertNotNull(..));",
+          "where": "Negative test cases, testing validation, performance assertions, comprehensive data validation.",
+          "when": "Use assertThrows for negative tests. assertAll when validating multiple fields of a result object. assertTimeout for SLA-critical methods.",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "14.0b.repeatedtest-tag-assumptions",
+          "term": "@RepeatedTest / @Tag / Assumptions",
+          "what": "@RepeatedTest(n): run same test n times — for flakiness detection or statistical confidence. @Tag: label tests for filtering (run only 'fast' or 'slow' or 'integration'). Assumptions.assumeTrue(): skip test if condition not met.",
+          "why": "@RepeatedTest finds intermittent failures. @Tag enables selective test runs (CI runs 'fast' tests on every commit, 'slow' tests nightly). Assumptions skip tests gracefully.",
+          "how": "@RepeatedTest(5) void testIdempotent(). @Tag('slow') @Test void testLargeFile(). Assumptions.assumeTrue(System.getenv('DB_URL') != null, 'DB not configured — skip');",
+          "where": "@Tag for test suites. @RepeatedTest for concurrency tests. Assumptions for environment-dependent tests.",
+          "when": "Use @Tag to separate fast unit tests from slow integration tests. Use Assumptions when test only makes sense in certain environments.",
+          "issue": "@Tag not configured in Maven Surefire — tags are added but tests still all run or all skip.",
+          "fix": "Configure maven-surefire-plugin with include/exclude tags: <groups>fast</groups><excludedGroups>slow</excludedGroups>.",
+          "star": {
+            "s": "CI builds take 15 minutes — slow integration tests run on every commit.",
+            "t": "Separate.",
+            "a": "@Tag('integration') on slow tests. CI profile runs only @Tag('unit'). Nightly run runs all.",
+            "r": "CI builds: 2 minutes."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "14.1b",
+      "slug": "mockito-extended",
+      "title": "Mockito Extended",
+      "keyRule": "",
+      "terms": [
+        {
+          "id": "14.1b.spy-captor",
+          "term": "@Spy / @Captor",
+          "what": "@Spy wraps a real object — real methods called unless explicitly stubbed. @Captor captures method argument values for verification.",
+          "why": "Spy when you want to test a real class but stub only some methods. Captor when you need to verify the exact argument passed to a mock.",
+          "how": "@Spy UserService userService = new UserService(); doReturn('mocked').when(userService).expensiveMethod(); @Captor ArgumentCaptor<Order> orderCaptor; verify(repo).save(orderCaptor.capture()); assertEquals(100, orderCaptor.getValue().getAmount());",
+          "where": "Testing classes with one or two methods that need stubbing. Verifying exact argument content in mock calls.",
+          "when": "Use @Spy when most real behavior is wanted but specific methods need mocking. Use @Captor instead of ArgumentCaptor.forClass() — cleaner.",
+          "issue": "Spy on a real object — spy created via constructor but tested via new call — spy not active.",
+          "fix": "Always use @Spy with @ExtendWith(MockitoExtension.class). Or manually: UserService spy = Mockito.spy(new UserService());",
+          "star": {
+            "s": "Need to test that correct Order object is passed to repository.save().",
+            "t": "Verify.",
+            "a": "ArgumentCaptor<Order> cap = ArgumentCaptor.forClass(Order.class); verify(repo).save(cap.capture()); assertEquals(expected, cap.getValue()).",
+            "r": "Exact argument verified."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "14.1b.doreturn-dothrow",
+          "term": "doReturn() / doThrow()",
+          "what": "doReturn(value).when(spy).method() — stubs without calling real method. doThrow(ex).when(spy).method() — throws on spy method call. Safer than when().thenReturn() for spies.",
+          "why": "",
+          "how": "",
+          "where": "",
+          "when": "",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "14.1b.inorder-verify-times",
+          "term": "InOrder / verify(times)",
+          "what": "InOrder verifies mock interactions in a specific order. verify(mock, times(n)) verifies a method was called exactly n times. verify(mock, never()) = called 0 times. verify(mock, atLeast(n)) = at least n times.",
+          "why": "Some business logic requires operations in a specific sequence. Verifying call count catches under/over-calling.",
+          "how": "InOrder inOrder = inOrder(mock1, mock2); inOrder.verify(mock1).authenticate(); inOrder.verify(mock2).process(); verify(emailService, times(1)).send(any());",
+          "where": "Protocol-sensitive operations (auth before process), audit trails, idempotency testing.",
+          "when": "Use InOrder when sequence matters. Use times()/never() when call count matters for correctness.",
+          "issue": "verify() with no count spec = times(1). Easy to forget — test passes even if method called twice.",
+          "fix": "Be explicit: verify(service, times(1)).send(any()); or verify(service, never()).send(any()); — clear intent.",
+          "star": {
+            "s": "Email service called twice on one order — duplicate emails sent.",
+            "t": "Catch in test.",
+            "a": "verify(emailService, times(1)).send(any()). Test fails if called twice.",
+            "r": "Bug caught. Deduplication logic added."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "14.2b",
+      "slug": "spring-testing-extended",
+      "title": "Spring Testing Extended",
+      "keyRule": "",
+      "terms": [
+        {
+          "id": "14.2b.mockbean-spybean",
+          "term": "@MockBean / @SpyBean",
+          "what": "@MockBean replaces a Spring bean with a Mockito mock in the ApplicationContext. @SpyBean wraps a real Spring bean with a Mockito spy. Both work in @SpringBootTest and @WebMvcTest.",
+          "why": "@Mock only works in unit tests without Spring context. @MockBean replaces beans in the full Spring context — for integration tests.",
+          "how": "@MockBean UserRepository userRepo; // replaces real UserRepository in context. @SpyBean UserService userService; // wraps real UserService.",
+          "where": "@SpringBootTest integration tests, @WebMvcTest controller tests with mocked service.",
+          "when": "Use @MockBean to avoid hitting real DB in integration tests. Use @SpyBean when you want mostly real behavior but need to stub specific methods.",
+          "issue": "@MockBean recreates the ApplicationContext for each test class — slow if many test classes use different @MockBean combinations.",
+          "fix": "Group tests with same @MockBean setup in one test class. Use @MockitoSettings + @ExtendWith(MockitoExtension) for pure unit tests instead.",
+          "star": {
+            "s": "Controller test needs to mock service but use real Spring MVC layer.",
+            "t": "Test setup.",
+            "a": "@WebMvcTest + @MockBean UserService. Tests MVC layer with mocked service.",
+            "r": "Fast, targeted controller tests."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "14.2b.sql-testpropertysource-testcontainers",
+          "term": "@Sql / @TestPropertySource / Testcontainers",
+          "what": "WireMock is a mock HTTP server for testing. It simulates external HTTP services — REST APIs, third-party services. Tests call WireMock instead of real external service.",
+          "why": "External services are unreliable in tests: slow, rate-limited, may not have test data. WireMock is local, fast, controllable.",
+          "how": "@AutoConfigureWireMock(port=8089) on test class. stubFor(get('/api/users/1').willReturn(aResponse().withBody(userJson).withStatus(200)));",
+          "where": "Testing services that call external REST APIs, payment gateways, notification services.",
+          "when": "Use WireMock when your service calls external HTTP APIs and you want reliable, fast tests without real external calls.",
+          "issue": "WireMock stubs not matching real API — test passes but production breaks. Stubs become stale as real API evolves.",
+          "fix": "Record stubs from real API: WireMock recording mode. Validate stubs against API contracts (Pact contract testing).",
+          "star": {
+            "s": "Payment service tests are flaky — real payment gateway unreliable in CI.",
+            "t": "Stabilize.",
+            "a": "WireMock simulates payment gateway. Predictable responses.",
+            "r": "Tests run in 200ms, never flaky."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    }
+  ]
+}

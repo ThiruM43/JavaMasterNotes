@@ -1,0 +1,202 @@
+[
+  {
+    "id": "1",
+    "slug": "core-java",
+    "title": "Core Java Fundamentals",
+    "icon": "☕",
+    "accentColor": "#d97706",
+    "file": "section-01-core-java.json",
+    "subsectionCount": 5,
+    "termCount": 22
+  },
+  {
+    "id": "2",
+    "slug": "oop",
+    "title": "Object-Oriented Programming",
+    "icon": "🏗️",
+    "accentColor": "#7c3aed",
+    "file": "section-02-oop.json",
+    "subsectionCount": 5,
+    "termCount": 31
+  },
+  {
+    "id": "3",
+    "slug": "collections",
+    "title": "Collections Framework",
+    "icon": "📦",
+    "accentColor": "#0891b2",
+    "file": "section-03-collections.json",
+    "subsectionCount": 9,
+    "termCount": 30
+  },
+  {
+    "id": "4",
+    "slug": "concurrency",
+    "title": "Concurrency & Multithreading",
+    "icon": "⚡",
+    "accentColor": "#dc2626",
+    "file": "section-04-concurrency.json",
+    "subsectionCount": 10,
+    "termCount": 41
+  },
+  {
+    "id": "5",
+    "slug": "jvm-gc",
+    "title": "JVM Internals & Garbage Collection",
+    "icon": "🔧",
+    "accentColor": "#059669",
+    "file": "section-05-jvm-gc.json",
+    "subsectionCount": 5,
+    "termCount": 20
+  },
+  {
+    "id": "6",
+    "slug": "generics",
+    "title": "Generics",
+    "icon": "🔷",
+    "accentColor": "#6366f1",
+    "file": "section-06-generics.json",
+    "subsectionCount": 2,
+    "termCount": 8
+  },
+  {
+    "id": "7",
+    "slug": "lambda",
+    "title": "Lambda & Functional Programming",
+    "icon": "λ",
+    "accentColor": "#0284c7",
+    "file": "section-07-lambda.json",
+    "subsectionCount": 3,
+    "termCount": 12
+  },
+  {
+    "id": "8",
+    "slug": "streams",
+    "title": "Streams API & Optional",
+    "icon": "🌊",
+    "accentColor": "#0d9488",
+    "file": "section-08-streams.json",
+    "subsectionCount": 4,
+    "termCount": 18
+  },
+  {
+    "id": "9",
+    "slug": "exceptions",
+    "title": "Exception Handling",
+    "icon": "⚠️",
+    "accentColor": "#ea580c",
+    "file": "section-09-exceptions.json",
+    "subsectionCount": 3,
+    "termCount": 7
+  },
+  {
+    "id": "10",
+    "slug": "java-io",
+    "title": "Java I/O",
+    "icon": "📁",
+    "accentColor": "#65a30d",
+    "file": "section-10-java-io.json",
+    "subsectionCount": 0,
+    "termCount": 0
+  },
+  {
+    "id": "11",
+    "slug": "jdbc",
+    "title": "JDBC & Database Access",
+    "icon": "🗄️",
+    "accentColor": "#ca8a04",
+    "file": "section-11-jdbc.json",
+    "subsectionCount": 2,
+    "termCount": 7
+  },
+  {
+    "id": "12",
+    "slug": "jpa-hibernate",
+    "title": "JPA & Hibernate",
+    "icon": "🗃️",
+    "accentColor": "#9333ea",
+    "file": "section-12-jpa-hibernate.json",
+    "subsectionCount": 2,
+    "termCount": 18
+  },
+  {
+    "id": "13",
+    "slug": "spring",
+    "title": "Spring Framework",
+    "icon": "🍃",
+    "accentColor": "#16a34a",
+    "file": "section-13-spring.json",
+    "subsectionCount": 8,
+    "termCount": 29
+  },
+  {
+    "id": "14",
+    "slug": "testing",
+    "title": "Testing",
+    "icon": "🧪",
+    "accentColor": "#2563eb",
+    "file": "section-14-testing.json",
+    "subsectionCount": 3,
+    "termCount": 8
+  },
+  {
+    "id": "15",
+    "slug": "microservices",
+    "title": "Microservices",
+    "icon": "🔬",
+    "accentColor": "#db2777",
+    "file": "section-15-microservices.json",
+    "subsectionCount": 2,
+    "termCount": 13
+  },
+  {
+    "id": "16",
+    "slug": "kafka",
+    "title": "Apache Kafka & Messaging",
+    "icon": "📨",
+    "accentColor": "#b45309",
+    "file": "section-16-kafka.json",
+    "subsectionCount": 4,
+    "termCount": 16
+  },
+  {
+    "id": "17",
+    "slug": "modern-java",
+    "title": "Modern Java (8 → 21)",
+    "icon": "🚀",
+    "accentColor": "#7c3aed",
+    "file": "section-17-modern-java.json",
+    "subsectionCount": 4,
+    "termCount": 15
+  },
+  {
+    "id": "18",
+    "slug": "dsa",
+    "title": "Data Structures & Algorithms",
+    "icon": "🌲",
+    "accentColor": "#0f766e",
+    "file": "section-18-dsa.json",
+    "subsectionCount": 5,
+    "termCount": 19
+  },
+  {
+    "id": "19",
+    "slug": "system-design",
+    "title": "System Design",
+    "icon": "🏛️",
+    "accentColor": "#1d4ed8",
+    "file": "section-19-system-design.json",
+    "subsectionCount": 5,
+    "termCount": 19
+  },
+  {
+    "id": "20",
+    "slug": "devops",
+    "title": "Code Quality & Best Practices",
+    "icon": "🛠️",
+    "accentColor": "#475569",
+    "file": "section-20-devops.json",
+    "subsectionCount": 2,
+    "termCount": 6
+  }
+]

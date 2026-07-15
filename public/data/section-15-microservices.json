@@ -1,0 +1,272 @@
+{
+  "id": "15",
+  "slug": "microservices",
+  "title": "Microservices",
+  "icon": "🔬",
+  "accentColor": "#db2777",
+  "subsections": [
+    {
+      "id": "15.1",
+      "slug": "microservices-fundamentals",
+      "title": "Microservices Fundamentals",
+      "keyRule": "Microservices = each service owns one business capability, its own database, deploys independently. Trade-offs vs monolith: + independent scaling, + independent deployment, + tech diversity. - network calls instead of in-memory, - distributed transactions complexity, - operational overhead.",
+      "terms": [
+        {
+          "id": "15.1.microservice-principles",
+          "term": "Microservice Principles",
+          "what": "Microservices architecture decomposes an application into small, independent services — each responsible for one business capability, deployable and scalable independently.",
+          "why": "Large monoliths are hard to scale, deploy, and maintain. Microservices allow each part to scale independently and be owned by a focused team.",
+          "how": "Each service: its own codebase, its own DB, REST or event-based communication, independently deployed as Docker container, orchestrated by Kubernetes.",
+          "where": "Large products with multiple teams: e-commerce (order service, inventory service, payment service, user service).",
+          "when": "Use microservices when: multiple teams working on the same app, need to scale different parts independently, different services have different tech needs. Avoid for small teams or simple apps — monolith is simpler.",
+          "issue": "Microservices introduce distributed systems problems: network failures, partial failures, eventual consistency, distributed tracing complexity.",
+          "fix": "Design for failure: circuit breakers, retry, timeouts on every service call. Use correlation IDs for distributed tracing. Use saga pattern for distributed transactions.",
+          "star": {
+            "s": "Interview: when would you NOT use microservices?",
+            "t": "Answer.",
+            "a": "Small team (<5 devs), simple domain, tight coupling between features, early-stage product. Monolith first, extract services when pain points are clear.",
+            "r": "Shows balanced thinking."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "15.1.rest-vs-grpc-inter-service",
+          "term": "REST vs gRPC (Inter-service)",
+          "what": "REST = HTTP/JSON — human readable, widely supported. gRPC = HTTP/2 with Protobuf — binary, typed, 5-10x faster, code-generated clients.",
+          "why": "REST is simpler, universal, works with any HTTP client. gRPC is faster and type-safe for high-throughput internal service calls.",
+          "how": "REST: Spring WebClient or Feign client for HTTP/JSON. gRPC: define service in .proto file, generate client+server code, call like a local method.",
+          "where": "REST for external APIs. gRPC for high-performance internal service-to-service calls.",
+          "when": "Use REST for public APIs and external-facing. Use gRPC for internal microservice communication needing high throughput (1000+ calls/sec).",
+          "issue": "REST with JSON serialization overhead adds up for high-frequency internal calls. Protobuf is 3-5x smaller and 2-10x faster to serialize.",
+          "fix": "For performance-critical internal services, migrate to gRPC. Keep REST for external-facing APIs.",
+          "star": {
+            "s": "Order service calls 5 other services per request — 200ms overhead just in HTTP/JSON.",
+            "t": "Reduce.",
+            "a": "Migrated internal calls to gRPC.",
+            "r": "Inter-service call time dropped from 200ms to 40ms."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "15.1.service-discovery-eureka",
+          "term": "Service Discovery (Eureka)",
+          "what": "Service Discovery lets services find each other by name instead of hardcoded IP/port. Registry keeps list of healthy service instances.",
+          "why": "In Kubernetes/cloud, services start/stop, scale up/down — IPs change constantly. Service discovery handles this dynamically.",
+          "how": "Each service registers with Eureka on startup. Clients ask Eureka for 'order-service' — get list of healthy instances. Ribbon/Spring LoadBalancer picks one.",
+          "where": "Any microservices deployment needing service-to-service communication. In Kubernetes, kube-dns provides similar functionality natively.",
+          "when": "Use Eureka for Spring Cloud deployments. In Kubernetes, rely on Kubernetes DNS — no Eureka needed.",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "15.1.api-gateway",
+          "term": "API Gateway",
+          "what": "API Gateway is the single entry point for all client requests. It routes to the right microservice, handles auth, rate limiting, SSL, and logging centrally.",
+          "why": "Without a gateway, clients must know about all services, all do auth separately, CORS must be configured in each. Gateway centralizes all of this.",
+          "how": "Spring Cloud Gateway or Kong. Routes: /users/* → user-service, /orders/* → order- service. Add filters for: JWT validation, rate limiting, request logging.",
+          "where": "Every microservices deployment that has external clients (web, mobile, third party).",
+          "when": "Always have an API Gateway for external access. Do NOT use it for internal service-to-service calls — adds unnecessary latency.",
+          "issue": "API Gateway becomes a bottleneck or single point of failure if not highly available.",
+          "fix": "Deploy gateway in multiple instances behind a load balancer. Use async processing and avoid stateful operations in the gateway.",
+          "star": {
+            "s": "Mobile app must call 5 services for one screen — multiple network hops.",
+            "t": "Simplify.",
+            "a": "Added API Gateway aggregator endpoint that calls 5 services and returns combined response.",
+            "r": "Mobile app makes 1 call instead of 5. Simpler and faster."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "15.1.circuit-breaker-resilience4j",
+          "term": "Circuit Breaker (Resilience4j)",
+          "what": "Circuit breaker monitors calls to a service. If failure rate exceeds a threshold, it 'opens' — subsequent calls fail immediately without trying the service. Prevents cascade failures.",
+          "why": "If Service B is down and Service A keeps calling it, A's threads fill up waiting for timeouts — A goes down too. Circuit breaker prevents this chain reaction.",
+          "how": "CLOSED (normal) → too many failures → OPEN (fail fast) → after timeout → HALF- OPEN (test one call) → success → CLOSED. Configure: failureRateThreshold, waitDurationInOpenState.",
+          "where": "Every service-to-service HTTP/gRPC call in microservices. Spring Cloud Resilience4j @CircuitBreaker annotation.",
+          "when": "Always add circuit breakers for external service calls. Also add fallback methods to return cached or default data when circuit is open.",
+          "issue": "Circuit breaker with no fallback = user gets error when circuit opens. Better than cascade failure but still bad UX.",
+          "fix": "Add @CircuitBreaker(fallbackMethod='getFallback'). Fallback returns: cached data, empty list, degraded response. User sees something useful instead of error.",
+          "star": {
+            "s": "Recommendation service down takes down product page too.",
+            "t": "Degrade gracefully.",
+            "a": "@CircuitBreaker on recommendation call with fallback returning empty list. Product page works, no recommendations shown.",
+            "r": "Partial failure handled gracefully."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "15.1.distributed-tracing-sleuth-zipkin",
+          "term": "Distributed Tracing (Sleuth/Zipkin)",
+          "what": "Distributed tracing tracks a single request as it flows through multiple microservices. Each service adds trace context — all logs linked by one trace ID.",
+          "why": "In microservices, one user request might touch 10 services. Without tracing, finding which service caused a failure or slowness is almost impossible.",
+          "how": "Spring Cloud Sleuth adds trace ID and span ID to every request and log line. Zipkin or Jaeger collects and visualizes traces. See full request journey in one dashboard.",
+          "where": "Every microservices deployment. Critical for debugging performance issues and failures.",
+          "when": "Add distributed tracing from day one — impossible to debug microservices without it.",
+          "issue": "Not propagating trace headers when making async calls or using non- instrumented HTTP clients.",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "15.1b",
+      "slug": "resilience-patterns",
+      "title": "Resilience Patterns",
+      "keyRule": "",
+      "terms": [
+        {
+          "id": "15.1b.sidecar-pattern",
+          "term": "Sidecar Pattern",
+          "what": "Sidecar deploys a helper container alongside the main service container in the same pod. Handles cross-cutting concerns: logging, config, proxy, service mesh communication.",
+          "why": "Moves infrastructure concerns (logging agent, config refresh, mTLS termination) out of the service code into a separate container.",
+          "how": "Main container: your Java service. Sidecar: Envoy proxy (Istio), Fluentd log shipper, config reload agent. They share network namespace — sidecar sees all traffic.",
+          "where": "Service mesh (Istio, Linkerd), log aggregation, config management, mTLS between services.",
+          "when": "Use sidecar when infrastructure concerns should not be coded into the service itself. Common in Kubernetes-based deployments.",
+          "issue": "Sidecar adds resource overhead — extra memory and CPU per pod. More containers = more complexity.",
+          "fix": "Use sidecar only for genuine cross-cutting infrastructure. Avoid sidecar for business logic.",
+          "star": {
+            "s": "20 microservices need mTLS, distributed tracing, and metrics collection.",
+            "t": "Add without code changes.",
+            "a": "Istio sidecar injection. Envoy handles mTLS, tracing headers.",
+            "r": "All 20 services secured and traced with zero code changes."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "15.1b.bulkhead-pattern",
+          "term": "Bulkhead Pattern",
+          "what": "Bulkhead isolates resources per downstream service — separate thread pools for each. If one service is slow, only its thread pool fills up, not the whole server.",
+          "why": "Without bulkhead: slow external service consumes all threads → entire application unresponsive. Bulkhead limits blast radius.",
+          "how": "Resilience4j @Bulkhead(name='paymentService', type=THREADPOOL): separate thread pool per downstream. Or SEMAPHORE type: limit concurrent calls.",
+          "where": "Services calling multiple external dependencies (payment, inventory, shipping). Each gets its own thread pool.",
+          "when": "Use when a service calls multiple external services and one failing/slow service should not cascade to others.",
+          "issue": "Thread pool bulkhead increases total thread count — careful with memory sizing.",
+          "fix": "Size each bulkhead's thread pool based on expected concurrency and SLA for that service.",
+          "star": {
+            "s": "Slow inventory service makes entire order service unresponsive — all threads waiting.",
+            "t": "Isolate.",
+            "a": "Bulkhead with separate thread pool for inventory.",
+            "r": "Inventory slowness limited to its pool. Order service serves other requests normally."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "15.1b.retry-pattern",
+          "term": "Retry Pattern",
+          "what": "Retry automatically retries failed operations a specified number of times before giving up. With backoff: wait increases between retries to reduce load on struggling service.",
+          "why": "Transient failures (network hiccup, brief service restart) resolve quickly — retry saves the user from seeing an error.",
+          "how": "@Retry(name='externalApi', fallbackMethod='fallback'). Config: max-attempts=3, wait-duration=1s, exponential-backoff-multiplier=2. 1s → 2s → 4s.",
+          "where": "HTTP calls to external services, database operations, message processing.",
+          "when": "Use retry for transient failures. Do NOT retry non-idempotent operations without checking first (don't retry a payment twice).",
+          "issue": "Retrying non-idempotent calls (POST, payment charge) causes duplicate operations.",
+          "fix": "Only retry safe/idempotent operations. Use idempotency keys for non-idempotent operations. Don't retry on 4xx errors.",
+          "star": {
+            "s": "5% of external API calls fail due to transient issues — user sees errors.",
+            "t": "Fix transparently.",
+            "a": "@Retry with 3 attempts, exponential backoff. Fallback to cached data if all fail.",
+            "r": "99.9% success rate. Transient failures invisible to users."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "15.1b.rate-limiting",
+          "term": "Rate Limiting",
+          "what": "Rate limiting controls how many requests can be made in a time window — limits excessive calls to prevent overload or API quota exhaustion.",
+          "why": "External APIs have rate limits. Internal services can be protected from traffic bursts. Prevent API abuse.",
+          "how": "Resilience4j @RateLimiter(name='apiLimiter'): limitForPeriod=10, limitRefreshPeriod=1s. Or API Gateway level: max 100 req/sec per IP.",
+          "where": "API Gateway (limit per client), service-to-service calls (stay within third-party API quota), public REST endpoints.",
+          "when": "Use rate limiting to protect services from being overwhelmed and to respect external API limits.",
+          "issue": "Rate limit too strict causes legitimate requests to be rejected. Too loose gives no protection.",
+          "fix": "Set limits based on measured capacity and SLA. Implement graceful degradation when rate limit hit — serve cached or simplified response.",
+          "star": {
+            "s": "Third-party payment API quota: 100 calls/sec. Under load we send 500/sec — get throttled.",
+            "t": "Fix.",
+            "a": "@RateLimiter allowing max 80/sec + queue for excess.",
+            "r": "Never exceed quota. Under-load queue drains."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "15.1b.feign-client-resttemplate-webclient",
+          "term": "Feign Client / RestTemplate / WebClient",
+          "what": "Feign Client: declarative HTTP client — define interface + annotations, Spring generates the implementation. RestTemplate: blocking HTTP client (deprecated in favor of WebClient). WebClient: reactive non-blocking HTTP client.",
+          "why": "Feign removes boilerplate for service-to-service calls. WebClient is the modern default for Spring. RestTemplate is still common in legacy code.",
+          "how": "@FeignClient(name='user-service', url='${user.service.url}') interface UserClient { @GetMapping('/users/{id}') User findUser(@PathVariable Long id); }",
+          "where": "Microservice-to-microservice communication. Feign + Ribbon/LoadBalancer for client-side load balancing.",
+          "when": "New code: WebClient for async. Feign Client for simple synchronous service calls. Avoid new RestTemplate — use WebClient or Feign instead.",
+          "issue": "Feign Client doesn't propagate security headers by default — auth token missing on downstream calls.",
+          "fix": "Add Feign RequestInterceptor to copy Authorization header from SecurityContextHolder to outgoing requests.",
+          "star": {
+            "s": "Service needs to call 3 other services — RestTemplate boilerplate.",
+            "t": "Clean up.",
+            "a": "Three @FeignClient interfaces. Service calls them like local methods.",
+            "r": "60% less boilerplate. Cleaner service code."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "15.1b.saga-pattern-choreography-orchestration",
+          "term": "Saga Pattern (Choreography & Orchestration)",
+          "what": "Saga: distributed transaction split into local transactions with compensating actions. Choreography: services emit events, react to each other — decentralized. Orchestration: central coordinator tells each service what to do.",
+          "why": "No two-phase commit across microservices. Saga achieves eventual consistency through compensating transactions on failure.",
+          "how": "Choreography: OrderService emits OrderCreated → PaymentService charges → emits PaymentDone → InventoryService reserves. Orchestration: OrderSaga orchestrator calls each service in sequence, calls compensation on failure.",
+          "where": "Order processing, hotel/flight booking, e-commerce checkout with multiple services.",
+          "when": "Use Choreography for simple linear flows. Use Orchestration for complex flows where visibility and central control matter.",
+          "issue": "Choreography: hard to trace flow across many events. Orchestration: orchestrator becomes a bottleneck.",
+          "fix": "Use Saga orchestration with Axon or Spring State Machine for visibility. Add correlation IDs for trace.",
+          "star": {
+            "s": "Order requires payment + inventory + shipping across 3 microservices.",
+            "t": "Handle partial failure.",
+            "a": "Saga orchestration. If inventory fails: compensate by refunding payment.",
+            "r": "Consistent state even on partial failure."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "15.1b.outbox-pattern",
+          "term": "Outbox Pattern",
+          "what": "Outbox pattern: write both the DB change AND an event to an 'outbox' table in the same transaction. A separate poller publishes events from outbox to message broker.",
+          "why": "Without outbox: save to DB, then publish to Kafka — if Kafka publish fails, DB saved but event lost. Outbox ensures both succeed or both fail atomically.",
+          "how": "BEGIN TRANSACTION: INSERT into orders(data); INSERT into outbox(event_type, payload); COMMIT; Poller reads outbox, publishes to Kafka, deletes outbox row.",
+          "where": "Any service that must both save data AND publish events reliably (exactly-once guarantee).",
+          "when": "Use outbox when DB write and event publication must be atomic — i.e., never have data without event or event without data.",
+          "issue": "Outbox poller adds latency — event published seconds after DB write, not milliseconds.",
+          "fix": "For low-latency, use Debezium (change data capture) instead of polling — reads DB transaction log directly.",
+          "star": {
+            "s": "Orders saved but order-created events sometimes not published — downstream services miss orders.",
+            "t": "Fix.",
+            "a": "Outbox pattern. Event written transactionally with order. Debezium publishes from transaction log.",
+            "r": "Zero missed events."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    }
+  ]
+}

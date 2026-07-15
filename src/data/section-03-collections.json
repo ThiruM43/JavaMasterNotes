@@ -1,0 +1,651 @@
+{
+  "id": "3",
+  "slug": "collections",
+  "title": "Collections Framework",
+  "icon": "📦",
+  "accentColor": "#0891b2",
+  "subsections": [
+    {
+      "id": "3.1",
+      "slug": "collections-hierarchy",
+      "title": "Collections Hierarchy",
+      "keyRule": "Collection root: List (ordered, duplicates OK) → Set (no duplicates) → Queue (FIFO). Map is NOT a Collection. Key classes: ArrayList, LinkedList, HashSet, TreeSet, LinkedHashSet, HashMap, TreeMap, LinkedHashMap, ArrayDeque, PriorityQueue.",
+      "terms": [
+        {
+          "id": "3.1.list-interface",
+          "term": "List Interface",
+          "what": "List is an ordered Collection that allows duplicates. You can access any element by index. Maintains insertion order.",
+          "why": "When you need to store elements in order and might need the same value multiple times, List is your choice.",
+          "how": "List<String> list = new ArrayList<>(); list.add('a'); list.get(0); list.set(0,'b'); list.remove(0); list.size();",
+          "where": "Any sequence of data: shopping cart items, search results, steps in a process, rows from DB query.",
+          "when": "Use List when: order matters, duplicates are allowed, you need index-based access. Choose ArrayList for most cases.",
+          "issue": "Adding to or removing from the middle of a large ArrayList is slow — O(n) because all subsequent elements shift.",
+          "fix": "If you frequently insert/remove in the middle, use LinkedList. If you only add to the end and access by index, ArrayList is perfect.",
+          "star": {
+            "s": "Interview: which List to use for a shopping cart?",
+            "t": "Answer.",
+            "a": "ArrayList — cart items have order, duplicates possible (2x same product), mostly add/iterate not insert- middle.",
+            "r": "Correct reasoning."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "3.1.set-interface",
+          "term": "Set Interface",
+          "what": "Set is a Collection that stores unique elements only. Automatically rejects duplicates. No index access.",
+          "why": "When you need a collection where each element appears only once — unique tags, unique user IDs, visited pages.",
+          "how": "Set<String> set = new HashSet<>(); set.add('a'); set.add('a'); // second add ignored. set.contains('a'); // O(1) for HashSet.",
+          "where": "Deduplication, checking membership, storing unique values, permission sets, cache key tracking.",
+          "when": "Use HashSet for fastest operations (O(1)). LinkedHashSet if insertion order matters. TreeSet if sorted order needed.",
+          "issue": "Set requires correct equals() and hashCode() on your objects. Without them, duplicates sneak in.",
+          "fix": "Always override equals() and hashCode() in classes stored in Sets. Use Lombok @EqualsAndHashCode.",
+          "star": {
+            "s": "User permission list has duplicates causing incorrect access control.",
+            "t": "Fix.",
+            "a": "Changed from List to HashSet<Permission>. Overrode equals/hashCode in Permission on permissionId.",
+            "r": "No duplicates possible."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "3.1.map-interface",
+          "term": "Map Interface",
+          "what": "Map stores key-value pairs. Each key is unique. Values can be duplicates. Map is NOT a Collection — it has its own hierarchy.",
+          "why": "Fast lookup by key. Finding a value by key in HashMap is O(1) — constant time regardless of map size.",
+          "how": "Map<String,User> map = new HashMap<>(); map.put('alice', user); map.get('alice'); map.containsKey('alice'); map.entrySet() to iterate.",
+          "where": "Caches (userId→User), config properties, counting frequencies, grouping data, session storage.",
+          "when": "HashMap for fastest operations. LinkedHashMap to maintain insertion order. TreeMap for sorted key order. ConcurrentHashMap for thread safety.",
+          "issue": "HashMap is not thread-safe. Multiple threads reading/writing can corrupt the internal structure (infinite loop bug in Java 7).",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "3.2",
+      "slug": "arraylist-vs-linkedlist",
+      "title": "ArrayList vs LinkedList",
+      "keyRule": "ArrayList = dynamic array — O(1) get by index, O(n) insert/remove middle. LinkedList = doubly linked nodes — O(n) get by index, O(1) insert/remove at known position. For 95% of use cases, ArrayList wins. Only use LinkedList when you do heavy insert/remove at middle positions.",
+      "terms": [
+        {
+          "id": "3.2.arraylist",
+          "term": "ArrayList",
+          "what": "ArrayList is a resizable array backed by an Object[]. Elements stored in contiguous memory. Index access is instant. Appending to end is fast.",
+          "why": "For most use cases, ArrayList is the right List. Fast iteration (CPU cache friendly — contiguous memory), fast get by index, fast add to end.",
+          "how": "Internally Object[] array. When full, creates a new array 1.5x larger and copies. Initial capacity 10. Set with new ArrayList<>(1000) to avoid re-sizing if you know size.",
+          "where": "Default List choice for almost everything. Spring query results, API response lists, batch processing collections.",
+          "when": "Use ArrayList when: you iterate frequently, access by index, add to end. Avoid when: you constantly insert or remove from the middle of large lists.",
+          "issue": "Inserting at position 0 in an ArrayList of 1 million elements copies 1 million references — very slow.",
+          "fix": "If heavy middle-insertion is needed, use LinkedList. But first ask: do you really need ordered middle insertion? Often a different data structure (queue, deque) is more appropriate.",
+          "star": {
+            "s": "Interview: I need to store 10,000 search results and display them paged. Which List?",
+            "t": "Answer.",
+            "a": "ArrayList — indexed access for paging, results added once, iterated many times. LinkedList has no benefit here.",
+            "r": "Correct."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "3.2.linkedlist",
+          "term": "LinkedList",
+          "what": "LinkedList is a doubly-linked list — each node holds data + pointer to next and previous node. No contiguous memory. Fast insert/remove at known positions.",
+          "why": "For frequent insertion and deletion at arbitrary positions, LinkedList avoids the costly array shifting that ArrayList requires.",
+          "how": "Each Node object holds {data, prev, next}. get(500) must walk 500 nodes — O(n). add(node) at a known position just changes prev/next pointers — O(1). Implements both List and Deque.",
+          "where": "Queue/Deque implementations, situations requiring fast insert/remove at head or tail. Undo/redo history where you add/remove at ends.",
+          "when": "Use LinkedList when: you frequently add/remove at head or tail, or when you have a reference to the position. Rarely better than ArrayList in practice.",
+          "issue": "LinkedList is NOT cache-friendly — nodes scattered in memory. Iteration is slower than ArrayList even though O(n) for both. Memory overhead: each node stores 3 references.",
+          "fix": "Benchmark before choosing LinkedList over ArrayList. Often ArrayDeque is better for queue use cases. LinkedList's advantages only show in very specific heavy-mutation scenarios.",
+          "star": {
+            "s": "Task queue needs fast add to back and remove from front.",
+            "t": "Choose data structure.",
+            "a": "ArrayDeque is better than LinkedList for queue operations — less memory overhead, better cache performance.",
+            "r": "ArrayDeque chosen."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "3.2.iterator-listiterator",
+          "term": "Iterator & ListIterator",
+          "what": "Iterator lets you traverse a Collection one element at a time safely. ListIterator additionally allows bidirectional traversal and modification during iteration.",
+          "why": "",
+          "how": "",
+          "where": "",
+          "when": "",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "3.2.collections-utility-class",
+          "term": "Collections utility class",
+          "what": "java.util.Collections is a utility class with static methods for sorting, searching, shuffling, reversing, and making Collections thread-safe or unmodifiable.",
+          "why": "Provides common operations without reimplementing. Collections.sort(), Collections.unmodifiableList(), Collections.synchronizedList() are used everywhere.",
+          "how": "Collections.sort(list); Collections.sort(list, comparator); Collections.reverse(list); Collections.shuffle(list); Collections.unmodifiableList(list) — returns read-only view.",
+          "where": "Sorting before display. Creating read-only snapshots. Returning safe views from public APIs. Converting single-thread collections to thread-safe wrappers.",
+          "when": "Use Collections.sort() for simple sorts. Use list.sort() or Stream.sorted() in modern Java. Use unmodifiableList() for defensive copies in public APIs.",
+          "issue": "Collections.synchronizedList() makes individual calls thread-safe but composite operations (check-then-act) are NOT atomic.",
+          "fix": "For truly concurrent access, use CopyOnWriteArrayList (read-heavy) or manual synchronization on the whole block. For modern code, use java.util.concurrent classes.",
+          "star": {
+            "s": "Public API returns internal list — callers modify it and corrupt state.",
+            "t": "Protect.",
+            "a": "Return Collections.unmodifiableList(internalList).",
+            "r": "Callers get UnsupportedOperationException if they try to modify. State protected."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "3.3",
+      "slug": "hashmap-internals",
+      "title": "HashMap Internals",
+      "keyRule": "HashMap uses hashCode() to find the bucket, equals() to find the exact key. Default capacity 16 buckets, load factor 0.75. When 75% full it doubles (resizes). Java 8+: when a bucket has 8+ entries it becomes a Red-Black Tree (O(log n) instead of O(n) for worst case).",
+      "terms": [
+        {
+          "id": "3.3.hashmap-internals",
+          "term": "HashMap Internals",
+          "what": "HashMap is an array of buckets. Each bucket is a linked list (or tree in Java 8+). Keys map to buckets via hashCode(). Duplicates in a bucket resolved by equals().",
+          "why": "Understanding internals helps you avoid performance pitfalls and debug 'key not found' bugs that come from broken equals/hashCode.",
+          "how": "put(key,val): hash = key.hashCode(); bucket = hash % capacity; walk bucket checking equals(); update or add. get(key): same two-step lookup. O(1) average, O(n) worst case (all in one bucket).",
+          "where": "Used everywhere as the most general-purpose key-value store. Cache implementations, config maps, frequency counters.",
+          "when": "Default Map choice. Not thread-safe — use ConcurrentHashMap for multi- threaded use. Use LinkedHashMap for ordered iteration.",
+          "issue": "All keys hashing to the same bucket = linked list grows = O(n) performance. Java 8 converts to Red-Black Tree at 8 entries — O(log n) worst case.",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "3.3.load-factor-resizing",
+          "term": "Load Factor & Resizing",
+          "what": "LinkedHashMap is a HashMap that also maintains a doubly-linked list through all entries — preserving insertion order or access order.",
+          "why": "Regular HashMap has unpredictable iteration order. LinkedHashMap guarantees predictable order — great for caches where you need to track access order.",
+          "how": "new LinkedHashMap<>(16, 0.75f, true) — accessOrder=true makes it LRU order (last accessed moves to end). Override removeEldestEntry() for LRU cache behavior.",
+          "where": "LRU cache implementation. Preserving insertion order in JSON output. Any map where iteration order matters.",
+          "when": "Use LinkedHashMap when: you need predictable iteration order, or building an LRU cache. Otherwise HashMap is faster.",
+          "issue": "More memory than HashMap — extra prev/next pointers per entry. Slightly slower insertions.",
+          "fix": "Use computeIfAbsent(), putIfAbsent(), or compute() — these are atomic composite operations in ConcurrentHashMap.",
+          "star": {
+            "s": "Hit counter for URLs using HashMap crashes under load — corrupted state.",
+            "t": "Fix thread safety.",
+            "a": "Changed to ConcurrentHashMap. Used map.merge(url, 1, Integer::sum) for atomic increment.",
+            "r": "Thread-safe hit counter. LinkedHashMap"
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "3.3.treemap",
+          "term": "TreeMap",
+          "what": "TreeMap is a Map that stores entries sorted by key — natural order (Comparable) or custom Comparator. Backed by a Red-Black Tree.",
+          "why": "When you need keys in sorted order — alphabetical listing, sorted ID ranges, time- series data sorted by timestamp.",
+          "how": "TreeMap<String,Integer> map = new TreeMap<>(); — keys automatically sorted alphabetically. map.firstKey(), map.lastKey(), map.subMap(from, to) — range operations.",
+          "where": "Sorted config, range queries (find all events between time A and B), dictionary- style sorted indexes.",
+          "when": "Use when sorted key order is needed. All operations are O(log n) — slower than HashMap O(1) but provides ordering.",
+          "issue": "TreeMap requires keys to implement Comparable or a Comparator to be provided. Without it, ClassCastException at runtime.",
+          "fix": "Implement Comparable in your key class or provide Comparator: new TreeMap<>(Comparator.comparing(MyKey::getId)).",
+          "star": {
+            "s": "Need to list configuration properties in alphabetical order.",
+            "t": "Choose Map.",
+            "a": "TreeMap — keys are property names, naturally alphabetically sorted. Iterate = sorted output.",
+            "r": "No manual sorting needed."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "3.4",
+      "slug": "comparable-vs-comparator",
+      "title": "Comparable vs Comparator",
+      "keyRule": "Comparable = class defines its OWN natural ordering via compareTo() — baked in. Comparator = external class defines ordering — flexible, multiple orderings possible. Use Comparable for default sort. Use Comparator when you need different orderings for different scenarios.",
+      "terms": [
+        {
+          "id": "3.4.comparable-interface",
+          "term": "Comparable Interface",
+          "what": "Comparable is an interface with one method: compareTo(T other). When a class implements Comparable, objects know how to compare themselves to each other — natural ordering.",
+          "why": "Allows objects to be sorted by Collections.sort() and stored in TreeSet/TreeMap without any extra code.",
+          "how": "class Employee implements Comparable<Employee> { public int compareTo(Employee other) { return this.salary.compareTo(other.salary); } } — sort by salary naturally.",
+          "where": "Domain objects with a clear natural order: Employee by ID, Product by price, Event by date.",
+          "when": "Implement Comparable when there is one obvious natural ordering. If multiple orderings are needed, use Comparator instead.",
+          "issue": "Natural ordering with Comparable is fixed — cannot be changed at call site. If sometimes sort by name, sometimes by salary, Comparable is not flexible enough.",
+          "fix": "Use Comparator for flexible, ad-hoc orderings. Use Comparable for the single 'default' ordering.",
+          "star": {
+            "s": "Employee objects need to sort by salary by default in TreeSet.",
+            "t": "Implement.",
+            "a": "Implement Comparable<Employee> in Employee class. compareTo compares salary. TreeSet uses this automatically.",
+            "r": "Automatic salary sort."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "3.4.comparator-interface",
+          "term": "Comparator Interface",
+          "what": "Comparator is an external comparison strategy. It has compare(T a, T b) method. You pass it to sort methods at call time — flexible and decoupled.",
+          "why": "Allows multiple different orderings for the same class. Sort employees by salary here, by name there, by hire date elsewhere.",
+          "how": "",
+          "where": "",
+          "when": "",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "3.4.comparator-chaining-thencompar-ing",
+          "term": "Comparator chaining (thenCompar ing)",
+          "what": "Comparator.comparing().thenComparing() chains multiple comparison criteria. First criterion sorts primarily, second used when first is equal.",
+          "why": "Real data often needs multi-level sorting: sort by last name, then by first name if last names are equal.",
+          "how": "list.sort(Comparator.comparing(Employee::getDept).thenComparing(Employee::getName).thenCompari ngInt(Employee::getSalary));",
+          "where": "Any multi-column sort: reports, leaderboards, data exports.",
+          "when": "Use chaining instead of complex custom Comparator logic. Much more readable.",
+          "issue": "Forgetting .reversed() on just one part of the chain. Reversed() on the whole chain reverses all criteria.",
+          "fix": "Apply reversed() individually: Comparator.comparing(Employee::getSalary).reversed().thenComparing(Employee::getName) — salary descending, then name ascending.",
+          "star": {
+            "s": "Report needs: primary sort by region ascending, secondary by revenue descending.",
+            "t": "Implement.",
+            "a": "Comparator.comparing(Row::getRegion).thenComparing(Comparator.comparingLong(Row::getRevenu e).reversed()).",
+            "r": "Correct two-level sort."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "3.5",
+      "slug": "queue-deque-priorityqueue",
+      "title": "Queue, Deque & PriorityQueue",
+      "keyRule": "Queue = FIFO (add to back, remove from front). Deque = double-ended (add/remove both ends). PriorityQueue = sorted by priority (min or max heap). ArrayDeque is fastest Queue/Deque. PriorityQueue for scheduling, BFS uses Queue, DFS uses Stack (or Deque as stack).",
+      "terms": [
+        {
+          "id": "3.5.queue-arraydeque",
+          "term": "Queue & ArrayDeque",
+          "what": "Queue is FIFO — first in, first out. ArrayDeque is the fastest Queue implementation in Java — backed by a resizable array.",
+          "why": "Task queues, print queues, BFS graph traversal, producer-consumer patterns all need FIFO ordering.",
+          "how": "Queue<String> q = new ArrayDeque<>(); q.offer('task1'); q.poll() removes and returns front. q.peek() sees front without removing. Use offer/poll/peek (return null) not add/remove/element (throw).",
+          "where": "BFS in graphs/trees, task processing, request queuing, event processing.",
+          "when": "Use ArrayDeque for Queue or Stack operations — faster than LinkedList, no null restriction of ArrayDeque vs LinkedList.",
+          "issue": "LinkedList used as Queue (common old code) has extra memory overhead per node. Slower than ArrayDeque.",
+          "fix": "Replace 'new LinkedList<>()' with 'new ArrayDeque<>()' as your Queue/Stack. Same Queue/Deque interface, better performance.",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "3.5.priorityqueue",
+          "term": "PriorityQueue",
+          "what": "PriorityQueue processes elements in priority order — not insertion order. Backed by a min-heap: smallest element comes out first by default.",
+          "why": "Job schedulers, Dijkstra's algorithm, event simulation, 'find top K elements' problems all need priority-based processing.",
+          "how": "PriorityQueue<Integer> pq = new PriorityQueue<>(); pq.offer(5); pq.offer(1); pq.offer(3); pq.poll() → 1 (smallest first). For max-heap: new PriorityQueue<>(Comparator.reverseOrder()).",
+          "where": "Task scheduling (high priority first), Huffman encoding, 'top K' algorithms, Dijkstra's shortest path.",
+          "when": "Use when processing order depends on value/priority, not insertion time. Not a FIFO — do not use when insertion order matters.",
+          "issue": "PriorityQueue does NOT sort the entire array — only guarantees the root (peek/poll) is the minimum. Iterating a PriorityQueue does NOT give sorted order.",
+          "fix": "To iterate in sorted order: drain the queue with repeated poll() — each poll() gives next minimum. Or convert to sorted list first.",
+          "star": {
+            "s": "Interview: find the top 5 most expensive products from 1 million products.",
+            "t": "Optimal solution.",
+            "a": "Min-heap PriorityQueue of size 5. For each product: if pq.size()<5 add it; else if product.price > pq.peek().price, poll and add.",
+            "r": "O(n log k) — much faster than sorting all."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "3.5.deque-as-stack",
+          "term": "Deque as Stack",
+          "what": "Deque (double-ended queue) can work as both a Queue and a Stack. Use Deque instead of java.util.Stack — Stack is synchronized and slow.",
+          "why": "java.util.Stack extends Vector which is synchronized — every operation locks even in single-threaded code. Deque gives stack operations without the overhead.",
+          "how": "Deque<Integer> stack = new ArrayDeque<>(); stack.push(1); stack.push(2); stack.pop() → 2 (LIFO). stack.peek() → top without removing.",
+          "where": "DFS traversal, undo/redo, expression parsing, call simulation, backtracking algorithms.",
+          "when": "Use ArrayDeque as Stack whenever you need LIFO. Never use java.util.Stack — it is a legacy class.",
+          "issue": "java.util.Stack has wrong inheritance (extends Vector) and is synchronized unnecessarily. Even single-threaded code pays lock overhead.",
+          "fix": "Replace 'new Stack<>()' with 'new ArrayDeque<>()'. Use push()/pop()/peek() — same method names.",
+          "star": {
+            "s": "Undo feature implemented using java.util.Stack — unnecessarily slow.",
+            "t": "Fix.",
+            "a": "Changed to ArrayDeque as stack.",
+            "r": "Same behavior, faster. No synchronization overhead."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "3.0",
+      "slug": "collection-interfaces-deep-dive",
+      "title": "Collection Interfaces Deep Dive",
+      "keyRule": "Iterable → Collection → List/Set/Queue. Map is separate. SortedSet/SortedMap add natural ordering. NavigableSet/NavigableMap add range navigation. RandomAccess is a marker for O(1) index access. EnumSet is the fastest Set for enum values.",
+      "terms": [
+        {
+          "id": "3.0.iterable-interface",
+          "term": "Iterable Interface",
+          "what": "Iterable is the root interface for all collections. Any class implementing Iterable can be used in a for-each loop. Has one method: iterator().",
+          "why": "for-each loop works on any Iterable — not just collections. You can make your own data structure for-each compatible by implementing Iterable.",
+          "how": "class MyRange implements Iterable<Integer> { public Iterator<Integer> iterator() { return new RangeIterator(); } } for(int i : new MyRange(1,10)) {...}",
+          "where": "All Java collections. Custom data structures. Stream sources.",
+          "when": "",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "3.0.sortedset-navigableset",
+          "term": "SortedSet / NavigableSet",
+          "what": "SortedSet extends Set with natural ordering (first(), last(), subSet(), headSet(), tailSet()). NavigableSet extends SortedSet with additional navigation: lower(), higher(), floor(), ceiling().",
+          "why": "When you need a set with sorted elements and range queries — sorted unique IDs, sorted timestamps, sorted names.",
+          "how": "NavigableSet<Integer> set = new TreeSet<>(); set.add(5); set.add(1); set.add(3); set.headSet(3) → [1] (less than 3). set.tailSet(3) → [3,5]. set.floor(4) → 3.",
+          "where": "TreeSet implements NavigableSet. Range queries, sliding window problems, ordered membership tests.",
+          "when": "Use TreeSet when you need sorted unique elements. Use subSet/headSet/tailSet for range queries.",
+          "issue": "TreeSet requires elements to be Comparable or a Comparator provided — otherwise ClassCastException.",
+          "fix": "Implement Comparable in element class or new TreeSet<>(comparator).",
+          "star": {
+            "s": "Need to find all events between two timestamps efficiently.",
+            "t": "Design structure.",
+            "a": "TreeSet of events. subSet(start, end) = O(log n) range query.",
+            "r": "Efficient and clean."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "3.0.sortedmap-navigablemap",
+          "term": "SortedMap / NavigableMap",
+          "what": "EnumSet is a high-performance Set implementation for enum values. Internally uses a bit vector — each bit represents one enum constant.",
+          "why": "Extremely fast and memory efficient for enum-based sets. All operations O(1). Much faster than HashSet<MyEnum>.",
+          "how": "EnumSet<Day> weekdays = EnumSet.of(Day.MON, Day.TUE, Day.WED, Day.THU, Day.FRI); EnumSet<Day> weekend = EnumSet.complementOf(weekdays);",
+          "where": "Permission sets, feature flags, day-of-week sets, state machines with enum states.",
+          "when": "Whenever you use a Set of enum values. Always prefer EnumSet over HashSet<MyEnum>.",
+          "issue": "EnumSet only works with enum types — cannot use for non-enum values.",
+          "fix": "Use EnumSet for all enum-based sets. Keep enum definition stable — adding new values is fine, removing is breaking.",
+          "star": {
+            "s": "Cache needs to find entries with keys in a date range.",
+            "t": "Implement.",
+            "a": "TreeMap keyed by date. subMap(startDate, endDate) returns only the needed entries.",
+            "r": "Efficient range lookup. EnumSet"
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "3.0.randomaccess-marker-interface",
+          "term": "RandomAccess Marker Interface",
+          "what": "RandomAccess is a marker interface (no methods) that signals a List supports fast O(1) index-based access. ArrayList implements it. LinkedList does not.",
+          "why": "Algorithms can check instanceof RandomAccess and use index-based loops for ArrayList, iterator-based for LinkedList — optimal performance.",
+          "how": "if (list instanceof RandomAccess) { for (int i=0; i<list.size(); i++) { process(list.get(i)); } } else { for(T item : list) { process(item); } }",
+          "where": "Collections.sort() and binarySearch() check RandomAccess. Binary search uses index access for RandomAccess lists.",
+          "when": "Check RandomAccess in generic algorithm code when behavior should differ for index-based vs sequential lists.",
+          "issue": "Using get(i) in a loop on a LinkedList — O(n) per access — is O(n²) total.",
+          "fix": "Use iterator or for-each for LinkedList. Only use index loop on RandomAccess lists.",
+          "star": {
+            "s": "Generic algorithm using get(i) loop is slow for large LinkedLists.",
+            "t": "Fix.",
+            "a": "Added RandomAccess check. LinkedList uses iterator path.",
+            "r": "O(n) performance for all list types."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "3.3b",
+      "slug": "hashmap-advanced",
+      "title": "HashMap Advanced",
+      "keyRule": "HashMap allows one null key (stored in bucket 0) and multiple null values. Hashtable is the legacy synchronized version — never use in new code. TreeSet.treeify happens at 8+ entries in one bucket to maintain O(log n) worst case.",
+      "terms": [
+        {
+          "id": "3.3b.null-key-in-hashmap",
+          "term": "null key in HashMap",
+          "what": "HashMap allows exactly ONE null key. The null key always goes to bucket 0. Multiple null values are allowed for different keys.",
+          "why": "Sometimes a null key has meaning — 'unknown category' mapped to some value. HashMap explicitly supports this.",
+          "how": "Map<String,Integer> map = new HashMap<>(); map.put(null, 42); map.get(null) → 42. map.put(null, 99) → overwrites. Only one null key.",
+          "where": "Optional category-to-value mapping. Default/fallback entries. Config maps with possible missing keys.",
+          "when": "Use null key when null has a meaningful semantic. Otherwise avoid null keys — can cause confusion.",
+          "issue": "TreeMap does NOT allow null key — throws NullPointerException. ConcurrentHashMap does NOT allow null key or null value.",
+          "fix": "Know which Map allows null: HashMap (null key/value OK), LinkedHashMap (OK), TreeMap (null key NO), ConcurrentHashMap (null key/value NO), Hashtable (null key/value NO).",
+          "star": {
+            "s": "Migrating from HashMap to ConcurrentHashMap — NPE appears.",
+            "t": "Debug.",
+            "a": "Code used null key in HashMap. ConcurrentHashMap rejects it. Replaced null key with a sentinel string 'UNKNOWN'.",
+            "r": "Works correctly."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "3.3b.hashmap-vs-hashtable",
+          "term": "HashMap vs Hashtable",
+          "what": "Hashtable is the legacy Java 1.0 thread-safe Map. Every method is synchronized. HashMap is the modern non-synchronized version. Hashtable is obsolete — never use in new code.",
+          "why": "Hashtable's whole-map synchronization is a performance bottleneck. ConcurrentHashMap gives thread safety with much better concurrency.",
+          "how": "Hashtable<String,String> ht = new Hashtable<>(); — every get/put locks the entire table. HashMap = no synchronization. ConcurrentHashMap = bucket-level locking.",
+          "where": "Legacy codebases use Hashtable. All new code should use HashMap (single thread) or ConcurrentHashMap (multi thread).",
+          "when": "",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "3.3b.treeify-threshold-java-8",
+          "term": "Treeify Threshold (Java 8+)",
+          "what": "When a single HashMap bucket accumulates 8 or more entries, the linked list in that bucket is converted to a Red-Black Tree. This is treeification.",
+          "why": "Worst-case LinkedList bucket = O(n) search. With treeification, worst case becomes O(log n) — much better for pathological hash distributions.",
+          "how": "Static final int TREEIFY_THRESHOLD = 8. When entries in one bucket reach 8, Java converts that bucket's linked list to a balanced tree. Untreeify at 6 when elements removed.",
+          "where": "Automatic inside HashMap, LinkedHashMap, ConcurrentHashMap. Invisible to users.",
+          "when": "You don't control this — it's automatic. But you should ensure good hashCode() distribution to prevent buckets from growing large.",
+          "issue": "All keys with same hashCode() go to same bucket — attack known as Hash DoS. Treeify helps but O(log n) is still worse than O(1).",
+          "fix": "Use good hashCode() distribution. In security-sensitive contexts, randomize hashCode with string-hash seeds (Java does this for String since Java 7).",
+          "star": {
+            "s": "Interview: what happens when HashMap bucket grows large?",
+            "t": "Explain.",
+            "a": "Java 8 treeifies at 8 entries — linked list becomes Red-Black Tree. Worst case O(n) → O(log n).",
+            "r": "Shows deep HashMap knowledge."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "3.5b",
+      "slug": "blocking-queue-types",
+      "title": "Blocking Queue Types",
+      "keyRule": "BlockingQueue types: ArrayBlockingQueue (bounded, array-backed), LinkedBlockingQueue (optionally bounded, linked), PriorityBlockingQueue (priority-ordered), SynchronousQueue (direct handoff, no buffer), DelayQueue (delayed elements). Choose based on: bounded vs unbounded, ordering, and handoff semantics.",
+      "terms": [
+        {
+          "id": "3.5b.arrayblockingqueue",
+          "term": "ArrayBlockingQueue",
+          "what": "ArrayBlockingQueue is a bounded blocking queue backed by an array. Fixed capacity set at creation. put() blocks when full. take() blocks when empty.",
+          "why": "Bounded capacity prevents OOM — producers slow down when consumers cannot keep up (back-pressure).",
+          "how": "BlockingQueue<Task> q = new ArrayBlockingQueue<>(1000); q.put(task); // blocks if full. Task t = q.take(); // blocks if empty.",
+          "where": "Thread pool task queues, bounded producer-consumer pipelines, rate limiting of background work.",
+          "when": "Use ArrayBlockingQueue when you need a hard limit on queue size to protect from memory exhaustion.",
+          "issue": "Setting capacity too small causes producers to block frequently. Too large = defeats the purpose of bounding.",
+          "fix": "Capacity = (average processing rate) × (acceptable burst time). Monitor queue depth in production.",
+          "star": {
+            "s": "File processor OOM — reader faster than writer.",
+            "t": "Add back-pressure.",
+            "a": "ArrayBlockingQueue(500) between reader and writer threads. Reader blocks when queue full.",
+            "r": "Memory bounded. System stable."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "3.5b.priorityblockingqueue",
+          "term": "PriorityBlockingQueue",
+          "what": "PriorityBlockingQueue is an unbounded blocking queue that orders elements by priority (natural order or Comparator). Highest priority element dequeued first.",
+          "why": "When tasks have different urgency — high-priority tasks must be processed before low-priority ones.",
+          "how": "BlockingQueue<Task> q = new PriorityBlockingQueue<>(11, Comparator.comparing(Task::getPriority).reversed()); q.put(urgentTask); q.take() → most urgent.",
+          "where": "Task schedulers, job queues with SLA tiers, Dijkstra's algorithm, event simulation.",
+          "when": "Use when tasks have urgency levels and must be processed in priority order, not FIFO.",
+          "issue": "PriorityBlockingQueue is unbounded — can grow without limit and cause OOM under heavy load.",
+          "fix": "Add a capacity check before adding tasks, or use a semaphore to limit the total tasks in the system.",
+          "star": {
+            "s": "Support ticket system — urgent tickets buried behind hundreds of normal tickets.",
+            "t": "Fix ordering.",
+            "a": "PriorityBlockingQueue with urgency comparator.",
+            "r": "Urgent tickets always processed first."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "3.5b.synchronousqueue",
+          "term": "SynchronousQueue",
+          "what": "SynchronousQueue has NO buffer capacity — zero elements stored. A put() blocks until a consumer is ready to take(). Each put and take are paired (direct handoff).",
+          "why": "Guarantees that a producer hands off directly to a consumer. No buffering — both must be present simultaneously.",
+          "how": "SynchronousQueue<Task> q = new SynchronousQueue<>(); Producer: q.put(task) — BLOCKS until a consumer calls take(). Consumer: q.take() — BLOCKS until producer calls put().",
+          "where": "Executors.newCachedThreadPool() uses SynchronousQueue internally. Direct handoff between known producer-consumer pairs.",
+          "when": "Use when you want direct producer-to-consumer handoff with no buffering — guarantees the task is being worked on immediately.",
+          "issue": "If no consumer is available, producer blocks indefinitely. Under bursts, producers may block.",
+          "fix": "Ensure enough consumers. CachedThreadPool spawns new threads as needed when SynchronousQueue is full.",
+          "star": {
+            "s": "Interview: what queue does CachedThreadPool use?",
+            "t": "Explain.",
+            "a": "SynchronousQueue — each submitted task is handed directly to a new or waiting thread. If no thread available, new thread spawned.",
+            "r": "Correct explanation."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "3.5b.delayqueue",
+          "term": "DelayQueue",
+          "what": "DelayQueue holds elements that become available only after a specified delay. Elements must implement Delayed interface. take() blocks until the first element's delay expires.",
+          "why": "For scheduling: 'process this task in 5 minutes', retry logic with backoff, scheduled message delivery.",
+          "how": "class DelayedTask implements Delayed { long executeTime; long getDelay(TimeUnit unit) { return unit.convert(executeTime - System.currentTimeMillis(), MILLISECONDS); } }",
+          "where": "Retry queues with backoff, scheduled task execution, session expiry, rate limiting.",
+          "when": "Use when tasks need time-based scheduling without a full scheduling framework.",
+          "issue": "Heavy use of DelayQueue can waste CPU checking delays in a tight loop. Large numbers of elements with similar delays cause contention.",
+          "fix": "Use ScheduledExecutorService for simpler periodic and delayed tasks. Use DelayQueue only for dynamic per-element delay logic.",
+          "star": {
+            "s": "Retry failed HTTP calls with exponential backoff.",
+            "t": "Implement.",
+            "a": "DelayQueue with retry tasks. Each failure re-adds with doubled delay.",
+            "r": "Retries with correct backoff without external scheduler."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "3.5b.offer-vs-add-poll-vs-remove",
+          "term": "offer() vs add() poll() vs remove()",
+          "what": "Queue has two sets of methods: throwing (add/remove/element — throw exception on failure) and non-throwing (offer/poll/peek — return false/null on failure). Always use offer/poll/peek.",
+          "why": "Throwing exceptions for expected conditions (full queue, empty queue) is bad practice. offer/poll return values you can check.",
+          "how": "queue.offer(item) → returns false if full. queue.add(item) → throws IllegalStateException if full. queue.poll() → returns null if empty. queue.remove() → throws NoSuchElementException if empty.",
+          "where": "All BlockingQueue usage. Always prefer offer/poll/peek for graceful handling.",
+          "when": "Use offer/poll/peek for regular Queue operations. Use put/take for blocking (BlockingQueue specific).",
+          "issue": "Using add() on a bounded queue and not catching IllegalStateException — uncaught exception crashes the thread.",
+          "fix": "Always use offer(). Check return value. Use put() for blocking behavior.",
+          "star": {
+            "s": "Code uses queue.add() on bounded queue — throws exception under load.",
+            "t": "Fix.",
+            "a": "Changed to offer() with return value check. Log if rejected.",
+            "r": "No exception. Graceful handling."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "3.4b",
+      "slug": "comparator-utilities",
+      "title": "Comparator Utilities",
+      "keyRule": "",
+      "terms": [
+        {
+          "id": "3.4b.comparator-naturalorder-reverseorder",
+          "term": "Comparator.naturalOrder() reverseOrder()",
+          "what": "Comparator.naturalOrder() returns a Comparator that sorts in natural order (Comparable). reverseOrder() returns one that reverses natural order. Both are pre- built — no lambda needed.",
+          "why": "Convenient shortcuts — no need to write (a,b) -> a.compareTo(b) for natural order.",
+          "how": "list.sort(Comparator.naturalOrder()); list.sort(Comparator.reverseOrder()); Set<String> set = new TreeSet<>(Comparator.reverseOrder()); — Z to A.",
+          "where": "Sorting collections, reverse-sorted TreeMap/TreeSet, combining with thenComparing.",
+          "when": "Use naturalOrder()/reverseOrder() instead of writing lambda comparators for standard orderings.",
+          "issue": "Using reverseOrder() on a TreeSet of custom objects without Comparable defined throws ClassCastException.",
+          "fix": "Ensure elements implement Comparable, or combine: Comparator.comparing(Employee::getSalary).reversed().",
+          "star": {
+            "s": "Need top-N list sorted descending by score.",
+            "t": "Implement.",
+            "a": "PriorityQueue<>(Comparator.reverseOrder()) for Integer scores.",
+            "r": "Clean, readable, correct."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "3.4b.comparator-nullsfirst-nullslast",
+          "term": "Comparator.nullsFirst() nullsLast()",
+          "what": "nullsFirst() wraps a Comparator so null elements sort before non-nulls. nullsLast() puts nulls after. Prevents NullPointerException when sorting lists with nulls.",
+          "why": "Sorting a list with null elements using a normal Comparator throws NullPointerException. nullsFirst/Last handles nulls safely.",
+          "how": "list.sort(Comparator.nullsFirst(Comparator.comparing(Employee::getName))); — employees with null names go first, rest sorted by name.",
+          "where": "Any sort that might have null fields: optional database columns, optional fields, config with missing values.",
+          "when": "Use when the collection might contain null elements or null fields and you don't want to pre-filter.",
+          "issue": "Forgetting nullsFirst/Last when nullable fields are sorted causes NPE in production when rare null data arrives.",
+          "fix": "Add nullsFirst()/nullsLast() as a defensive measure for any field that could be null. TERM MEANING",
+          "star": {
+            "s": "Sorting product list by optional description field — NPE in production.",
+            "t": "Fix.",
+            "a": "Comparator.nullsLast(Comparator.comparing(Product::getDescription)).",
+            "r": "No NPE. Nulls go to the end."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    }
+  ]
+}

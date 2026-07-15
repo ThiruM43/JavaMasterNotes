@@ -1,0 +1,139 @@
+{
+  "id": "20",
+  "slug": "devops",
+  "title": "Code Quality & Best Practices",
+  "icon": "🛠️",
+  "accentColor": "#475569",
+  "subsections": [
+    {
+      "id": "20.0b",
+      "slug": "clean-code-extended",
+      "title": "Clean Code Extended",
+      "keyRule": "",
+      "terms": [
+        {
+          "id": "20.0b.dry-small-functions-law-of-demeter",
+          "term": "DRY / Small Functions / Law of Demeter",
+          "what": "DRY (Don't Repeat Yourself): extract duplicated logic into shared methods/classes. Small functions: do one thing, fit one screen. Law of Demeter: talk to direct friends only — avoid obj.getA().getB().doThing() (train wreck).",
+          "why": "DRY: change one place, all usages benefit. Small functions: easy to test, name, understand. Law of Demeter: reduces coupling — each object depends only on direct neighbors.",
+          "how": "DRY: extract method. Small: if > 20 lines, split. LoD: order.getCustomer().getName() — Order knows Customer — OK. order.getCustomer().getAddress().getCity().toUpperCase() — Order knows Address details — violation.",
+          "where": "All code. Method extraction for DRY. Service design for LoD — expose what you need via direct methods.",
+          "when": "DRY: whenever you copy-paste code. Small: when function description needs 'AND'. LoD: when chaining more than 2 dots.",
+          "issue": "LoD violation: chained calls tightly couple to internal structure. Change in City breaks Order-level code.",
+          "fix": "Order.getCustomerCity() — Order facade hides navigation. Only one method needs to change if City moves.",
+          "star": {
+            "s": "Code review: 6-dot chain.",
+            "t": "Fix.",
+            "a": "Extracted order.getCustomerShippingCity() method. Internal chain hidden.",
+            "r": "Callers decoupled from internal structure."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "20.0b.command-query-separation-cqs",
+          "term": "Command-Query Separation (CQS)",
+          "what": "CQS: a method either changes state (command) OR returns data (query) — never both. Commands are void. Queries have no side effects.",
+          "why": "Methods that both change state and return values are hard to reason about. Side effects in getters cause bugs.",
+          "how": "Bad: int getAndIncrementCounter() — returns AND changes. Good: int getCounter() (query) + void incrementCounter() (command). Spring Data: @Query for reads, @Modifying for writes.",
+          "where": "Service methods, getter methods, repository queries.",
+          "when": "Default: separate read and write. Exception: Optional.orElseGet (acceptable convention break). Builder.build() returns and doesn't mutate (OK — final step).",
+          "issue": "User.setAndGetId() — sets ID and returns it — side effect in a getter-like method causes confusion.",
+          "fix": "Separate: setId(id) + getId(). Or use Builder pattern for construction.",
+          "star": {
+            "s": "Code review: loadAndTransformData() method changes DB state AND returns result.",
+            "t": "Fix.",
+            "a": "Split into loadData() (query) + transformData(data) (pure function) + saveResult(data) (command).",
+            "r": "Each method does one thing."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "20.0b.magic-numbers-positive-conditionals",
+          "term": "Magic Numbers / Positive Conditionals",
+          "what": "Magic numbers: unnamed constants (86400, 0.15, 100) — replace with named constants. Positive conditionals: 'if(isValid())' is clearer than 'if(!isInvalid())'.",
+          "why": "Magic numbers: reader has no idea what 86400 means. Named constant makes intent clear. Positive conditionals: double negation requires mental translation.",
+          "how": "Bad: if(count > 100) → Good: if(count > MAX_PAGE_SIZE). Bad: if(!user.isNotActive()) → Good: if(user.isActive()). final static int MAX_PAGE_SIZE = 100;",
+          "where": "All code. Constants extracted to top of class or constants file.",
+          "when": "Every numeric literal (except 0 and 1 in simple increments) should be a named constant.",
+          "issue": "Magic number changed in one place but same literal appears elsewhere — inconsistent behavior.",
+          "fix": "Named constant changed in one place affects all usages.",
+          "star": {
+            "s": "Code review: 86400 appearing 6 times in codebase.",
+            "t": "Fix.",
+            "a": "public static final int SECONDS_PER_DAY = 86400.",
+            "r": "One constant, all usages clear and consistent."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "20.2b",
+      "slug": "docker-deployment-strategies",
+      "title": "Docker & Deployment Strategies",
+      "keyRule": "",
+      "terms": [
+        {
+          "id": "20.2b.multi-stage-docker-build",
+          "term": "Multi-Stage Docker Build",
+          "what": "Multi-stage build: use one Docker stage to build (JDK, Maven), a separate final stage to run (JRE only). Build artifacts copied from build stage to run stage. Final image has no build tools.",
+          "why": "Build image with Maven+JDK is ~600MB. Final runtime image with JRE is ~100MB. Smaller image = faster pulls, smaller attack surface.",
+          "how": "FROM maven:3.9-eclipse-temurin-21 AS builder COPY . . RUN mvn package. FROM eclipse-temurin:21-jre COPY --from=builder /app/target/app.jar /app.jar CMD ['java','-jar','/app.jar']",
+          "where": "All production Docker builds for Java applications.",
+          "when": "Always use multi-stage for Java — build stage needs Maven/JDK, run stage only needs JRE.",
+          "issue": "Single-stage build: final image includes Maven, JDK, source code — 600MB+ and security risk.",
+          "fix": "Split into builder stage (Maven+JDK) and runtime stage (JRE only). Copy only the final JAR.",
+          "star": {
+            "s": "Docker image is 650MB — slow CI/CD.",
+            "t": "Reduce.",
+            "a": "Multi-stage build. Final image is JRE + JAR only.",
+            "r": "Image size: 650MB → 120MB. 5x faster push/pull."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "20.2b.blue-green-canary-rolling-deployment",
+          "term": "Blue-Green / Canary / Rolling Deployment",
+          "what": "Blue-Green: two identical environments (Blue=current, Green=new). Switch traffic instantly to Green. Easy rollback: switch back to Blue. Canary: gradually shift traffic percentage to new version. Rolling: replace instances one by one.",
+          "why": "Zero-downtime deployments. Blue-Green: instant rollback. Canary: detect issues early with small % of traffic. Rolling: gradual with no extra environment needed.",
+          "how": "Blue-Green: load balancer switches Blue→Green. Canary: LB sends 5% to new, 95% to old. Increase gradually. Rolling: K8s default strategy.",
+          "where": "Production deployments. Kubernetes supports all three natively.",
+          "when": "Blue-Green for zero-downtime with instant rollback (needs 2x infrastructure). Canary for risk management. Rolling for resource-efficient deployments.",
+          "issue": "Blue-Green: DB schema must be backward compatible — both Blue and Green run simultaneously during switch.",
+          "fix": "Expand-contract migration: add new columns first (both work), switch traffic, remove old columns later.",
+          "star": {
+            "s": "Deployment causes 5-minute downtime — users see errors.",
+            "t": "Fix.",
+            "a": "Blue-Green deployment. Deploy to Green. Switch load balancer. Rollback in 30 seconds if issue.",
+            "r": "Zero-downtime deployments."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "20.2b.jvm-in-container-xx-maxrampercentage",
+          "term": "JVM in Container (- XX:MaxRAMPercentage)",
+          "what": "SonarQube: static code analysis — detects bugs, code smells, security vulnerabilities, duplicate code. JaCoCo: Java code coverage tool — measures % of code exercised by tests.",
+          "why": "Automated code quality gate — catches issues before production. Coverage enforces testing discipline.",
+          "how": "Maven: add JaCoCo plugin, sonar-maven-plugin. Run: mvn test jacoco:report sonar:sonar. SonarQube shows: coverage %, critical bugs, vulnerabilities, code smells.",
+          "where": "CI/CD pipeline — run on every commit. Block PRs with quality gate failures.",
+          "when": "Integrate in CI from day one. Set quality gate: coverage > 80%, 0 critical bugs.",
+          "issue": "High line coverage but low branch coverage — if-else branches not tested. Real bugs hide in untested branches.",
+          "fix": "Configure JaCoCo for branch coverage. Set branch coverage gate in SonarQube: > 70%.",
+          "star": {
+            "s": "Bug in production despite 90% line coverage.",
+            "t": "Find gap.",
+            "a": "SonarQube shows branch coverage only 45%. Null-handling branch never tested. Added test.",
+            "r": "Coverage 85%. Bug class prevented."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    }
+  ]
+}

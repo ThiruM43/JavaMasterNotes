@@ -1,0 +1,166 @@
+{
+  "id": "9",
+  "slug": "exceptions",
+  "title": "Exception Handling",
+  "icon": "⚠️",
+  "accentColor": "#ea580c",
+  "subsections": [
+    {
+      "id": "9.1",
+      "slug": "exception-hierarchy-best-practices",
+      "title": "Exception Hierarchy & Best Practices",
+      "keyRule": "Throwable → Error (JVM problems, do not catch) and Exception. Exception → Checked (must handle, IO/SQL) and Unchecked/RuntimeException (programming bugs). Best practices: throw specific, catch specific, never swallow, always log, use try-with-resources for closeable resources.",
+      "terms": [
+        {
+          "id": "9.1.checked-vs-unchecked-exceptions",
+          "term": "Checked vs Unchecked Exceptions",
+          "what": "try-with-resources automatically closes any AutoCloseable resource when the try block ends — exception or not. Replaces manual finally { resource.close(); }.",
+          "why": "Forgetting to close resources (connections, streams, files) causes resource leaks. try-with-resources makes closing automatic and safe.",
+          "how": "try (Connection conn = ds.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) { ps.execute(); } — conn and ps auto-closed when block exits.",
+          "where": "Any AutoCloseable: Connection, Statement, InputStream, OutputStream, FileReader, Scanner, any custom resource.",
+          "when": "Use try-with-resources (Java 7+) instead of try-finally for AutoCloseable resources — cleaner and safer.",
+          "issue": "Returning inside finally block swallows exceptions — the exception is silently lost and the finally return value wins.",
+          "fix": "Never return from finally. Never throw from finally (swallows original exception). Finally is only for cleanup.",
+          "star": {
+            "s": "Bug where exception details lost — catch block only shows 'Error occurred'.",
+            "t": "Fix logging.",
+            "a": "catch (Exception e) { log.error('Processing failed: {}', e.getMessage(), e); throw e; } — log with full stack trace.",
+            "r": "Full exception details in logs. try-with-resources"
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "9.1.custom-exceptions",
+          "term": "Custom Exceptions",
+          "what": "Custom exceptions let you create domain-specific exception types with meaningful names and extra context fields.",
+          "why": "'RuntimeException: null' tells you nothing. 'UserNotFoundException(userId=101)' tells you exactly what went wrong.",
+          "how": "public class UserNotFoundException extends RuntimeException { private final Long userId; public UserNotFoundException(Long userId) { super('User not found: ' + userId); this.userId = userId; } }",
+          "where": "Service layers, domain logic, API error handling. Each domain has specific exceptions: OrderException, PaymentException, ValidationException.",
+          "when": "Create custom exceptions for: distinguishing error types for different error responses, adding context (which ID failed), documenting expected failure modes.",
+          "issue": "Creating too many fine-grained exceptions creates a deep hierarchy that is hard to manage. Exception handling becomes complex.",
+          "fix": "Create exceptions at the right level of granularity. A few clear types per domain are better than 50 micro-exceptions. Always include context in the message.",
+          "star": {
+            "s": "All errors return 500 Internal Server Error.",
+            "t": "Add proper HTTP codes.",
+            "a": "Custom UserNotFoundException (→ 404), ValidationException (→ 400), BusinessRuleException (→ 422). @ExceptionHandler in Spring maps each to correct HTTP status.",
+            "r": "Proper REST error responses."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "9.1.exception-chaining-cause",
+          "term": "Exception chaining (cause)",
+          "what": "Exception chaining wraps the original exception inside a new one using the 'cause' constructor parameter. Preserves the full error context.",
+          "why": "When you translate a low-level exception (SQLException) to a high-level one (ServiceException), always include the original as cause. Logs show both.",
+          "how": "catch (SQLException e) { throw new ServiceException('Failed to save order', e); } — log shows ServiceException with cause = SQLException with cause = original DB error.",
+          "where": "At every layer boundary: DAO catches SQLException, throws DataAccessException(cause). Service catches, throws ServiceException(cause).",
+          "when": "Always chain exceptions when translating from one layer to another. Never throw new Exception() alone — always include the original cause.",
+          "issue": "throw new ServiceException(e.getMessage()) — this loses the stack trace of the original exception. Only the message is preserved. Debugging becomes very hard.",
+          "fix": "Always use throw new ServiceException('context', e) — the 'e' is the cause. Full original stack trace preserved.",
+          "star": {
+            "s": "Production error shows 'Failed to process order' with no further detail.",
+            "t": "Improve diagnostics.",
+            "a": "Found catch (SQLException e) { throw new ServiceException('Failed'); } — cause not chained. Added cause.",
+            "r": "Logs show full DB error details."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "9.1.exceptionhandler-spring",
+          "term": "@ExceptionHandler (Spring)",
+          "what": "Spring's @ExceptionHandler in a @ControllerAdvice class catches exceptions thrown from any controller and converts them to appropriate HTTP responses.",
+          "why": "Without centralized handling, every controller needs its own try-catch for the same exceptions. @ControllerAdvice + @ExceptionHandler centralizes it.",
+          "how": "@ControllerAdvice class GlobalExceptionHandler { @ExceptionHandler(UserNotFoundException.class) public ResponseEntity<ErrorDTO> handle(UserNotFoundException e) { return ResponseEntity.status(404).body(new ErrorDTO(e.getMessage())); } }",
+          "where": "",
+          "when": "",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "9.0b",
+      "slug": "exception-handling-advanced",
+      "title": "Exception Handling Advanced",
+      "keyRule": "",
+      "terms": [
+        {
+          "id": "9.0b.exception-hierarchy-deep-dive",
+          "term": "Exception Hierarchy Deep Dive",
+          "what": "Throwable → Error (JVM-level: OOM, SOE — don't catch) and Exception. Exception → RuntimeException (unchecked) and checked exceptions. Checked = compiler forces you to handle. Unchecked = extends RuntimeException, optional handling.",
+          "why": "Knowing the hierarchy helps choose the right exception type to throw and catch.",
+          "how": "Checked: IOException, SQLException — must catch or declare throws. Unchecked: NullPointerException, IllegalArgumentException — optional catch. Error: OutOfMemoryError — almost never catch.",
+          "where": "API design: use checked for recoverable conditions client can handle. Use unchecked for programming errors.",
+          "when": "Throw checked when caller can meaningfully recover. Throw unchecked (RuntimeException) for programming errors (invalid args, null where not expected).",
+          "issue": "Over-checked APIs (every method throws IOException, SQLException) force callers into verbose try-catch that just re-throws.",
+          "fix": "Wrap checked exceptions in unchecked custom exceptions at service layer boundary. Only checked exceptions that callers meaningfully handle.",
+          "star": {
+            "s": "Every method throws 5 checked exceptions — callers have to catch all or declare.",
+            "t": "Simplify.",
+            "a": "Wrapped in custom ServiceException (RuntimeException). Callers only catch what they can handle.",
+            "r": "Cleaner, less boilerplate."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "10.1",
+      "slug": "java-io-vs-java-nio",
+      "title": "java.io vs java.nio",
+      "keyRule": "java.io = blocking I/O — thread waits during read/write. java.nio = non-blocking I/O — thread can do other work while waiting. For files: use NIO Path/Files API (cleaner than old File). For network: NIO for high-concurrency servers. Always close resources with try-with-resources.",
+      "terms": [
+        {
+          "id": "10.1.inputstream-outputstream",
+          "term": "InputStream / OutputStream",
+          "what": "java.nio.file.Path and Files class (Java 7+) are the modern way to work with files — cleaner, more powerful than old java.io.File.",
+          "why": "Old File API was buggy — delete() returns boolean (not exception), no clear error info. NIO Files throws descriptive exceptions.",
+          "how": "Path path = Path.of('/data/file.txt'); Files.readString(path); Files.writeString(path, content); Files.copy(src, dest); Files.walk(dir) for directory traversal.",
+          "where": "All modern file operations. Replaces File.exists(), File.mkdir(), File.listFiles() with cleaner APIs.",
+          "when": "Use NIO Path/Files for all new code. Migrate old File code when you have opportunity.",
+          "issue": "Files.walk() does not close its stream if exception occurs mid-walk — resource leak.",
+          "fix": "Always: new InputStreamReader(stream, StandardCharsets.UTF_8). In modern Java: Files.readString(path, StandardCharsets.UTF_8).",
+          "star": {
+            "s": "CSV file reads fine on Windows, shows garbage on Linux.",
+            "t": "Fix.",
+            "a": "FileReader was using platform default charset. Changed to Files.newBufferedReader(path, StandardCharsets.UTF_8).",
+            "r": "Same output on all platforms. NIO — Path & Files"
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "10.1.serialization",
+          "term": "Serialization",
+          "what": "Serialization converts a Java object to bytes for storage or network transfer. Deserialization converts bytes back to an object.",
+          "why": "To save object state to a file or send it over a network, it must become bytes first. Serialization does this conversion.",
+          "how": "Class implements Serializable. ObjectOutputStream oos = new ObjectOutputStream(fos); oos.writeObject(obj). Deserialization: ObjectInputStream ois = ...; MyClass obj = (MyClass) ois.readObject().",
+          "where": "Session persistence, RMI, legacy distributed systems, Java object caching.",
+          "when": "Avoid Java native serialization for new code — it is insecure and fragile. Use JSON (Jackson) or Protobuf instead.",
+          "issue": "Java serialization is a security risk — crafted byte streams can cause remote code execution. CVEs have attacked Java deserialization.",
+          "fix": "Do not deserialize data from untrusted sources with Java serialization. Use JSON/Protobuf for data interchange. If you must use serialization, use an ObjectInputFilter to whitelist allowed classes. 📌 Note: serialVersionUID field prevents version mismatch errors when the class changes. Always declare it explicitly: private static final long serialVersionUID = 1L;",
+          "star": {
+            "s": "Security audit flags Java serialization in user upload endpoint.",
+            "t": "Fix vulnerability.",
+            "a": "Replaced ObjectInputStream with Jackson JSON deserialization. Validated input schema.",
+            "r": "Deserialization attack vector removed."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,345 @@
+{
+  "id": "16",
+  "slug": "kafka",
+  "title": "Apache Kafka & Messaging",
+  "icon": "📨",
+  "accentColor": "#b45309",
+  "subsections": [
+    {
+      "id": "16.1",
+      "slug": "kafka-core-concepts",
+      "title": "Kafka Core Concepts",
+      "keyRule": "Kafka = distributed event streaming platform. Messages called events/records. Stored in Topics. Topics split into Partitions for parallelism. Producers write, Consumers read. Consumer Groups enable parallel consumption. Messages retained for a configurable time — NOT deleted after consumption.",
+      "terms": [
+        {
+          "id": "16.1.topics-partitions",
+          "term": "Topics & Partitions",
+          "what": "A Topic is a named stream of events — like a DB table but for events. Each Topic is split into Partitions — ordered, immutable logs. Partitions enable parallel processing.",
+          "why": "Without partitions, one consumer reads all events — cannot scale. With 10 partitions and 10 consumers, 10x parallel processing.",
+          "how": "Topic 'orders' with 10 partitions. Messages with same key (customerId) always go to same partition — preserving order per customer. Each partition has a sequential offset.",
+          "where": "Decoupled event-driven microservices: order-service publishes 'order-placed', multiple services consume independently.",
+          "when": "More partitions = more parallelism but more overhead. Rule: number of consumers <= number of partitions. Add partitions only when needed.",
+          "issue": "Increasing partition count for an existing topic reassigns messages — breaks ordering guarantees for key-based routing.",
+          "fix": "Plan partition count at topic creation. Start with enough (10-50 for high-volume). Cannot reduce partitions — only increase.",
+          "star": {
+            "s": "Interview: how does Kafka scale consumers?",
+            "t": "Answer.",
+            "a": "Each consumer in a group gets exclusive partitions. Add consumers up to partition count = linear scaling. Beyond partition count, extra consumers idle.",
+            "r": "Correct explanation of consumer group scaling."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "16.1.producers",
+          "term": "Producers",
+          "what": "Producer sends (publishes) events to Kafka topics. Can specify: key (determines partition), value (event payload), headers, timestamp.",
+          "why": "Producers are the source of all events in Kafka. The key determines routing — same key = same partition = ordered delivery for that key.",
+          "how": "Spring Kafka: @Autowired KafkaTemplate<String,OrderEvent> template; template.send('orders', order.getId().toString(), orderEvent);",
+          "where": "Any service that needs to publish events: order-service publishes order events, payment-service publishes payment results.",
+          "when": "Always set a meaningful key for ordering guarantees. Use null key for even round- robin distribution with no ordering needed.",
+          "issue": "Producer not acknowledging — data loss if broker crashes before writing. Default acks=1 only waits for leader broker.",
+          "fix": "Set acks=all for critical data — waits for all in-sync replicas to confirm. Set retries=3 and idempotent=true to prevent duplicates on retry.",
+          "star": {
+            "s": "Order events occasionally lost.",
+            "t": "Fix.",
+            "a": "Producer had acks=1 (leader only). Changed to acks=all with retries=3 and enable.idempotence=true.",
+            "r": "No message loss. Exactly-once delivery for critical orders."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "16.1.consumers-consumer-groups",
+          "term": "Consumers & Consumer Groups",
+          "what": "Consumer reads events from Kafka topics. Consumers in the same Consumer Group share partitions — each partition assigned to one consumer. Different groups each get all events independently.",
+          "why": "Consumer groups enable parallel processing (one group) AND fan-out (multiple groups each process all events — order-service AND inventory-service both get all order events).",
+          "how": "@KafkaListener(topics='orders', groupId='inventory-service') void processOrder(OrderEvent event) { ... } — inventory-service processes all orders.",
+          "where": "Every service that reacts to events from another service.",
+          "when": "One consumer group per downstream service. Each service independently reads at its own pace — Kafka retains messages for both.",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "16.1.kafka-offsets-retention",
+          "term": "Kafka Offsets & Retention",
+          "what": "Offset is the sequential position of each event in a partition. Consumer tracks its offset — knows where to resume if restarted. Retention = how long Kafka keeps messages (default 7 days).",
+          "why": "Unlike traditional queues, Kafka keeps messages after consumption. Multiple consumers can read the same message. You can replay from any offset.",
+          "how": "Reset offset to beginning: consumer group --reset-offsets --to-earliest — reprocess all messages. Skip ahead: --to-latest. Specific time: --to-datetime.",
+          "where": "Every Kafka consumer setup. Offset management is critical for reliability.",
+          "when": "Reset offsets when: deploying a fix for bad processing, testing with real data, adding a new consumer that needs historical events.",
+          "issue": "Consumer offset committed too early — consumer restarts and skips messages. Or committed too late — reprocesses messages causing duplicates.",
+          "fix": "Implement idempotent consumers — if same event processed twice, result is same. Use unique event ID + DB check: 'have I seen this ID?'",
+          "star": {
+            "s": "Deployed buggy consumer — 3 hours of events processed incorrectly.",
+            "t": "Reprocess.",
+            "a": "Reset consumer group offset to 3 hours ago. Redeploy fixed consumer.",
+            "r": "All events reprocessed correctly. Kafka retention made this easy."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "16.1.spring-kafka-kafkalistener",
+          "term": "Spring Kafka @KafkaListener",
+          "what": "Spring Kafka's @KafkaListener annotation wires a method to consume from Kafka topics. Handles consumer lifecycle, threading, error handling, and deserialization.",
+          "why": "Removes boilerplate Kafka consumer setup. Clean annotation-driven programming model.",
+          "how": "@KafkaListener(topics='orders', groupId='inventory', containerFactory='kafkaListenerContainerFactory') public void handle(OrderEvent event) { ... }",
+          "where": "Every Spring microservice that consumes Kafka events.",
+          "when": "Use @KafkaListener for most consumption. Configure concurrency for parallel partition processing: @KafkaListener(concurrency='3').",
+          "issue": "@KafkaListener method throws exception — depends on config: might stop the consumer, or skip the message, or retry forever.",
+          "fix": "Configure DefaultErrorHandler with retry backoff. Send to Dead Letter Topic (DLT) after max retries. Monitor DLT for failed messages.",
+          "star": {
+            "s": "One bad message in Kafka stops all processing — consumer stuck retrying forever.",
+            "t": "Fix.",
+            "a": "Added DefaultErrorHandler with 3 retries + exponential backoff. After 3 fails, send to orders-DLT. Alert on DLT activity.",
+            "r": "Bad messages isolated. Processing continues. 17. MODERN JAVA — JAVA 8 TO 21"
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "17.1",
+      "slug": "java-8-core-features",
+      "title": "Java 8 Core Features",
+      "keyRule": "Java 8 was the biggest Java update since Java 5. Key: Lambda expressions, Stream API, Optional, Default methods in interfaces, new Date/Time API (java.time), CompletableFuture improvements. These are now baseline — every Java developer must know them.",
+      "terms": [
+        {
+          "id": "17.1.date-time-api-java-time",
+          "term": "Date/Time API (java.time)",
+          "what": "Records are immutable data carriers — automatically get constructor, getters, equals, hashCode, and toString based on their components. Minimal boilerplate.",
+          "why": "Java DTO/value objects needed 10-20 lines for what should be 1 line. Records make immutable data classes concise.",
+          "how": "record UserDTO(String name, String email) {} — generates: constructor, name(), email(), equals(), hashCode(), toString(). Immutable — all fields are final.",
+          "where": "DTOs, API response objects, value objects, response bodies, query results.",
+          "when": "Use records for simple immutable data containers. Do NOT use for JPA entities (need no-arg constructor and mutable fields). Do NOT use when you need inheritance.",
+          "issue": "Records cannot extend another class (only implement interfaces). Cannot be mutable — no setters.",
+          "fix": "For entities, use regular classes with Lombok @Data. Use records only for immutable DTOs.",
+          "star": {
+            "s": "DTO class is 25 lines for 4 fields (getters, equals, hashCode, toString, constructor).",
+            "t": "Simplify.",
+            "a": "record UserDTO(Long id, String name, String email, String role) {} — 1 line.",
+            "r": "25 lines → 1 line. All methods auto-generated."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "17.1.sealed-classes-java-17",
+          "term": "Sealed Classes (Java 17)",
+          "what": "Sealed classes restrict which classes can extend or implement them. You declare the exact allowed subclasses.",
+          "why": "Enables exhaustive pattern matching — compiler knows all possible subtypes. Like a controlled enum but for classes.",
+          "how": "sealed interface Shape permits Circle, Rectangle, Triangle {} — only these three can implement Shape. Each can be final, sealed, or non-sealed.",
+          "where": "Domain modeling where you know all variants: payment types, result types (Success/Failure), event types.",
+          "when": "Use when you know all subtypes at design time and want the compiler to enforce exhaustive handling.",
+          "issue": "Without sealed, adding a new subclass breaks exhaustive switch — no compiler warning.",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "17.1.pattern-matching-java-16-21",
+          "term": "Pattern Matching (Java 16-21)",
+          "what": "Pattern matching for instanceof eliminates the cast after instanceof check. Switch expressions can match on type, value, or condition.",
+          "why": "Old: if (obj instanceof String) { String s = (String) obj; ... } — redundant cast. New: if (obj instanceof String s) { use s directly }.",
+          "how": "if (obj instanceof String s && s.length() > 5) { ... }. Switch: return switch(shape) { case Circle c -> Math.PI * c.radius() * c.radius(); case Rectangle r -> r.w() * r.h(); };",
+          "where": "Type-based dispatch, JSON/XML processing, visitor patterns.",
+          "when": "Use in any instanceof check in new Java 16+ code. Use switch expressions for multi-way type dispatch.",
+          "issue": "Old code with explicit casts after instanceof — verbose and fragile if wrong cast.",
+          "fix": "Migrate instanceof + cast pairs to pattern matching instanceof.",
+          "star": {
+            "s": "Process different event types with instanceof chains.",
+            "t": "Clean up.",
+            "a": "Changed to switch pattern matching. Each case matches type and binds variable.",
+            "r": "30 lines → 10 lines. Compiler enforces all types covered (with sealed events)."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "17.1.virtual-threads-java-21",
+          "term": "Virtual Threads (Java 21)",
+          "what": "Virtual threads are lightweight threads managed by the JVM — not OS threads. You can create millions of them with tiny memory footprint.",
+          "why": "Platform threads (OS threads) are expensive — each needs 1MB+ stack. Can't have more than ~10,000. Virtual threads need ~few KB each — millions possible.",
+          "how": "Thread.ofVirtual().start(() -> handleRequest()). Or Executors.newVirtualThreadPerTaskExecutor() — creates a new virtual thread per task.",
+          "where": "High-concurrency servers, each request gets its own virtual thread. I/O-bound workloads where threads spend most time waiting.",
+          "when": "Use virtual threads for I/O-bound concurrent work (HTTP calls, DB queries, file reads). NOT for CPU-bound tasks — no benefit there.",
+          "issue": "Synchronized blocks pin virtual threads to platform threads — loses the benefit.",
+          "fix": "Replace synchronized with ReentrantLock in code that will use virtual threads. Avoid long-running synchronized blocks.",
+          "star": {
+            "s": "Tomcat with 200 platform threads cannot handle 10,000 concurrent connections.",
+            "t": "Scale.",
+            "a": "Switched to virtual thread executor. Each connection gets its own virtual thread.",
+            "r": "Handles 100,000 concurrent connections on same machine."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "17.2",
+      "slug": "java-9-17-key-features",
+      "title": "Java 9-17 Key Features",
+      "keyRule": "Java 9: Module system (Jigsaw), private interface methods. Java 10: var (local type inference). Java 11: String methods (isBlank, strip, lines), HttpClient. Java 14: Switch expressions, Records (preview). Java 15: Text blocks. Java 17: Sealed classes, LTS release.",
+      "terms": [
+        {
+          "id": "17.2.var-java-10",
+          "term": "var (Java 10)",
+          "what": "var lets the compiler infer the type of a local variable from the right-hand side. Less verbose, but type is still static — checked at compile time.",
+          "why": "Removes redundant type repetition: ArrayList<Map<String, List<User>>> list = new ArrayList<>() → var list = new ArrayList<>(). Cleaner code.",
+          "how": "var users = new ArrayList<User>(); var result = service.findAll(); var entry = map.entrySet().iterator().next();",
+          "where": "Local variables where type is obvious from context. NOT allowed: method parameters, return types, fields.",
+          "when": "",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "17.2.text-blocks-java-15",
+          "term": "Text Blocks (Java 15)",
+          "what": "Text blocks are multi-line string literals using triple quotes. Preserve formatting, handle indentation, no need for escape characters.",
+          "why": "Multi-line SQL, JSON, HTML in strings required messy escaping and concatenation. Text blocks make them readable.",
+          "how": "String sql = '''SELECT id, name FROM users WHERE active = true ORDER BY name'''; String json = '''{ \"name\": \"Alice\", \"role\": \"admin\" }''';",
+          "where": "SQL queries, JSON templates, HTML email templates, YAML snippets in code.",
+          "when": "Use for any multi-line string content. Text blocks trim common indentation automatically.",
+          "issue": "Text block trims leading whitespace based on the closing ''' position — indentation can be unexpected.",
+          "fix": "Position closing ''' at the leftmost indent level you want. Or use stripIndent() for explicit control.",
+          "star": {
+            "s": "JPQL query with string concat and escaping is unreadable.",
+            "t": "Clean up.",
+            "a": "Converted to text block.",
+            "r": "Query readable and maintainable."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "17.2.httpclient-java-11",
+          "term": "HttpClient (Java 11)",
+          "what": "Java 11's java.net.http.HttpClient is a modern, non-blocking HTTP client built into the JDK. No external library needed for HTTP calls.",
+          "why": "Old HttpURLConnection was verbose and low-level. HttpClient supports HTTP/2, async calls, and has a clean API.",
+          "how": "HttpClient client = HttpClient.newHttpClient(); HttpRequest req = HttpRequest.newBuilder().uri(URI.create(url)).GET().build(); HttpResponse<String> resp = client.send(req, BodyHandlers.ofString());",
+          "where": "Any Java app making HTTP calls to external APIs without wanting to add libraries.",
+          "when": "Use for simple HTTP calls in Java 11+. For Spring Boot, use WebClient (reactive) or RestTemplate/RestClient for more integration.",
+          "issue": "Synchronous client.send() blocks the calling thread — for high-concurrency use client.sendAsync() which returns CompletableFuture.",
+          "fix": "client.sendAsync(request, BodyHandlers.ofString()).thenApply(HttpResponse::body).thenAccept(System.out::println);",
+          "star": {
+            "s": "Java 8 app using Apache HttpClient (external dep).",
+            "t": "Remove dep for simple use.",
+            "a": "Upgraded to Java 11. Migrated to built-in HttpClient.",
+            "r": "Removed external dependency. Same functionality."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "16.0b",
+      "slug": "kafka-internals",
+      "title": "Kafka Internals",
+      "keyRule": "Broker = Kafka server that stores partitions. Replication factor = copies of each partition across brokers. ISR = in-sync replicas (fully caught up). At-most-once = may lose messages. At-least- once = may duplicate. Exactly-once = no loss, no duplicate (Kafka transactions + idempotent producer). Dead Letter Topic = error queue for failed messages.",
+      "terms": [
+        {
+          "id": "16.0b.kafka-broker-replication-factor",
+          "term": "Kafka Broker / Replication Factor",
+          "what": "Broker: a Kafka server that stores and serves partition data. A Kafka cluster has multiple brokers. Replication factor: how many broker copies of each partition exist — for fault tolerance.",
+          "why": "If one broker goes down, other brokers holding replicas serve traffic. Replication factor 3 = one partition leader + two followers — tolerates 2 broker failures.",
+          "how": "Each partition has one leader (handles all reads/writes) and N-1 followers (replicate from leader). Replication factor set per topic: kafka-topics.sh --replication-factor 3.",
+          "where": "Production Kafka clusters. Minimum 3 brokers for replication factor 3. More brokers = more parallelism.",
+          "when": "Set replication factor based on fault tolerance needs: RF=1 for dev, RF=3 for production. Higher RF = more storage, slightly more latency.",
+          "issue": "RF=1 means one broker down = topic unavailable. For production, always use RF >= 3.",
+          "fix": "Create topics with: --replication-factor 3. Configure min.insync.replicas=2 so writes require 2 brokers to confirm.",
+          "star": {
+            "s": "Interview: how does Kafka handle broker failure?",
+            "t": "Explain.",
+            "a": "Leader election — a follower in ISR becomes new leader. If RF=3 and min.insync.replicas=2, one broker can fail without data loss.",
+            "r": "Expert Kafka knowledge."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "16.0b.isr-in-sync-replicas",
+          "term": "ISR (In-Sync Replicas)",
+          "what": "ISR (In-Sync Replicas) is the set of replicas fully caught up with the partition leader. If a replica falls behind, it leaves ISR. Only ISR members can become leader.",
+          "why": "If a replica is lagging (behind the leader), making it the new leader would lose messages. ISR ensures only up-to-date replicas are candidates for leadership.",
+          "how": "Producer acks=all: waits for all ISR replicas to acknowledge before confirming. If ISR shrinks to 1 (only leader), acks=all still succeeds (just the leader).",
+          "where": "Kafka broker replication. Affects: data durability guarantees, producer acknowledgment.",
+          "when": "Monitor ISR size. If ISR drops below replication factor, a replica is lagging — investigate broker performance.",
+          "issue": "A lagging replica being out of ISR = if leader fails now, some messages may be in the leader's log but not in any ISR replica — potential data loss.",
+          "fix": "Monitor ISR with kafka-topics.sh --describe. Alert when under-replicated partitions exist. Tune replica.lag.time.max.ms.",
+          "star": {
+            "s": "Topic shows under-replicated partitions.",
+            "t": "Diagnose.",
+            "a": "Slow broker falling behind — leaves ISR. Found disk I/O bottleneck on that broker. Fixed disk.",
+            "r": "Replica catches up, rejoins ISR. Full redundancy restored."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "16.0b.at-most-once-at-least-once-exactly-once",
+          "term": "At-Most-Once / At- Least-Once / Exactly-Once",
+          "what": "At-most-once: commit offset before processing — message may be lost if processor crashes after commit. At-least-once: commit after processing — message processed at least once, may be duplicated on retry. Exactly-once: Kafka transactions + idempotent producer — no loss, no duplicate.",
+          "why": "Different systems have different tolerance for loss vs duplication. Choose delivery semantics based on business requirements.",
+          "how": "At-most-once: enable.auto.commit=true, auto.commit.interval.ms=1000. At-least- once: manual commit after processing. Exactly-once: spring-kafka transaction + idempotent producer (enable.idempotence=true).",
+          "where": "At-most-once: metrics (losing a counter is OK). At-least-once: order processing with idempotent handlers. Exactly-once: financial transactions.",
+          "when": "",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "16.0b.dead-letter-topic-dlt",
+          "term": "Dead Letter Topic (DLT)",
+          "what": "Dead Letter Topic stores messages that failed processing after max retries. Instead of losing them, Spring Kafka sends them to a DLT for error handling and investigation.",
+          "why": "Messages fail for many reasons (bad data, downstream unavailable). DLT captures them for analysis and potential reprocessing — no data loss.",
+          "how": "Spring Kafka auto-configures DLT: @KafkaListener topic fails → retried N times → sent to 'topicName.DLT'. Monitor DLT for processing errors.",
+          "where": "All production Kafka consumers. DLT is standard practice for reliable message processing.",
+          "when": "Always configure DLT for production consumers. Process DLT regularly — alert on DLT growth.",
+          "issue": "Ignoring DLT causes message buildup — data silently lost. DLT itself can fill up if underlying bug not fixed.",
+          "fix": "Set up DLT consumer to alert on failures. Process DLT: fix bug, replay messages. Use exponential backoff before DLT.",
+          "star": {
+            "s": "Kafka consumer occasionally fails on malformed messages — messages silently dropped.",
+            "t": "Fix.",
+            "a": "DLT configured. Failed messages go to orders.DLT. Alert set up. Regular DLT audit.",
+            "r": "No messages lost. All failures visible and actionable."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    }
+  ]
+}

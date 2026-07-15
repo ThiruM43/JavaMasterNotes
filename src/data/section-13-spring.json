@@ -1,0 +1,624 @@
+{
+  "id": "13",
+  "slug": "spring",
+  "title": "Spring Framework",
+  "icon": "🍃",
+  "accentColor": "#16a34a",
+  "subsections": [
+    {
+      "id": "13.1",
+      "slug": "ioc-di-spring-beans",
+      "title": "IoC, DI & Spring Beans",
+      "keyRule": "IoC (Inversion of Control) = Spring creates and manages your objects (beans). DI (Dependency Injection) = Spring injects dependencies for you — no 'new' needed. Bean scopes: Singleton (one per app), Prototype (new per request), Request (one per HTTP request), Session (one per HTTP session).",
+      "terms": [
+        {
+          "id": "13.1.ioc-container-applicationcontext",
+          "term": "IoC Container & ApplicationContext",
+          "what": "IoC Container is Spring's object factory. It creates beans, wires dependencies, and manages bean lifecycle. ApplicationContext is the main IoC container interface.",
+          "why": "Without IoC, you manually create objects and pass dependencies — tight coupling, hard to test. IoC delegates creation to Spring — loose coupling, easy testing.",
+          "how": "@SpringBootApplication starts up ApplicationContext. Spring scans @Component, @Service, @Repository, @Controller — creates beans. You just @Autowired where needed.",
+          "where": "The foundation of every Spring application. All beans live here.",
+          "when": "Always let Spring manage your beans. Only create objects with 'new' for: simple value objects (DTO, entity), objects that should NOT be Spring-managed.",
+          "issue": "Trying to use @Autowired in a class created with 'new' — null injection. Spring cannot inject into manually-created objects.",
+          "fix": "Let Spring create and inject every bean. If you need a prototype bean, inject ApplicationContext and call getBean().",
+          "star": {
+            "s": "@Autowired repository is null in service.",
+            "t": "Diagnose.",
+            "a": "Service was created with 'new Service()' in controller — not managed by Spring. Changed to @Autowired injection.",
+            "r": "Dependencies injected correctly."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "13.1.autowired-constructor-injection",
+          "term": "@Autowired & Constructor Injection",
+          "what": "Bean scope controls how many instances Spring creates. Singleton (default) = one instance for entire app. Prototype = new instance every time it is requested.",
+          "why": "Singleton is correct for stateless services. Prototype needed for stateful objects that should not be shared.",
+          "how": "@Scope('singleton') — default. @Scope('prototype'). @RequestScope — one per HTTP request. @SessionScope — one per HTTP session.",
+          "where": "Services and repositories: singleton. Request-scoped data (current user context): request scope. Shopping cart: session scope.",
+          "when": "Default to singleton for stateless beans. Use request scope for request-specific state. Never store mutable per-user data in a singleton — all users share it.",
+          "issue": "Field injection: private @Autowired OrderRepository repo — cannot be final, cannot be injected without Spring, hard to unit test (must use reflection or Spring test context).",
+          "fix": "Switch to constructor injection. Dependencies become final, clearly visible, and you can new OrderService(mockRepo) in unit tests — no Spring needed.",
+          "star": {
+            "s": "Unit tests are slow because they start full Spring context.",
+            "t": "Fix.",
+            "a": "Services use constructor injection. Tests create services with 'new Service(mockDep)'.",
+            "r": "Tests run in milliseconds without Spring. Bean Scopes"
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "13.1.component-service-repository-controller",
+          "term": "@Component, @Service, @Repository, @Controller",
+          "what": "These are stereotype annotations — they all ultimately extend @Component (which registers a bean). They communicate the role of the class.",
+          "why": "Same effect as @Component, but named annotations express intent. @Repository additionally adds exception translation (JDBC exceptions → Spring DataAccessException).",
+          "how": "@Repository on DAO classes. @Service on business logic. @Controller or @RestController on web endpoints. @Component for everything else.",
+          "where": "Every Spring bean in the app.",
+          "when": "Use the most specific annotation. @Service for services. @Repository for persistence. Never use bare @Component for classes that fit a specific role.",
+          "issue": "Using @Component everywhere — code compiles but loses clarity and @Repository exception translation.",
+          "fix": "Use correct stereotype for each class. Code reviews should flag wrong stereotype use.",
+          "star": {
+            "s": "JDBC SQLException from DAO not caught by @ExceptionHandler for DataAccessException.",
+            "t": "Diagnose.",
+            "a": "DAO used @Component instead of @Repository — no Spring exception translation. Changed to @Repository.",
+            "r": "JDBC exceptions auto- translated to DataAccessException."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "13.2",
+      "slug": "spring-boot-rest",
+      "title": "Spring Boot & REST",
+      "keyRule": "Spring Boot = Spring with auto-configuration and opinionated defaults. No XML config. Embedded Tomcat. Convention over configuration. @RestController = @Controller + @ResponseBody. REST: GET (read), POST (create), PUT (replace), PATCH (partial update), DELETE (remove). Always return ResponseEntity with correct HTTP status.",
+      "terms": [
+        {
+          "id": "13.2.spring-boot-auto-configuration",
+          "term": "Spring Boot Auto- Configuration",
+          "what": "Spring Boot examines your classpath and auto-configures beans based on what it finds. Add Jackson on classpath = auto-configure JSON serialization. Add HikariCP + DB driver = auto-configure DataSource.",
+          "why": "No more XML config or dozens of @Bean definitions. Sensible defaults for 80% of use cases. Override when needed.",
+          "how": "@EnableAutoConfiguration (included in @SpringBootApplication) triggers class path scanning. Each AutoConfigure class has @ConditionalOn... to activate only when conditions met.",
+          "where": "Every Spring Boot application. Auto-configures: DataSource, JPA, Web MVC, Security, Actuator, Logging.",
+          "when": "Trust auto-config for standard setups. Override with properties (application.properties) first, then with explicit @Bean definitions when you need custom behavior.",
+          "issue": "Multiple DataSource configurations conflicting — two datasource beans found, Spring doesn't know which to use.",
+          "fix": "@Primary on the main DataSource bean, or @Qualifier to specify which to inject.",
+          "star": {
+            "s": "Spring Boot app needs two databases.",
+            "t": "Configure second DataSource.",
+            "a": "Defined second @Bean DataSource with @Qualifier('secondDb').",
+            "r": "Two datasources, explicitly distinguished by qualifier."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "13.2.restcontroller-rest-mapping",
+          "term": "@RestController & REST Mapping",
+          "what": "@RestController combines @Controller and @ResponseBody — every method returns data (as JSON) directly, not a view name. Mapping annotations route HTTP requests to methods.",
+          "why": "Clean way to build REST APIs. No boilerplate @ResponseBody on every method. Annotations map HTTP verbs and paths to Java methods.",
+          "how": "@GetMapping('/users/{id}'), @PostMapping('/users'), @PutMapping, @DeleteMapping, @PatchMapping. @PathVariable for URL params, @RequestParam for query params, @RequestBody for JSON body.",
+          "where": "Every REST API endpoint.",
+          "when": "Use @GetMapping for reads. @PostMapping for create (return 201). @DeleteMapping (return 204). Always validate input with @Valid.",
+          "issue": "Returning null from a REST endpoint — Spring returns 200 with empty body. Clients cannot distinguish 'found but empty' from 'not found'.",
+          "fix": "Return ResponseEntity<T>. Not found: return ResponseEntity.notFound().build() — HTTP 404. Success: return ResponseEntity.ok(data) — HTTP 200.",
+          "star": {
+            "s": "API returns 200 with null body when user not found. Clients confused.",
+            "t": "Fix.",
+            "a": "Return ResponseEntity.status(404).body(new ErrorDto('User not found')).",
+            "r": "Clear 404 response. Clients handle correctly."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "13.2.requestbody-validation",
+          "term": "@RequestBody & Validation",
+          "what": "AOP (Aspect Oriented Programming) lets you add behavior (logging, security, transactions) to methods without modifying the method code itself — 'cross-cutting concerns'.",
+          "why": "Logging, timing, transactions, security checks are needed everywhere but should not pollute business logic code.",
+          "how": "@Aspect class with @Around, @Before, @After advice. @Pointcut defines which methods to intercept. Spring wraps the target bean in a proxy.",
+          "where": "@Transactional IS AOP. Spring Security IS AOP. @Cacheable IS AOP. You can add custom AOP for: audit logging, performance timing, retry logic.",
+          "when": "Use AOP for: logging method calls, measuring performance, retry, audit. Avoid for: business logic — that should be explicit.",
+          "issue": "AOP self-invocation problem: calling an AOP-intercepted method from the same class bypasses the proxy — @Transactional/@Cacheable won't work.",
+          "fix": "Call AOP-proxied methods from a different Spring bean. Or use AspectJ compile- time weaving to avoid proxy limitation.",
+          "star": {
+            "s": "Every service method needs execution time logging.",
+            "t": "Add without touching every method.",
+            "a": "@Around AOP aspect measures time for all methods in @Service classes.",
+            "r": "Performance logging added to 50 methods with one 15-line aspect."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "13.2.spring-security-basics",
+          "term": "Spring Security (basics)",
+          "what": "Spring Security handles authentication (who are you?) and authorization (what can you do?). Integrates with JWT, OAuth2, LDAP, Basic Auth.",
+          "why": "Security is complex — Spring Security handles it correctly so you don't have to. Handles CSRF, session fixation, clickjacking protections by default.",
+          "how": "@EnableWebSecurity + SecurityFilterChain bean. Authenticate via JWT filter or session. Authorize with .authorizeHttpRequests().requestMatchers('/admin').hasRole('ADMIN').",
+          "where": "Every production REST API. Secure endpoints by role, authenticated vs public.",
+          "when": "Add Spring Security from the start. Never build custom security from scratch. Use JWT for stateless REST APIs, session-based for web apps.",
+          "issue": "CORS blocking REST API calls from a front-end on a different domain — '403 Forbidden' or no response.",
+          "fix": "Add @CrossOrigin on controller or configure CorsConfigurationSource in SecurityFilterChain. Always specify exact origins in production — never '*'.",
+          "star": {
+            "s": "Mobile app cannot call backend API — CORS error.",
+            "t": "Fix.",
+            "a": "Added CorsConfigurationSource bean allowing specific mobile app origin.",
+            "r": "API accessible from mobile. Other origins still blocked."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "13.0b",
+      "slug": "spring-ioc-extended",
+      "title": "Spring IoC Extended",
+      "keyRule": "BeanFactory = minimal IoC (lazy). ApplicationContext = BeanFactory + events + AOP + messaging. @Configuration + @Bean = Java config. @Qualifier disambiguates. @Primary = default bean. @Lazy = lazy initialization. @Scope(prototype) = new instance every injection.",
+      "terms": [
+        {
+          "id": "13.0b.beanfactory-vs-applicationcontext",
+          "term": "BeanFactory vs ApplicationContext",
+          "what": "@Configuration marks a class as a Spring configuration class. @Bean marks a method that returns a Spring bean — Spring manages its lifecycle.",
+          "why": "Programmatic bean definition — more flexible than component scanning. Lets you create beans from third-party classes you cannot annotate.",
+          "how": "@Configuration class AppConfig { @Bean DataSource dataSource() { HikariDataSource ds = new HikariDataSource(); ds.setJdbcUrl(url); return ds; } }",
+          "where": "Infrastructure beans (DataSource, RestTemplate, ObjectMapper, Kafka consumer factories), third-party library integration. TERM MEANING",
+          "when": "Use @Bean when you cannot add @Component to a class (third-party). Use @Component/@Service when you own the class.",
+          "issue": "@Bean method not called if called directly from another @Bean method — unless class is @Configuration (CGLIB proxied). Calling @Bean on @Component class = new instance each time.",
+          "fix": "Always use @Configuration (not @Component) for classes with @Bean methods that call each other. @Configuration's CGLIB proxy intercepts direct method calls.",
+          "star": {
+            "s": "Two @Bean methods share a DataSource — second creates a second DataSource instead of reusing first.",
+            "t": "Fix.",
+            "a": "Class was @Component not @Configuration. Changed to @Configuration. CGLIB proxy ensures single DataSource.",
+            "r": "Beans share one DataSource."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "13.0b.qualifier-primary-lazy",
+          "term": "@Qualifier / @Primary / @Lazy",
+          "what": "@Primary: marks a bean as the default when multiple beans of same type exist. @Qualifier('name'): selects a specific bean by name when multiple exist. @Lazy: tells Spring to create the bean only when first accessed.",
+          "why": "Multiple implementations of same interface — need to inject the right one. @Lazy reduces startup time for expensive beans.",
+          "how": "@Primary @Service class SqlUserService. @Service class CacheUserService. @Autowired UserService service; // injects SqlUserService (primary). @Autowired @Qualifier('cacheUserService') UserService cached;",
+          "where": "Multiple DataSources, multiple MessageSources, multiple TransactionManagers, multiple implementations of same interface.",
+          "when": "@Primary for the most common implementation. @Qualifier for specific injection. @Lazy for expensive beans used infrequently.",
+          "issue": "@Primary not set when multiple beans of same type exist = UnsatisfiedDependencyException — no unique bean.",
+          "fix": "Set @Primary on the default implementation, or use @Qualifier at every injection point.",
+          "star": {
+            "s": "Two DataSource beans — Primary (MySQL) and Secondary (analytics).",
+            "t": "Inject right one.",
+            "a": "@Primary on MySQL DataSource. @Qualifier('analytics') where analytics is needed.",
+            "r": "Correct DB used everywhere."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "13.0b.conditionalonclass-conditionalonproperty",
+          "term": "@ConditionalOnClass / @ConditionalOnProperty",
+          "what": "@ConditionalOnClass: bean created only if certain class is on classpath. @ConditionalOnProperty: bean created only if a property has a specific value. Both used in Spring Boot auto-configuration.",
+          "why": "Auto-configuration is conditional — Redis bean only created if Jedis/Lettuce is on classpath. Feature toggle via property.",
+          "how": "@ConditionalOnClass(RedisTemplate.class) @Bean RedisCache redisCache(...). @ConditionalOnProperty(name='feature.enabled', havingValue='true') @Bean FeatureBean featureBean(...)",
+          "where": "Auto-configuration classes, feature flags, environment-specific beans.",
+          "when": "Use @ConditionalOnProperty for feature flags and environment-specific behavior. @ConditionalOnClass for optional integrations.",
+          "issue": "@ConditionalOnProperty default behavior when property is missing depends on 'matchIfMissing' attribute (default=false = bean NOT created).",
+          "fix": "Set matchIfMissing=true if you want the bean by default and disable it explicitly.",
+          "star": {
+            "s": "New feature must be toggleable without redeploy.",
+            "t": "Implement.",
+            "a": "@ConditionalOnProperty(name='new.feature.enabled', havingValue='true', matchIfMissing=false). Set property in env config.",
+            "r": "Feature enabled/disabled without code change."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "13.0b.configurationproperties-value",
+          "term": "@ConfigurationProperties / @Value",
+          "what": "Spring Profiles activate different configurations for different environments (dev, test, prod). Beans/configs annotated with @Profile('prod') only active when 'prod' profile is active.",
+          "why": "Different environments need different settings: dev uses H2 DB, prod uses PostgreSQL. Profiles manage this without code changes.",
+          "how": "@Profile('dev') @Bean DataSource devDataSource(). @Profile('prod') @Bean DataSource prodDataSource(). Activate: spring.profiles.active=prod or SPRING_PROFILES_ACTIVE=prod env var.",
+          "where": "DataSource configuration, external service URLs, email config (no real emails in dev), feature toggles.",
+          "when": "Always have at minimum dev and prod profiles. Consider test profile for integration tests.",
+          "issue": "Forgetting to set active profile in production — app runs with default (dev) settings — wrong DB, wrong credentials.",
+          "fix": "Make profile-sensitive beans fail if no profile active: @Profile('!default'). Always set SPRING_PROFILES_ACTIVE in deployment scripts.",
+          "star": {
+            "s": "Dev H2 database accidentally used in staging.",
+            "t": "Fix.",
+            "a": "Added @Profile('dev') on H2 bean. @Profile('!dev') on real DB bean. Staging must set profile explicitly.",
+            "r": "Wrong DB impossible by design."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "13.1b",
+      "slug": "spring-mvc-extended",
+      "title": "Spring MVC Extended",
+      "keyRule": "",
+      "terms": [
+        {
+          "id": "13.1b.dispatcherservlet-handlermapping",
+          "term": "DispatcherServlet / HandlerMapping",
+          "what": "DispatcherServlet is Spring MVC's front controller — all HTTP requests go through it. HandlerMapping maps URLs to controller methods. HandlerAdapter invokes the method.",
+          "why": "Understanding the request lifecycle helps debug routing issues, interceptors, and custom filters.",
+          "how": "Request → DispatcherServlet → HandlerMapping (finds @RequestMapping method) → HandlerAdapter (invokes method) → View/JSON response.",
+          "where": "Embedded in every Spring Boot web application. configure via WebMvcConfigurer.",
+          "when": "Understand this for debugging 404s (HandlerMapping finds nothing), content negotiation issues, and custom interceptor placement.",
+          "issue": "Two @RequestMapping mappings for same URL — DispatcherServlet throws AmbiguousHandlerMappingException.",
+          "fix": "Ensure unique URL patterns. Use @RequestMapping with method attribute: @GetMapping vs @PostMapping.",
+          "star": {
+            "s": "New endpoint returns 404 despite being annotated correctly.",
+            "t": "Debug.",
+            "a": "Controller missing @RestController — DispatcherServlet skips plain @Controller with no view. Added @RestController.",
+            "r": "Endpoint found."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "13.1b.httpmessageconverter-content-negotiation",
+          "term": "HttpMessageConverter / Content Negotiation",
+          "what": "HttpMessageConverter converts between Java objects and HTTP request/response body. Jackson's MappingJackson2HttpMessageConverter handles JSON. Content negotiation selects format based on Accept header.",
+          "why": "@RequestBody and @ResponseBody use MessageConverters to serialize/deserialize. Content negotiation supports multiple formats (JSON, XML) from same endpoint.",
+          "how": "@RequestBody reads JSON → Java via Jackson. @ResponseBody writes Java → JSON via Jackson. Accept: application/json → Jackson. Accept: application/xml → JAXB.",
+          "where": "All @RestController endpoints. Configured via WebMvcConfigurer.configureMessageConverters().",
+          "when": "Configure converters when: adding XML support, customizing Jackson behavior (dates, nulls), supporting custom media types.",
+          "issue": "Jackson cannot deserialize unknown field → 400 error. Jackson fails on unrecognized properties by default.",
+          "fix": "@JsonIgnoreProperties(ignoreUnknown=true) on DTO class, or configure ObjectMapper: mapper.configure(FAIL_ON_UNKNOWN_PROPERTIES, false).",
+          "star": {
+            "s": "API returns 400 when client sends extra fields in JSON.",
+            "t": "Fix.",
+            "a": "Added @JsonIgnoreProperties(ignoreUnknown=true) to request DTOs.",
+            "r": "Extra fields ignored. Backward compatible API."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "13.1b.bindingresult-valid-validation",
+          "term": "BindingResult / @Valid Validation",
+          "what": "@Valid triggers Bean Validation on @RequestBody. BindingResult captures validation errors as structured data — method still called. Without BindingResult, invalid input throws MethodArgumentNotValidException.",
+          "why": "@Valid alone throws exception on invalid input — no control over error response. BindingResult lets you inspect errors and return custom responses.",
+          "how": "@PostMapping('/user') ResponseEntity<?> create(@Valid @RequestBody UserDTO user, BindingResult result) { if(result.hasErrors()) return ResponseEntity.badRequest().body(result.getAllErrors()); ... }",
+          "where": "REST API endpoints with request body validation.",
+          "when": "Use @Valid without BindingResult and handle MethodArgumentNotValidException globally with @ExceptionHandler for cleaner code. Use BindingResult only for complex per-field custom logic.",
+          "issue": "BindingResult must be the parameter immediately after the @Valid parameter — otherwise Spring throws exception.",
+          "fix": "Always: @PostMapping method(@Valid @RequestBody Dto dto, BindingResult result) — BindingResult must follow @Valid param directly.",
+          "star": {
+            "s": "API throws exception for every validation error — clients get stack trace.",
+            "t": "Fix.",
+            "a": "Global @ExceptionHandler for MethodArgumentNotValidException. Returns 400 with field-error list.",
+            "r": "Clean validation errors for all endpoints."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "13.2b",
+      "slug": "spring-aop-extended",
+      "title": "Spring AOP Extended",
+      "keyRule": "AOP terms: Aspect = the class containing cross-cutting logic. Advice = the action (Before/After/Around). Pointcut = the expression that selects methods to intercept. JoinPoint = the intercepted method call. Weaving = applying aspects to target code. JDK proxy = for interfaces. CGLIB proxy = for classes.",
+      "terms": [
+        {
+          "id": "13.2b.aop-terms-aspect-advice-pointcut-joinpoint",
+          "term": "AOP Terms: Aspect, Advice, Pointcut, JoinPoint",
+          "what": "Aspect = class with cross-cutting logic (@Aspect). Advice = when to run (@Before, @After, @Around, @AfterReturning, @AfterThrowing). Pointcut = which methods to intercept. JoinPoint = the actual method being intercepted.",
+          "why": "Understanding AOP terminology helps you write correct aspects and debug proxy- related issues.",
+          "how": "",
+          "where": "",
+          "when": "",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "13.2b.jdk-proxy-vs-cglib-proxy",
+          "term": "JDK Proxy vs CGLIB Proxy",
+          "what": "JDK Dynamic Proxy: wraps an interface — target must implement an interface. CGLIB Proxy: subclasses the target class — no interface needed. Spring uses JDK proxy for interface-based beans, CGLIB for class-based.",
+          "why": "Understanding which proxy is used explains: why @Transactional fails on final methods (CGLIB cannot subclass final), why interface injection is needed with JDK proxy.",
+          "how": "JDK proxy: @Autowired UserService service; // UserService is interface. CGLIB: Spring Boot uses CGLIB by default (spring.aop.proxy-target-class=true).",
+          "where": "All Spring AOP features: @Transactional, @Cacheable, @Async, @Secured.",
+          "when": "Use interfaces for Spring beans — makes both JDK and CGLIB proxying work. Avoid final methods/classes in Spring beans.",
+          "issue": "CGLIB cannot subclass final class or override final method — @Transactional on final method = no transaction.",
+          "fix": "Remove final from methods that need AOP interception. Or use interfaces.",
+          "star": {
+            "s": "@Transactional on a method does nothing.",
+            "t": "Debug.",
+            "a": "Method is final — CGLIB proxy cannot override it. Removed final.",
+            "r": "Transaction applied correctly."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "13.2b.afterreturning-afterthrowing",
+          "term": "@AfterReturning / @AfterThrowing",
+          "what": "@AfterReturning: runs after method returns successfully — can access return value. @AfterThrowing: runs after method throws exception — can access the exception.",
+          "why": "More targeted than @After — react to success or failure specifically. Common for audit logging: log what was returned or what went wrong.",
+          "how": "@AfterReturning(pointcut='...', returning='result') void logReturn(Object result) { log.info('Returned: {}', result); } @AfterThrowing(pointcut='...', throwing='ex') void logError(Exception ex) { log.error(ex.getMessage()); }",
+          "where": "Audit logging, metrics collection, error notification, result transformation (though prefer @Around for transformation).",
+          "when": "Use @AfterReturning to log success results. @AfterThrowing to log/handle exceptions. @Around for full control (modify input, output, or handle exceptions).",
+          "issue": "@AfterReturning cannot modify the return value — use @Around for that.",
+          "fix": "For result modification, use @Around: Object result = pjp.proceed(); return transformResult(result);",
+          "star": {
+            "s": "Audit trail needs to log what data was returned from each service method.",
+            "t": "Implement.",
+            "a": "@AfterReturning aspect logs method signature + return value as JSON.",
+            "r": "Complete audit trail with zero changes to service code."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "13.3b",
+      "slug": "spring-transactions-extended",
+      "title": "Spring Transactions Extended",
+      "keyRule": "Propagation types: REQUIRED (default, join or create), REQUIRES_NEW (always new, suspend current), NESTED (savepoint within current), SUPPORTS (join if exists, else no tx), MANDATORY (must exist), NEVER (must not exist), NOT_SUPPORTED (suspend current). rollbackFor: default unchecked only. Add rollbackFor=Exception.class for checked.",
+      "terms": [
+        {
+          "id": "13.3b.transaction-propagation-types",
+          "term": "Transaction Propagation Types",
+          "what": "Propagation defines what happens when a @Transactional method is called from another @Transactional context. 7 types: REQUIRED, REQUIRES_NEW, NESTED, SUPPORTS, MANDATORY, NEVER, NOT_SUPPORTED.",
+          "why": "Correct propagation prevents: accidentally nesting transactions, losing rollbacks, or creating transactions where they don't belong.",
+          "how": "REQUIRED (default): join existing or create new. REQUIRES_NEW: always create new, suspend outer. NESTED: create savepoint within current (rolls back to savepoint on error). SUPPORTS: use existing if present, else no transaction.",
+          "where": "Any @Transactional method. Critical for: audit logging (should save even if main tx rolls back → REQUIRES_NEW), batch processing, and nested service calls.",
+          "when": "Use REQUIRED for most cases. REQUIRES_NEW for operations that must commit independently (audit, notification). NESTED for partial rollback within a transaction.",
+          "issue": "REQUIRED propagation: inner method rollback = outer transaction also rolled back — all work lost.",
+          "fix": "For operations that must succeed even if outer tx fails: use REQUIRES_NEW. This creates an independent transaction.",
+          "star": {
+            "s": "Audit log not saved when order transaction fails.",
+            "t": "Fix.",
+            "a": "@Transactional(propagation=REQUIRES_NEW) on audit method.",
+            "r": "Audit saves in its own transaction regardless of outer tx outcome."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "13.3b.rollbackfor-norollbackfor-readonly",
+          "term": "rollbackFor / noRollbackFor / readOnly",
+          "what": "rollbackFor: which exceptions trigger rollback (default: RuntimeException only). noRollbackFor: exceptions that should NOT trigger rollback. readOnly=true: hint for performance optimization — no locks for reads.",
+          "why": "Checked exceptions don't rollback by default — common bug. readOnly=true lets DB optimize read-only queries (no write locks).",
+          "how": "@Transactional(rollbackFor=Exception.class) — rollback on any exception. @Transactional(noRollbackFor=StockWarningException.class) — don't rollback for warnings. @Transactional(readOnly=true) — for query methods.",
+          "where": "Service methods. readOnly=true on all query-only service methods.",
+          "when": "Add rollbackFor=Exception.class to services calling external APIs (checked exceptions possible). readOnly=true on all read-only service methods — free performance win.",
+          "issue": "@Transactional method catches a checked IOException and logs it — but default @Transactional would not have rolled back anyway even if it propagated.",
+          "fix": "Add rollbackFor=Exception.class to ensure checked exceptions also trigger rollback.",
+          "star": {
+            "s": "File import service doesn't rollback DB changes when file parse fails (checked IOException).",
+            "t": "Fix.",
+            "a": "Added @Transactional(rollbackFor=Exception.class).",
+            "r": "DB rolled back on any exception."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "13.3b.transactiontemplate-platformtransactionmanage",
+          "term": "TransactionTemplate / PlatformTransactionManager",
+          "what": "TransactionTemplate provides programmatic transaction management — control transaction boundaries in code. PlatformTransactionManager is the underlying Spring transaction abstraction.",
+          "why": "@Transactional is declarative — less control. TransactionTemplate gives full programmatic control: start, execute, commit/rollback based on conditions.",
+          "how": "TransactionTemplate tmpl = new TransactionTemplate(txManager); tmpl.execute(status -> { dao.save(entity); return null; }); — throws exception = rollback. Returns = commit.",
+          "where": "Complex transaction logic, batch processing with per-item commits, programmatic rollback based on business conditions. TERM MEANING",
+          "when": "Use @Transactional for 95% of cases. Use TransactionTemplate when you need: programmatic rollback based on result, different transaction per loop iteration, conditional commit.",
+          "issue": "TransactionTemplate swallows RuntimeExceptions for rollback — the exception is rethrown after rollback.",
+          "fix": "Wrap TransactionTemplate.execute() in try-catch if you need to handle exceptions after rollback.",
+          "star": {
+            "s": "Batch processor must commit every 100 rows — single @Transactional commits all or none.",
+            "t": "Fix.",
+            "a": "TransactionTemplate in loop, commits every 100 rows.",
+            "r": "Batch can be resumed from last 100-row commit on failure."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "13.4b",
+      "slug": "spring-security-extended",
+      "title": "Spring Security Extended",
+      "keyRule": "Security chain: request → SecurityFilterChain → authenticate → authorize → resource. UserDetailsService loads user. PasswordEncoder hashes passwords. HttpSecurity configures access rules. @PreAuthorize/@Secured for method security. JWT = stateless token auth. OAuth2 = delegated authorization.",
+      "terms": [
+        {
+          "id": "13.4b.userdetailsservice-userdetails-passwordencode",
+          "term": "UserDetailsService / UserDetails / PasswordEncoder",
+          "what": "UserDetailsService.loadUserByUsername() loads user from DB by username — returns UserDetails (username, password, authorities). PasswordEncoder hashes and verifies passwords (BCryptPasswordEncoder).",
+          "why": "Spring Security needs these to authenticate users. You provide the user data; Spring Security handles the authentication flow.",
+          "how": "@Service class MyUserDetails implements UserDetailsService { UserDetails loadUserByUsername(String username) { User u = userRepo.findByUsername(username); return new org.springframework.security.core.userdetails.User(u.getName(), u.getPassword(), u.getRoles()); } }",
+          "where": "Any Spring Security application. Custom authentication against your user DB.",
+          "when": "Implement UserDetailsService when you need custom user loading (from DB, LDAP, etc.). Use BCryptPasswordEncoder for password storage.",
+          "issue": "Storing plain-text passwords — security disaster. Old code using MD5 or SHA1 — not secure for passwords.",
+          "fix": "ALWAYS use BCryptPasswordEncoder. Never store plain text. On save: passwordEncoder.encode(rawPassword). On login: passwordEncoder.matches(raw, stored).",
+          "star": {
+            "s": "Code review — passwords stored as MD5 hash.",
+            "t": "Fix.",
+            "a": "Changed to BCryptPasswordEncoder. Migration: on first login with old MD5, re-hash and save BCrypt.",
+            "r": "Passwords progressively upgraded."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "13.4b.httpsecurity-preauthorize-secured",
+          "term": "HttpSecurity / @PreAuthorize / @Secured",
+          "what": "HttpSecurity configures URL-level access rules in SecurityFilterChain. @PreAuthorize provides method-level security with SpEL. @Secured is simpler — list of required roles.",
+          "why": "Two levels: URL security for coarse-grained access, method security for fine- grained business logic.",
+          "how": "http.authorizeHttpRequests(auth -> auth.requestMatchers('/admin/**').hasRole('ADMIN').anyRequest().authenticated()); @PreAuthorize('hasRole(ADMIN) or #userId == authentication.name')",
+          "where": "All secured Spring Boot applications. @PreAuthorize on service/controller methods.",
+          "when": "Use HttpSecurity for URL-based access control. Use @PreAuthorize for business-logic security (user can only access their own resources).",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "13.4b.jwt-authentication",
+          "term": "JWT Authentication",
+          "what": "JWT (JSON Web Token) is a stateless token: header.payload.signature. Server creates JWT on login, client sends it in Authorization header. Server validates signature — no session storage needed.",
+          "why": "Stateless — scales horizontally. No session affinity required. Works for microservices and mobile apps.",
+          "how": "Login → server creates JWT signed with secret. Client sends: Authorization: Bearer <token>. Server validates signature + expiry. Extract user from token claims.",
+          "where": "REST APIs, microservices, mobile app backends, single-page applications.",
+          "when": "Use JWT for stateless APIs. Do NOT use JWT for sessions in traditional web apps where you need instant revocation.",
+          "issue": "JWTs cannot be instantly revoked — stolen token valid until expiry. Also, large payloads increase every request size.",
+          "fix": "Short expiry (15 min) + refresh token. Blacklist compromised tokens in Redis if instant revocation needed. Keep JWT payload minimal.",
+          "star": {
+            "s": "System needs scalable stateless auth across 10 microservices.",
+            "t": "Design.",
+            "a": "JWT auth at API Gateway. All services validate signature with shared public key.",
+            "r": "No session affinity. Any service can validate any request."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "13.4b.oauth2-csrf-securitycontextholder",
+          "term": "OAuth2 / CSRF / SecurityContextHolder",
+          "what": "OAuth2: delegated authorization — 'Login with Google/GitHub' — third-party issues token. CSRF: Cross-Site Request Forgery protection — prevents malicious sites from making authenticated requests on behalf of users. SecurityContextHolder: thread- local storage of current authenticated user.",
+          "why": "OAuth2 for federated identity. CSRF for form-based apps. SecurityContextHolder for getting current user anywhere.",
+          "how": "OAuth2: spring-boot-starter-oauth2-client + application.yml config. CSRF: enabled by default for forms, disabled for stateless REST. SecurityContextHolder.getContext().getAuthentication() gets current user.",
+          "where": "OAuth2: SSO, social login. CSRF: form-based web apps. SecurityContextHolder: service methods needing current user.",
+          "when": "Disable CSRF for REST APIs (stateless, token auth). Enable for session-based web apps. Use SecurityContextHolder in service layer (avoid in domain layer).",
+          "issue": "CSRF disabled globally for REST but forms accidentally use same security config — forms become vulnerable.",
+          "fix": "Separate security config for API (stateless, no CSRF) and form (session, CSRF enabled).",
+          "star": {
+            "s": "Add 'Login with Google' to app.",
+            "t": "Implement.",
+            "a": "spring-boot-starter- oauth2-client, configure google client-id/secret in yml, add /oauth2/login endpoint. Spring handles flow.",
+            "r": "Google OAuth2 login working in 20 lines of config. 14. TESTING — JUnit 5, Mockito & Spring Boot Test"
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "14.1",
+      "slug": "junit-5-mockito-spring-boot-test",
+      "title": "JUnit 5, Mockito & Spring Boot Test",
+      "keyRule": "Unit test = test one class in isolation (mock dependencies). Integration test = test with real Spring context + real DB. @SpringBootTest = full context — slow. @WebMvcTest = web layer only. @DataJpaTest = JPA layer only. Test Pyramid: many unit tests, some integration, few E2E.",
+      "terms": [
+        {
+          "id": "14.1.junit-5-basics",
+          "term": "JUnit 5 Basics",
+          "what": "JUnit 5 is the standard Java testing framework. Tests are methods annotated with @Test. Lifecycle: @BeforeEach, @AfterEach, @BeforeAll, @AfterAll.",
+          "why": "Structured, automated test execution. Tests document expected behavior. Catch regressions before production.",
+          "how": "@Test void shouldReturnUser() { User user = service.find(1L); assertNotNull(user); assertEquals('Alice', user.getName()); }. Use AssertJ for fluent assertions: assertThat(user.getName()).isEqualTo('Alice');",
+          "where": "Every class, every public method should have corresponding tests.",
+          "when": "Write tests before fixing bugs (prove the bug, then fix). Write tests before adding features (TDD). At minimum, test all business logic paths.",
+          "issue": "Tests that depend on execution order — one test pollutes state for the next.",
+          "fix": "Each test must be independent. Use @BeforeEach to reset state. Never share mutable state between tests.",
+          "star": {
+            "s": "Test suite passes alone but fails in certain order.",
+            "t": "Fix.",
+            "a": "Found @BeforeAll initializing shared mutable list not reset between tests. Moved to @BeforeEach.",
+            "r": "Tests independent — pass in any order."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "14.1.mockito-mocking",
+          "term": "Mockito Mocking",
+          "what": "Mockito lets you replace real dependencies with fake ones (mocks) that return whatever you tell them to. Tests run without real DB, network, or external services.",
+          "why": "Real dependencies make tests slow (DB calls), unreliable (network down), and hard (you don't control external services).",
+          "how": "@Mock OrderRepository repo; @InjectMocks OrderService service; when(repo.findById(1L)).thenReturn(Optional.of(testOrder)); service.getOrder(1L); verify(repo).findById(1L);",
+          "where": "Every unit test that tests a class with dependencies.",
+          "when": "Mock all external dependencies in unit tests. Do NOT mock your own classes — if you need to, your design has too many responsibilities.",
+          "issue": "Mocking the class under test (the SUT) instead of its dependencies — you are testing the mock, not your code.",
+          "fix": "Only mock dependencies. The class you are testing is REAL. Dependencies injected into it are MOCKS.",
+          "star": {
+            "s": "Service test requires running database — too slow for CI.",
+            "t": "Fix.",
+            "a": "Replaced @Autowired repository with @Mock. Used when().thenReturn() to define behavior.",
+            "r": "Tests run in 50ms without DB."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "14.1.springbootte-st-webmvctest",
+          "term": "@SpringBootTe st & @WebMvcTest",
+          "what": "@SpringBootTest starts full Spring application context for integration tests. @WebMvcTest starts only the web layer (controllers + MVC config) — faster.",
+          "why": "@SpringBootTest tests real integration between layers. @WebMvcTest tests controllers without starting full app.",
+          "how": "@WebMvcTest(UserController.class) @AutoConfigureMockMvc — injects MockMvc. mockMvc.perform(get('/users/1')).andExpect(status().isOk()).andExpect(jsonPath('$.name').value('Al ice'));",
+          "where": "@WebMvcTest for controller tests. @DataJpaTest for repository tests. @SpringBootTest for full integration.",
+          "when": "Use @WebMvcTest for controller layer tests — fast and focused. Use @SpringBootTest only when you need to test the full integration.",
+          "issue": "@SpringBootTest starts full context — loads all beans, DB, everything. Very slow for large apps.",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "14.1.datajpatest",
+          "term": "@DataJpaTest",
+          "what": "@DataJpaTest starts only the JPA layer (entities, repositories, in-memory H2 DB) — no web layer, no service layer. Fast, focused repository tests.",
+          "why": "Tests your JPA queries and repository methods in isolation without full app startup.",
+          "how": "@DataJpaTest class UserRepositoryTest { @Autowired UserRepository repo; @Test void shouldFindByEmail() { repo.save(new User('Alice', 'a@b.com')); Optional<User> found = repo.findByEmail('a@b.com'); assertTrue(found.isPresent()); } }",
+          "where": "Every custom @Query or derived query method in Spring Data repositories.",
+          "when": "Use @DataJpaTest for repository tests. Tests run against H2 in-memory DB — no real DB needed.",
+          "issue": "@DataJpaTest uses H2 by default — SQL dialects differ. A query that works in MySQL might fail in H2.",
+          "fix": "For critical DB-specific queries, use @AutoConfigureTestDatabase(replace=NONE) to test against the real DB (requires test DB setup).",
+          "star": {
+            "s": "Custom JPQL query untested — bug found in production.",
+            "t": "Add coverage.",
+            "a": "@DataJpaTest with H2. Test each query method with multiple scenarios.",
+            "r": "Query bugs caught before production."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "14.1.test-coverage-best-practices",
+          "term": "Test Coverage & Best Practices",
+          "what": "Test coverage measures what percentage of code is tested. High coverage alone doesn't mean good tests — quality of tests matters more than quantity.",
+          "why": "Tests document behavior, catch regressions, enable confident refactoring, and speed up debugging.",
+          "how": "Use JaCoCo for coverage reports. Aim for 80%+ on business logic. 100% is diminishing returns on trivial code.",
+          "where": "CI pipeline should fail if coverage drops below threshold. Focus on: service layer, domain logic, complex algorithms.",
+          "when": "Write tests as you write code (TDD) or immediately after. Never 'add tests later' — it rarely happens.",
+          "issue": "100% coverage but tests only check happy path — all sad paths uncovered. Production failures in error scenarios.",
+          "fix": "Test edge cases: null input, empty list, boundary values, exception paths. Parameterized tests (@ParameterizedTest) cover multiple cases efficiently.",
+          "star": {
+            "s": "New developer asks what to test.",
+            "t": "Guide.",
+            "a": "Test everything that contains logic. Happy path first, then edge cases (null, empty, boundary), then exception paths. Use TDD for new features.",
+            "r": "Team builds test habits from the start."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    }
+  ]
+}

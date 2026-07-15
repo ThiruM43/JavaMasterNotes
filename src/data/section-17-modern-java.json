@@ -1,0 +1,326 @@
+{
+  "id": "17",
+  "slug": "modern-java",
+  "title": "Modern Java (8 → 21)",
+  "icon": "🚀",
+  "accentColor": "#7c3aed",
+  "subsections": [
+    {
+      "id": "17.0b",
+      "slug": "java-9-11-features",
+      "title": "Java 9-11 Features",
+      "keyRule": "Java 9: Module system (JPMS), JShell, Collection factory methods. Java 10: var. Java 11: String API improvements, HttpClient stable, Files.readString/writeString. Each version adds useful incremental improvements.",
+      "terms": [
+        {
+          "id": "17.0b.java-9-module-system-jpms",
+          "term": "Java 9: Module System (JPMS)",
+          "what": "JPMS (Java Platform Module System): declare modules with module-info.java. Modules explicitly declare what they export and what they require. Strong encapsulation of JDK internals.",
+          "why": "Before Java 9, the classpath was one big ball — any code could access any class. Modules enforce explicit dependency boundaries and hide internal APIs.",
+          "how": "module com.myapp.service { requires com.myapp.db; exports com.myapp.service.api; } — only .api package visible outside. com.myapp.db must also be a module.",
+          "where": "Large modular applications, framework development, microkernel architectures.",
+          "when": "Use JPMS for large complex applications needing strict encapsulation. Most Spring Boot apps use classpath — modules are optional. Many libraries still not fully modularized.",
+          "issue": "Many legacy libraries not yet module-compatible — automatic modules work but lose strong encapsulation. Complex to set up in large codebases.",
+          "fix": "Start with classpath (Spring Boot default). Add JPMS when you need strict package visibility or are building a library. Automatic module name in MANIFEST.MF for partial adoption.",
+          "star": {
+            "s": "Interview: what is JPMS?",
+            "t": "Explain.",
+            "a": "Java 9 module system — explicit exports/requires in module-info.java. Strong encapsulation. JDK itself is modularized. Replaced monolithic rt.jar.",
+            "r": "Shows Java 9+ knowledge."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "17.0b.java-9-jshell-collection-of",
+          "term": "Java 9: JShell / Collection.of()",
+          "what": "JShell: interactive Java REPL — try code without creating a class/project. Collection.of(): List.of(), Set.of(), Map.of() — create immutable collections in one line (Java 9+).",
+          "why": "JShell for quick experiments. List.of() replaces Arrays.asList() and Collections.singletonList() — shorter, truly immutable.",
+          "how": "JShell: $ jshell → jshell> var list = List.of(1,2,3); list.get(0); → 1. Code: List<String> names = List.of('Alice','Bob','Carol'); — immutable, no nulls.",
+          "where": "JShell: learning, prototyping, quick tests. List.of(): anywhere you create small immutable collections.",
+          "when": "Use List.of() instead of new ArrayList<>(Arrays.asList(...)) for immutable collections. JShell for quick API exploration.",
+          "issue": "List.of() is truly immutable — list.add() throws UnsupportedOperationException. Also: no null elements allowed.",
+          "fix": "For mutable collections: new ArrayList<>(List.of(a,b,c)). For collections that might have nulls: Arrays.asList() or new ArrayList<>().",
+          "star": {
+            "s": "Interview: what changed in Java 9 collections?",
+            "t": "Answer.",
+            "a": "List.of(), Set.of(), Map.of() — immutable collection factory methods. Shorter than Arrays.asList(), truly immutable (no add/set/remove). Null elements forbidden.",
+            "r": "Good Java 9 awareness."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "17.0b.java-9-stream-improvements",
+          "term": "Java 9: Stream Improvements",
+          "what": "Java 9 added Stream methods: takeWhile(predicate) — take elements until predicate false. dropWhile(predicate) — drop elements until predicate false. Stream.iterate(seed, predicate, nextFunc) — bounded iterate without limit().",
+          "why": "takeWhile/dropWhile are more expressive for ordered streams — take sorted elements up to a condition.",
+          "how": "IntStream.iterate(1, n->n<100, n->n*2).forEach(print); // 1,2,4,8,16,32,64. Stream.of(1,2,3,4,5,6).takeWhile(n->n<4).collect(toList()) → [1,2,3].",
+          "where": "Ordered stream processing, bounded sequence generation, while-condition stream operations.",
+          "when": "",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "17.0b.java-11-string-api-improvements",
+          "term": "Java 11: String API Improvements",
+          "what": "Java 11 added String methods: isBlank() (true for empty or whitespace), strip()/stripLeading()/stripTrailing() (Unicode-aware trim), lines() (stream of lines), repeat(n) (repeat string n times).",
+          "why": "Old trim() doesn't handle Unicode whitespace. isBlank() cleaner than isEmpty() || s.trim().isEmpty(). lines() replaces split('\\n').",
+          "how": "' '.isBlank() → true. '\\u2005hello'.strip() → 'hello' (Unicode space stripped). 'ha'.repeat(3) → 'hahaha'. 'a\\nb\\nc'.lines().count() → 3.",
+          "where": "String validation, text processing, CSV parsing, template processing.",
+          "when": "Use isBlank() instead of isEmpty() when whitespace-only strings should be treated as empty. Use strip() instead of trim() for Unicode safety.",
+          "issue": "trim() only strips ASCII whitespace (chars <= 32). strip() handles all Unicode whitespace. Using trim() on user input from international apps may fail.",
+          "fix": "Replace trim() with strip(). Replace isEmpty() with isBlank() for whitespace checks.",
+          "star": {
+            "s": "International user's name with Unicode space not being cleaned.",
+            "t": "Fix.",
+            "a": "Changed trim() to strip().",
+            "r": "Unicode whitespace correctly removed."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "17.0b.java-11-httpclient-files-readstring",
+          "term": "Java 11: HttpClient / Files.readString()",
+          "what": "Java 11 made java.net.http.HttpClient stable. Supports HTTP/2, async requests, streaming. Files.readString(path) and Files.writeString(path, content) — read/write whole files in one line.",
+          "why": "Old HttpURLConnection was verbose. New HttpClient is modern, type-safe, async. Files.readString() replaces boilerplate FileReader + BufferedReader.",
+          "how": "HttpClient client = HttpClient.newHttpClient(); HttpRequest req = HttpRequest.newBuilder(URI.create(url)).build(); HttpResponse<String> resp = client.send(req, BodyHandlers.ofString()); Files.readString(Path.of('file.txt'));",
+          "where": "HTTP client calls, file I/O, test helpers.",
+          "when": "Use HttpClient for all new HTTP calls — replaces Apache HttpClient, RestTemplate for simple cases. Files.readString() for reading small-to-medium files.",
+          "issue": "HttpClient send() is blocking. Use sendAsync() for non-blocking: CompletableFuture<HttpResponse<String>> future = client.sendAsync(req, BodyHandlers.ofString());",
+          "fix": "Use sendAsync() for production code. Use send() in tests where blocking is acceptable.",
+          "star": {
+            "s": "Apache HttpClient dependency for simple HTTP calls.",
+            "t": "Remove dependency.",
+            "a": "Java 11 HttpClient.newHttpClient().",
+            "r": "No third-party dependency. Same functionality. Cleaner code."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "17.1b",
+      "slug": "java-12-17-features",
+      "title": "Java 12-17 Features",
+      "keyRule": "",
+      "terms": [
+        {
+          "id": "17.1b.java-14-helpful-npe-messages",
+          "term": "Java 14: Helpful NPE Messages",
+          "what": "Java 14+ NullPointerExceptions include a detailed message saying WHICH variable was null: 'Cannot invoke String.length() because user.getName() is null' instead of just 'NullPointerException'.",
+          "why": "Old NPE messages just said 'NullPointerException at line X' — you had to guess which variable was null. New messages pinpoint it immediately.",
+          "how": "",
+          "where": "",
+          "when": "",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "17.1b.java-17-enhanced-switch-expression",
+          "term": "Java 17: Enhanced Switch Expression",
+          "what": "Switch expressions (preview Java 12, stable Java 14) return a value, use arrow labels (→), and require exhaustive cases. Java 17 finalizes switch expressions with sealed classes for total coverage.",
+          "why": "Old switch was verbose, fall-through bug-prone, and couldn't return values. New switch is expression-oriented and safer.",
+          "how": "String result = switch(day) { case MONDAY, TUESDAY -> 'Weekday'; case SATURDAY, SUNDAY -> 'Weekend'; default -> 'Other'; }; // No fall-through. Arrow syntax. Returns value.",
+          "where": "Status/enum/type-based logic, replacing long if-else chains, pattern matching in switch (Java 21).",
+          "when": "Use switch expression whenever switch is the right construct. It's cleaner and safer than the old switch statement.",
+          "issue": "Old switch fall-through: forgetting break causes unintended fall-through to next case. Switch expression arrows don't fall through.",
+          "fix": "Migrate old switch statements to switch expressions. Arrow syntax enforces no fall- through.",
+          "star": {
+            "s": "Old switch statement with missing break causing wrong status calculation.",
+            "t": "Fix.",
+            "a": "Converted to switch expression with arrow syntax. No fall-through possible.",
+            "r": "Bug impossible with new syntax."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "17.1b.java-17-sealed-classes-stable",
+          "term": "Java 17: Sealed Classes (Stable)",
+          "what": "Sealed classes restrict which classes can extend or implement them. The permitted subclasses form a closed, known hierarchy — the compiler knows all possibilities.",
+          "why": "For modeling closed domains: Shape can only be Circle, Square, or Triangle. Exhaustive pattern matching possible — compiler ensures all cases handled.",
+          "how": "sealed interface Shape permits Circle, Square, Triangle {} final class Circle implements Shape { double radius; } — only Circle, Square, Triangle can implement Shape.",
+          "where": "Domain modeling (payment types, event types, result types), replacing enum when each type needs different fields, pattern matching.",
+          "when": "Use sealed when you need a closed type hierarchy — all subtypes known at compile time. Alternative to enum when types need different data.",
+          "issue": "Adding a new permitted type requires changing the sealed class — not open for extension by default.",
+          "fix": "This is intentional — sealed classes are closed hierarchies. For open extension, use regular interface/class.",
+          "star": {
+            "s": "Interview: when would you use sealed class vs enum?",
+            "t": "Answer.",
+            "a": "Sealed when each type has different fields/behavior (Circle with radius vs Square with side). Enum when types are just labels with same structure. Sealed enables exhaustive pattern matching.",
+            "r": "Nuanced, correct answer."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "17.2b",
+      "slug": "java-21-features",
+      "title": "Java 21 Features",
+      "keyRule": "",
+      "terms": [
+        {
+          "id": "17.2b.java-21-record-patterns",
+          "term": "Java 21: Record Patterns",
+          "what": "Record Patterns let you deconstruct records in switch/instanceof patterns: case Person(String name, int age) when age > 18 → adult handling.",
+          "why": "",
+          "how": "",
+          "where": "",
+          "when": "",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "17.2b.java-21-sequenced-collections",
+          "term": "Java 21: Sequenced Collections",
+          "what": "SequencedCollection/SequencedMap/SequencedSet interfaces add: getFirst(), getLast(), reversed() to List, Set, Map. Unified API for ordered collections.",
+          "why": "Before Java 21: List had get(0)/get(size-1). Deque had peekFirst/peekLast. LinkedHashSet had no first/last methods. Sequenced Collections unify this.",
+          "how": "List.of(1,2,3).getFirst() → 1. List.of(1,2,3).getLast() → 3. list.reversed() → reversed view. LinkedHashSet now has getFirst()/getLast().",
+          "where": "All ordered collections in Java 21+. Replace get(0) with getFirst() for clarity.",
+          "when": "Use in Java 21+ code. getFirst()/getLast() throw NoSuchElementException on empty collections — handle accordingly.",
+          "issue": "getFirst()/getLast() throw NoSuchElementException if collection empty — unlike Optional-returning alternatives.",
+          "fix": "Check isEmpty() before calling getFirst()/getLast(), or use try-catch.",
+          "star": {
+            "s": "Interview: what's new in Java 21 collections?",
+            "t": "Answer.",
+            "a": "SequencedCollection — getFirst(), getLast(), reversed() added to List, Deque, LinkedHashSet, LinkedHashMap. Unified ordered collection API.",
+            "r": "Shows Java 21 awareness."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "17.2b.java-21-structured-concurrency",
+          "term": "Java 21: Structured Concurrency",
+          "what": "Structured Concurrency (incubating): StructuredTaskScope — parent thread waits for all subtasks. Failure propagates clearly. Cancels sibling tasks when one fails.",
+          "why": "Traditional CompletableFuture: if one subtask fails, others continue until explicitly cancelled. StructuredTaskScope automatically handles parent-child task lifetime.",
+          "how": "try (var scope = new StructuredTaskScope.ShutdownOnFailure()) { var user = scope.fork(() -> fetchUser(id)); var order = scope.fork(() -> fetchOrder(id)); scope.join().throwIfFailed(); process(user.resultNow(), order.resultNow()); }",
+          "where": "Microservice fan-out calls, parallel data fetching, request-scoped parallel operations.",
+          "when": "Java 21+ with virtual threads. Use when you need clear parent-child task relationships and clean failure handling.",
+          "issue": "Still incubating in Java 21 — API may change. Not recommended for stable production code yet.",
+          "fix": "Use CompletableFuture.allOf() for stable production. Experiment with StructuredTaskScope for Java 21+ internal tools.",
+          "star": {
+            "s": "Fetch user + order + preferences in parallel — if any fails, cancel others.",
+            "t": "Implement cleanly.",
+            "a": "StructuredTaskScope.ShutdownOnFailure. One fails = all cancelled.",
+            "r": "Clean, safe parallel fan-out."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "17.2b.java-19-scoped-values",
+          "term": "Java 19: Scoped Values",
+          "what": "ScopedValue provides immutable, thread-local-like values for virtual threads. Unlike ThreadLocal, ScopedValue is immutable and has bounded scope — value only set within a specific code scope.",
+          "why": "ThreadLocal is mutable and stateful — problematic with virtual threads (many threads, thread reuse). ScopedValue is immutable and scoped — safe and predictable.",
+          "how": "",
+          "where": "",
+          "when": "",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    },
+    {
+      "id": "17.3b",
+      "slug": "java-time-date-time-deep-dive",
+      "title": "java.time Date/Time Deep Dive",
+      "keyRule": "",
+      "terms": [
+        {
+          "id": "17.3b.localdate-localtime-localdatetime",
+          "term": "LocalDate / LocalTime / LocalDateTime",
+          "what": "LocalDate: date only (2024-01-15). LocalTime: time only (14:30:00.123). LocalDateTime: date + time, NO timezone. All are immutable.",
+          "why": "Old java.util.Date/Calendar: mutable, confusing, not thread-safe. java.time: immutable, clear, thread-safe.",
+          "how": "LocalDate date = LocalDate.of(2024, 1, 15); LocalDate today = LocalDate.now(); LocalDateTime dt = LocalDateTime.of(date, LocalTime.of(14, 30));",
+          "where": "Business dates, form inputs, log timestamps (no timezone), database dates (DATE, DATETIME columns).",
+          "when": "LocalDate for date-only (birthday, appointment date). LocalDateTime for DB timestamps without timezone. ZonedDateTime when timezone matters.",
+          "issue": "LocalDateTime stored in DB without timezone — when server timezone changes, saved times are misinterpreted.",
+          "fix": "For app events visible to users in multiple timezones: use ZonedDateTime or Instant + timezone stored separately.",
+          "star": {
+            "s": "Appointment system shows wrong times after server moved to different timezone.",
+            "t": "Fix.",
+            "a": "Changed from LocalDateTime to ZonedDateTime for appointment storage.",
+            "r": "Times display correctly in all timezones."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "17.3b.zoneddatetime-instant-zoneid",
+          "term": "ZonedDateTime / Instant / ZoneId",
+          "what": "ZonedDateTime: date + time + timezone — for user-facing times across zones. Instant: machine timestamp (epoch milliseconds) — for ordering events, logs. ZoneId: timezone identifier like 'Asia/Kolkata'.",
+          "why": "Instant is absolute — same moment everywhere. ZonedDateTime converts to local time for display. Don't confuse: Instant for storage, ZonedDateTime for display.",
+          "how": "Instant now = Instant.now(); ZonedDateTime kolkata = now.atZone(ZoneId.of('Asia/Kolkata')); Instant back = kolkata.toInstant(); // same moment.",
+          "where": "Instant: DB timestamps, event ordering, duration calculation. ZonedDateTime: user-visible scheduled times, calendar apps.",
+          "when": "Store timestamps as Instant or epoch millis. Convert to ZonedDateTime in user's timezone for display.",
+          "issue": "Storing ZonedDateTime with timezone in DB — timezone changes in DB cause incorrect times.",
+          "fix": "Store as Instant (epoch millis) in DB. Read timezone from user profile. Convert on display: instant.atZone(userZone).",
+          "star": {
+            "s": "International app shows meetings at wrong time for users in different timezones.",
+            "t": "Fix.",
+            "a": "Store meeting time as Instant. Show in user's ZoneId.",
+            "r": "All users see correct local time."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        },
+        {
+          "id": "17.3b.duration-period-datetimeformatter",
+          "term": "Duration / Period / DateTimeFormatter",
+          "what": "Duration: time-based amount (hours, minutes, seconds, nanos). Period: date-based amount (years, months, days). DateTimeFormatter: parse and format date/time objects.",
+          "why": "Duration for measuring elapsed time and time gaps. Period for calendar-based differences (3 months, 2 years). Formatter for string conversion.",
+          "how": "Duration.between(start, end).toMinutes(). Period.between(birthDate, today).getYears() → age. DateTimeFormatter fmt = DateTimeFormatter.ofPattern('dd/MM/yyyy'); fmt.format(date); LocalDate.parse('15/01/2024', fmt);",
+          "where": "Age calculation, session duration, interval scheduling, date formatting for display and parsing from forms.",
+          "when": "Duration for time-of-day/second-level differences. Period for date-level differences. Formatter for all parsing/formatting.",
+          "issue": "DateTimeFormatter is thread-safe (unlike SimpleDateFormat). But custom patterns with wrong letters cause DateTimeParseException.",
+          "fix": "Test formatters with example dates. Use standard ISO formatters (DateTimeFormatter.ISO_DATE) when possible.",
+          "star": {
+            "s": "Calculate user's age.",
+            "t": "Implement.",
+            "a": "Period.between(user.getBirthDate(), LocalDate.now()).getYears().",
+            "r": "Clean, correct age calculation. Handles leap years automatically."
+          },
+          "difficulty": "intermediate",
+          "tags": []
+        }
+      ]
+    }
+  ]
+}
