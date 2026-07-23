@@ -1,0 +1,1079 @@
+{
+  "id": "23",
+  "slug": "priority-learning-roadmap",
+  "title": "⭐ Priority Roadmap — 12+ Years",
+  "icon": "⭐",
+  "accentColor": "#7c3aed",
+  "subsections": [
+    {
+      "id": "23.1",
+      "slug": "tier-1-interview-critical",
+      "title": "🔴 TIER 1 — Study These First (Interview Will Ask)",
+      "keyRule": "These 15 topics were directly asked in your recent interview or are guaranteed to appear in every senior/architecture interview. Complete these before moving to other tiers. Estimated study time: 2-3 days focused prep. Click any term below to study all details inline instantly.",
+      "terms": [
+        {
+          "id": "21.1.self-introduction",
+          "term": "🔴 T1 #1 — Self Introduction (Architecture Way)",
+          "what": "A structured 2-3 minute professional pitch that communicates your technical depth, domain expertise, architecture decisions you made, and business impact — NOT a timeline of job titles.",
+          "why": "At 12+ years, interviewers expect you to articulate systems you designed, tradeoffs you made, and results you drove. They are evaluating technical leadership, communication, and seniority of thinking — not just skill checklist.",
+          "how": "Structure in 5 parts: 1) Role + Domain: 'I am a senior Java engineer/architect with 12+ years, currently working in healthcare interoperability.' 2) Flagship System: 'I have been building eCR-Now, a FHIR-based electronic case reporting middleware deployed on GKE that connects hospital EHR systems to the CDC for automated disease surveillance.' 3) One Key Architecture Decision: 'I designed the async patient data flow — when a patient is admitted, IMS sends a launchPatient POST through our API gateway, eCR-Now queries FHIR for reportable conditions, generates the eCR report, sends to CDC via Direct messaging protocol, then posts the CDC response back to the EHR as a FHIR documentReference.' 4) Scale/Impact: 'The system handles admissions for multiple hospital networks, with 99.9% CDC reporting compliance.' 5) Bridge to Conversation: 'Happy to go deeper on the FHIR integration, GKE deployment, or failure handling — what is most relevant for your team?'",
+          "where": "Every interview — phone screen, technical round, architecture discussion, panel interview, CTO/VP level meeting. This sets the tone for everything that follows.",
+          "when": "Always lead with this. It frames you as someone who thinks in systems. The last line invites them to steer toward their interests, giving you control of the conversation.",
+          "issue": "Most 12+ year developers give a resume-reading intro: 'I worked at X, then Y, then Z, I know Spring Boot and Kafka.' This sounds junior regardless of experience — it lists tools without context of what was built or why.",
+          "fix": "Prepare 3 versions: 60-second elevator pitch, 2-minute technical intro, 5-minute deep-dive. Practice each until natural, not scripted. Always anchor to one real system you are most proud of and describe it architecturally.",
+          "star": {
+            "s": "Interviewer opened: 'Tell me about yourself.' Architecture-level role at a health-tech company.",
+            "t": "Position myself as a senior architect who thinks in systems and business outcomes, not just as a developer who knows frameworks.",
+            "a": "Led with domain (healthcare interoperability), named the system (eCR-Now on GKE), described one architectural flow end-to-end (patient admission → FHIR query → CDC report → EHR response), stated the business result (99.9% CDC reporting compliance), then invited them to steer: 'Happy to go deeper on FHIR, GKE, or our failure handling approach — what matters most for your team?'",
+            "r": "Interviewer said: 'Let us talk about the FHIR integration.' I had already demonstrated depth before the first technical question was asked."
+          },
+          "difficulty": "advanced",
+          "tags": [
+            "interview",
+            "communication",
+            "self-intro",
+            "leadership",
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "21.1.project-architecture-explanation",
+          "term": "🔴 T1 #2 — Project Architecture Explanation (Architecture Way)",
+          "what": "Explaining your project at architecture level means covering: business problem → system components → data flow → technology choices with rationale → scalability/failure handling → operational observability. Not listing technologies.",
+          "why": "Senior engineers are expected to communicate systems to non-technical stakeholders, guide junior developers, and make and defend technology decisions. Architecture-level communication is the single biggest differentiator at 12+ years versus 5 years.",
+          "how": "Six-part structure: 1) Business Problem: 'When a hospital admits a patient with a reportable condition (flu, COVID, etc.), they are legally required to notify the CDC within 24 hours. This was done manually — we automated it.' 2) High-Level Architecture: 'eCR-Now is a middleware service on GKE that sits between the hospital EHR (Evident) and the CDC. It integrates via FHIR R4 standard.' 3) Data Flow: 'Patient admitted in IMS → IMS uses cpXML to get FHIR IDs → Sends launchPatient POST to our API Gateway (Linus) → Gateway routes to eCR-Now on GKE → eCR-Now queries patient FHIR resources (Condition, Observation, MedicationRequest) → Evaluates reportability triggers → Generates eCR report → Sends to CDC via Direct messaging (secure SMTP) → Polls IMAP for CDC response → Stores response in eCR-Now DB → POSTs documentReference back to Evident EHR.' 4) Key Technology Decisions: 'FHIR because it is the national interoperability standard — every modern EHR supports it. GKE for pod autoscaling — burst admission load during morning rounds. Direct protocol because CDC mandates it for secure health messaging.' 5) Failure Handling: 'Circuit breakers on every FHIR call. Retry with exponential backoff for CDC submissions. Dead-letter queue for failed reports. Liveness probes restart stuck pods automatically.' 6) Observability: 'Prometheus metrics, Grafana dashboards, distributed tracing with correlation IDs across the full patient flow.'",
+          "where": "Architecture interviews, technical design reviews, CTO presentations, onboarding new team members, stakeholder demos.",
+          "when": "After self-intro. Prepare a 5-minute version and a 10-minute deep-dive. Draw the flow on whiteboard when available — visual always wins over verbal alone.",
+          "issue": "Engineers describe projects as 'We built REST APIs with Spring Boot connected to MySQL.' No context, no architecture, no tradeoffs. Sounds like a junior regardless of complexity of what was actually built.",
+          "fix": "Always frame with business context FIRST. Then architecture. Then technology. Practice explaining your system to someone non-technical first — then add the technical depth layer on top. If you cannot explain the business problem in one sentence, prepare that sentence before the interview.",
+          "star": {
+            "s": "Architecture panel: 'Walk me through your current system.' Three senior engineers listening including CTO.",
+            "t": "Demonstrate systems thinking, not just coding skill.",
+            "a": "Drew the patient flow on whiteboard: IMS → Linus Gateway → eCR-Now (GKE) → FHIR query → eCR report → CDC via Direct → IMAP poll → EHR POST. Explained each component's responsibility, why FHIR over HL7 v2, why GKE over bare EC2, how we handle CDC endpoint being slow or down. Mentioned we considered a simpler polling approach but chose event-driven for lower latency.",
+            "r": "CTO said: 'This is exactly the level of architectural thinking we need.' Progressed to offer."
+          },
+          "difficulty": "advanced",
+          "tags": [
+            "architecture",
+            "communication",
+            "interview",
+            "project-explanation",
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "21.2.rate-limiting-algorithms",
+          "term": "🔴 T1 #3 — Rate Limiting Algorithms",
+          "what": "Rate limiting controls how many requests a client can make in a time window. Four main algorithms: Token Bucket (bursty traffic allowed up to bucket size), Leaky Bucket (smooth output regardless of burst), Fixed Window Counter (simple per-minute/per-hour counter), Sliding Window Log/Counter (accurate but more memory).",
+          "why": "Without rate limiting, one abusive or broken client can exhaust all server resources — starving other clients and causing system-wide degradation. Essential for API gateway, FHIR servers, and any public-facing endpoint.",
+          "how": "Token Bucket: Client has a bucket of N tokens. Each request consumes 1. Tokens refill at rate R per second. Burst up to bucket size is allowed. Best for: external APIs where some burst is acceptable. Implementation: Redis INCR + TTL. Leaky Bucket: Requests enter a fixed-size queue and are processed at a constant rate. Excess requests dropped. Best for: rate-limiting output to downstream (CDC endpoint). Fixed Window: Count requests in a fixed minute/hour window. Reset at boundary. Problem: 100 req at 11:59 + 100 req at 12:00 = 200 in 2 seconds at boundary. Sliding Window Log: Track exact timestamp of each request in a sorted set. Count requests in last N seconds. Accurate. Higher memory (O(requests) per client). Sliding Window Counter: Approximation using two fixed windows. Lower memory. Common choice for production.",
+          "where": "API Gateway (Spring Cloud Gateway, Kong, AWS API Gateway), FHIR API endpoints, CDC reporting endpoints, any external-facing service.",
+          "when": "Always at API gateway for external APIs. Per-endpoint for expensive operations (FHIR bulk export, report generation). Service-level for protecting downstream dependencies (CDC, EHR FHIR server).",
+          "issue": "Fixed Window has a boundary burst problem: double the intended rate passes through at window boundaries. In distributed systems, each instance has its own counter — effective rate becomes N × limit when N instances are running.",
+          "fix": "Use Redis for distributed rate limiting — single shared counter across all instances. Use Token Bucket (not Fixed Window) for external APIs. Spring Cloud Gateway has built-in Redis RequestRateLimiter filter. For internal service protection, use Resilience4j RateLimiter.",
+          "star": {
+            "s": "Interview question today: 'How would you implement rate limiting?' / 'One EHR is sending 1000 req/min to our FHIR API — how do you handle it?'",
+            "t": "Design a distributed, per-client rate limiter that isolates abusive clients without affecting others.",
+            "a": "Token Bucket in Spring Cloud Gateway backed by Redis. Each EHR identified by API key or client certificate CN. Bucket: 100 tokens, refills 100/min. Redis Lua script for atomic check-and-decrement (prevents race condition across instances). Returns HTTP 429 with Retry-After header. Different limits per client tier: certified EHR partners 1000/min, test systems 100/min — configured in Redis hash, hot-updatable without redeployment.",
+            "r": "Isolated abusive client immediately. Other EHR systems unaffected. Abusive client received clear 429 + Retry-After signal to implement proper backoff."
+          },
+          "difficulty": "advanced",
+          "tags": [
+            "rate-limiting",
+            "token-bucket",
+            "redis",
+            "api-gateway",
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "21.2.distributed-rate-limiting",
+          "term": "🔴 T1 #4 — Distributed Rate Limiting with Redis",
+          "what": "Distributed rate limiting enforces a GLOBAL limit across all instances of a service using a shared Redis counter. Without it, 10 instances with a limit of 100/min each = effective limit of 1000/min.",
+          "why": "Microservices run multiple replicas. Local in-memory rate limiting (Guava RateLimiter) is per-instance — provides no global enforcement. Redis gives a single authoritative counter.",
+          "how": "Redis Lua Script for atomic sliding window: local key = KEYS[1] local limit = tonumber(ARGV[1]) local window = tonumber(ARGV[2]) local now = tonumber(ARGV[3]) redis.call('ZREMRANGEBYSCORE', key, 0, now - window * 1000) local count = redis.call('ZCARD', key) if count < limit then redis.call('ZADD', key, now, now) redis.call('EXPIRE', key, window) return 1 else return 0 end. Lua script executes atomically — no race condition. Spring Cloud Gateway built-in: spring.cloud.gateway.routes[N].filters: - name: RequestRateLimiter args: redis-rate-limiter.replenishRate: 100 redis-rate-limiter.burstCapacity: 200 key-resolver: '#{@clientIdKeyResolver}'. Cloud-native options: AWS API Gateway, GCP Cloud Endpoints, Kong — all have built-in distributed rate limiting.",
+          "where": "Any multi-instance service. Critical for: API gateways serving external clients, FHIR servers, payment APIs, any endpoint with per-client SLA.",
+          "when": "Always use distributed rate limiting if running more than 1 instance. Local limiting gives a false sense of security in distributed deployments — never acceptable in production.",
+          "issue": "Redis adds ~1-2ms latency per request. Under extreme load (10K+ req/sec), Redis can become a bottleneck. Redis going down makes rate limiting unavailable — fail-open (all requests pass) or fail-closed (all requests blocked)?",
+          "fix": "Use Redis Cluster for horizontal scaling. For fail-open vs fail-closed: for public APIs use fail-open (availability > perfect rate limiting). For security-sensitive APIs use fail-closed. Add Redis circuit breaker so a slow Redis does not cause service-wide latency. Log and alert on rate limit decisions for abuse detection.",
+          "star": {
+            "s": "eCR-Now scaled from 2 to 10 pods. An EHR was sending 800 req/min — expected to be blocked at 100/min but all 10 pods were passing it through independently.",
+            "t": "Fix rate limiting to enforce global limits across all pod replicas.",
+            "a": "Replaced in-memory Guava RateLimiter with Redis-backed distributed sliding window counter. Keyed by EHR client certificate CN. Redis Lua script for atomic counting. 2ms Redis latency overhead — acceptable for this use case. Deployed Redis Sentinel for HA. Configured fail-open: if Redis unavailable, log alert and allow traffic (availability > strict limiting for healthcare systems).",
+            "r": "Global rate limiting enforced correctly regardless of pod count. Single EHR cannot overwhelm system by hitting different pods."
+          },
+          "difficulty": "advanced",
+          "tags": [
+            "distributed",
+            "rate-limiting",
+            "redis",
+            "spring-cloud-gateway",
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "21.3.server-stuck-handling",
+          "term": "🔴 T1 #5 — Server Gets Stuck / Hung — Detection & Recovery",
+          "what": "A server is 'stuck' when all threads are blocked waiting on a downstream dependency (DB, slow FHIR endpoint, CDC), but the process is still running. It looks healthy from the OS but serves no requests. Classic symptoms: requests timing out, thread pool exhausted, CPU at 0% with no throughput, memory stable.",
+          "why": "Stuck servers are one of the most common and dangerous production incidents. Load balancers keep routing traffic to stuck instances because the port is open and the process is alive. Without detection, you accumulate slow/failed requests while operators investigate.",
+          "how": "PREVENTION — Step 1: Set explicit timeouts on ALL external calls. Never use default (usually infinite or 30+ seconds). WebClient: .timeout(Duration.ofSeconds(5)). HikariCP: connection-timeout=3000ms, keepalive-time=30000ms. Kafka consumer: max.poll.interval.ms=300000. Step 2: Thread pool isolation (Bulkhead). Separate thread pool for FHIR calls, CDC calls, DB calls — so one slow dependency does not exhaust the shared pool. Resilience4j Bulkhead: @Bulkhead(name = 'fhirBulkhead', type = Bulkhead.Type.THREADPOOL). Step 3: Circuit Breaker on every external call. DETECTION — Kubernetes liveness probe on /actuator/health with 5s timeout, 3 failure threshold → automatic pod restart. Health check must probe real dependencies (DB query, Redis ping) not just 'return 200'. Custom HealthIndicator: @Component class FhirHealthIndicator implements HealthIndicator { public Health health() { try { fhirClient.ping().timeout(Duration.ofSeconds(2)).block(); return Health.up().build(); } catch(Exception e) { return Health.down().withDetail('fhir', e.getMessage()).build(); } } }. RECOVERY — Kubernetes restarts stuck pods automatically when liveness probe fails. Circuit breaker trips when downstream is slow — stops threads piling up. Thread dump analysis when investigating: jstack <pid> | grep BLOCKED. Look for threads all blocked on same resource.",
+          "where": "Every production service making synchronous calls to external dependencies. Most dangerous in services calling slow legacy EHRs, government endpoints (CDC Direct), or shared databases.",
+          "when": "Design for this BEFORE adding features. Set timeouts before you deploy. Add liveness probes before you go live. Every external call needs a timeout — add it when writing the code, not as a hotfix after the incident.",
+          "issue": "Spring Boot /actuator/health by default only checks if the Spring ApplicationContext loaded — not whether DB, Redis, or FHIR server are actually reachable. A service can be 'UP' while completely unable to process requests.",
+          "fix": "Implement custom HealthIndicator for each external dependency. Use spring.cloud.gateway built-in health checks. Configure Kubernetes liveness probe with the deep health check endpoint and short enough timeout (5s) and failure threshold (3) to catch stuck pods within 15-20 seconds.",
+          "star": {
+            "s": "eCR-Now pods were hanging in production. EHR was upgraded and FHIR responses slowed from 200ms to 35 seconds. All threads blocked waiting on FHIR queries. Service stopped processing new admissions. Kubernetes thought pods were healthy — no liveness probe at the time.",
+            "t": "Recover immediately, prevent recurrence without EHR team involvement.",
+            "a": "Immediate: manually deleted stuck pods — Kubernetes restarted them in 30 seconds. Short-term (same day): Added 5s timeout on all WebClient FHIR calls. Added Resilience4j circuit breaker — after 5 failures, circuit opens for 30s, fail fast. Added liveness probe on /actuator/health/liveness checking FHIR reachability. Long-term: Added Resilience4j Bulkhead — 20 dedicated threads for FHIR, separate from rest of service. Exponential backoff retry: 3 attempts at 1s/2s/4s with jitter.",
+            "r": "Next EHR slow response incident: circuit breaker opened in 10 seconds, liveness probe restarted pod in 45 seconds total. Reports queued in Kafka retry topic. Zero missed CDC reports. MTTR dropped from 45 minutes (manual) to 45 seconds (automated)."
+          },
+          "difficulty": "advanced",
+          "tags": [
+            "fault-tolerance",
+            "hung-threads",
+            "circuit-breaker",
+            "kubernetes",
+            "health-check",
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "21.3.circuit-breaker-resilience4j",
+          "term": "🔴 T1 #6 — Circuit Breaker Pattern (Resilience4j)",
+          "what": "Circuit Breaker wraps calls to external services and tracks failure rate. CLOSED: calls pass through normally. After failure threshold: OPEN — calls fail immediately without hitting downstream, freeing threads. After timeout: HALF-OPEN — test call. Success → CLOSED. Failure → OPEN again.",
+          "why": "Without circuit breaker: slow downstream causes thread pool exhaustion → entire service stops responding. Circuit breaker fails fast, freeing threads immediately, allowing the service to handle other requests.",
+          "how": "@CircuitBreaker(name = 'fhirService', fallbackMethod = 'fhirFallback') public Mono<Bundle> queryFhir(String patientId) { return fhirClient.get(...); } public Mono<Bundle> fhirFallback(String patientId, CallNotPermittedException ex) { return Mono.just(Bundle.empty()); }. application.yml: resilience4j: circuitbreaker: instances: fhirService: sliding-window-type: COUNT_BASED sliding-window-size: 10 failure-rate-threshold: 50 slow-call-duration-threshold: 3s slow-call-rate-threshold: 50 wait-duration-in-open-state: 30s permitted-number-of-calls-in-half-open-state: 3 minimum-number-of-calls: 5. Key: minimum-number-of-calls prevents circuit opening on first few calls at startup.",
+          "where": "Every synchronous call to an external service: FHIR API, CDC Direct endpoint, database in high-throughput path, any third-party API. Never skip this in production.",
+          "when": "Add circuit breaker when writing the integration code, not as a reactive hotfix. Rule of thumb: if the call crosses a network boundary, it needs a circuit breaker and a timeout.",
+          "issue": "Misconfigured thresholds cause two problems: 1) Too sensitive (10% threshold) — circuit opens on normal transient errors, causing cascading failures. 2) Too insensitive (90% threshold) — circuit opens too late, after many threads already blocked.",
+          "fix": "Start with: failure-rate-threshold: 50, minimum-number-of-calls: 10, sliding-window-size: 20. Tune based on observed error rates in production. Add slow call rate threshold separately (slow calls are as dangerous as errors). Test with Chaos Engineering: kill downstream, verify circuit opens and fallback works within expected time.",
+          "star": {
+            "s": "CDC Direct messaging endpoint was intermittently slow (government infrastructure maintenance). eCR-Now threads piled up during CDC slowness → service degraded, missing 24-hour reporting window.",
+            "t": "Isolate CDC slowness from rest of eCR-Now service. Ensure reports eventually reach CDC even if endpoint is slow.",
+            "a": "Added Resilience4j circuit breaker on CDC Direct send. Fallback: enqueue report to a Kafka retry topic instead of dropping it. Circuit: 50% failure rate in 10-call window → OPEN for 30s. Kafka retry consumer retries with exponential backoff: 1min, 5min, 15min, 1hr, 24hr. Alert when circuit stays OPEN >5 minutes (PagerDuty). Dashboards showing open/closed state per dependency.",
+            "r": "CDC slowness no longer affects eCR-Now service. Reports queued and delivered when CDC recovers. Zero missed reportable condition reports. Team gets alerted before SLA breach."
+          },
+          "difficulty": "advanced",
+          "tags": [
+            "circuit-breaker",
+            "resilience4j",
+            "fault-tolerance",
+            "spring-boot",
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "21.3.retry-timeout-strategies",
+          "term": "🔴 T1 #7 — Retry & Timeout Strategies",
+          "what": "Retry: automatically retry failed operations on transient errors with exponential backoff + jitter. Timeout: stop waiting after configured duration. Together, they are the foundation of resilient distributed systems.",
+          "why": "Network glitches, brief service restarts, GC pauses cause transient failures. A single retry resolves ~80% of transient failures. Without timeout, threads wait forever — this is how services get stuck.",
+          "how": "Resilience4j Retry: @Retry(name = 'fhirQuery', fallbackMethod = 'fallback'). Config: max-attempts: 3, wait-duration: 1s, exponential-backoff-multiplier: 2.0, randomized-wait-factor: 0.3 (jitter), retry-exceptions: [IOException, TimeoutException, WebClientRequestException]. Do NOT include: HttpClientErrorException (4xx = caller error, not transient). WebClient timeout: webClient.get().uri(url).retrieve().bodyToMono(Patient.class).timeout(Duration.ofSeconds(5)). HikariCP: connectionTimeout=3000, validationTimeout=2000, maxLifetime=1800000. Always: timeout < retry-wait. Otherwise previous attempt still running when retry starts. Standard timeouts: internal services 1-3s, FHIR EHR server 5s, CDC Direct 15-30s (government infra is slow), DB 3s.",
+          "where": "All HTTP client calls (WebClient, RestTemplate, Feign), DB calls in high-throughput paths, Kafka consumer processing, external API integrations.",
+          "when": "ONLY retry idempotent operations. GET = safe to retry. POST = only retry if server is idempotent (uses idempotency key). NEVER retry without backoff + jitter — causes thundering herd when all instances retry simultaneously and overwhelm a recovering service.",
+          "issue": "Retrying non-idempotent operations (CDC report submission) causes duplicate reports. Retrying without jitter causes thundering herd — all pods retry at exact same interval, spike of retries overwhelms recovering service.",
+          "fix": "Check idempotency before enabling retry. Use idempotency key (encounterID + timestamp hash) for POST operations. Always add randomized-wait-factor (jitter) — spreads retries across the retry window. Cap maximum attempts at 3-5. Add retry budget — if >20% of calls are retrying, alert and stop retrying.",
+          "star": {
+            "s": "FHIR patient queries intermittently failing due to EHR GC pauses (500ms GC stops causing connection reset). No retry = occasional missed condition detection.",
+            "t": "Add resilient retry without overloading the EHR during its GC recoveries.",
+            "a": "Resilience4j Retry: 3 attempts, exponential backoff 1s/2s/4s with 30% jitter. Only retry on IOException, TimeoutException — not 400/404 (those are data errors, not transient). FHIR queries are GET (idempotent) so retry is safe. Added 5s timeout per call. Metric: retry-attempt counter in Prometheus — alerting if >5% of calls hit retry.",
+            "r": "GC-pause failures resolved transparently. EHR not overwhelmed by simultaneous retries. Condition detection rate: 99.9%."
+          },
+          "difficulty": "advanced",
+          "tags": [
+            "retry",
+            "timeout",
+            "resilience4j",
+            "exponential-backoff",
+            "jitter",
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "22.4.rate-limiting-scenario",
+          "term": "🔴 T1 #8 — Scenario: Design Rate Limiting for FHIR API",
+          "what": "Architecture scenario: 'One hospital IMS is sending 5000 launchPatient requests per minute — overwhelming eCR-Now. Other hospitals are being starved of processing capacity. How do you handle this?'",
+          "why": "This tests: understanding of rate limiting algorithms, distributed systems constraints (multiple eCR-Now pods), per-client isolation design, and graceful degradation vs hard rejection.",
+          "how": "Step 1 — Clarify: 'Is this a buggy IMS sending duplicates, or legitimate high admission volume?' (Determines if we alert the hospital IT team vs just rate limit). 'Do we need per-hospital limits or global limits?' Step 2 — Solution: Rate limit at Linus Gateway layer (not inside eCR-Now). Per-hospital rate limit keyed by hospital system identifier (client certificate CN or API key). Algorithm: Token Bucket — allows some burst for legitimate peak admissions, but caps sustained rate. Limit: 100 launchPatient/min per hospital (configurable per hospital tier). Redis-backed for consistency across multiple Linus Gateway instances. Step 3 — Response to rate-limited hospital: HTTP 429 with Retry-After: 60 header. IMS must implement retry — documented in integration contract. Step 4 — Monitoring: Real-time dashboard of launchPatient rate per hospital. Alert when any hospital hits >80% of limit (proactive, not just reactive). Step 5 — Investigation: If legitimate high volume (mass casualty event), allow manual override of rate limit for specific hospital with TTL.",
+          "where": "Linus Gateway (not inside eCR-Now). Rate limiting at the entry point, before eCR-Now does any FHIR work.",
+          "when": "Rate limits active always. Override capability for exceptional circumstances (disaster scenarios, mass casualty events) with audit log of override actions.",
+          "issue": "Rate limiting too aggressively during a mass casualty incident could prevent reporting of a large number of genuine infectious disease cases — direct public health harm.",
+          "fix": "Tiered limits: normal hospitals at 100/min, designated emergency centers at 500/min. Dynamic override capability: operations team can raise limit for specific hospital for up to 4 hours via admin API (with audit log). Alert CDC operations when any hospital exceeds normal tier limits — they may need to prepare for a large batch of eCR reports.",
+          "star": {
+            "s": "Interview: 'A hospital IMS had a bug and sent 50,000 duplicate launchPatient requests in 10 minutes. How should your system handle this?'",
+            "t": "Show multi-layer thinking: immediate protection + root cause + recovery + prevention.",
+            "a": "Layer 1 (Immediate): Rate limiter at Linus Gateway drops excess requests, returns 429. Layer 2 (Deduplication): eCR-Now checks for existing in-progress report for same encounterId before starting new workflow (idempotency). Duplicate detected → return 200 with existing workflow status. No duplicate FHIR queries, no duplicate CDC submissions. Layer 3 (Alert): Hospital IT team alerted automatically when 429 rate exceeds 10 in 1 minute — they can investigate the IMS bug. Layer 4 (Prevention): Documented in IMS integration guide: launchPatient is idempotent — do not send same encounterId more than once unless workflow explicitly failed.",
+            "r": "Shows defense in depth: rate limiter + idempotency + alerting + documentation. Demonstrates that I think about the entire failure mode, not just one layer."
+          },
+          "difficulty": "advanced",
+          "tags": [
+            "rate-limiting",
+            "scenario",
+            "architecture",
+            "idempotency",
+            "healthcare",
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "22.4.server-stuck-scenario",
+          "term": "🔴 T1 #9 — Scenario: eCR-Now Server Gets Stuck — What Do You Do?",
+          "what": "Interview scenario: 'Your eCR-Now service is deployed on GKE. At 8am on a Monday, it stops responding to new patient admissions. Kubernetes shows all pods as running and healthy. How do you investigate and recover?'",
+          "why": "Tests: understanding of hung thread vs crashed process distinction, Kubernetes health check design, diagnosis skills, immediate recovery vs root cause analysis, and architecture decisions that prevent recurrence.",
+          "how": "Phase 1 — Immediate Investigation (first 5 minutes): 1) Check Kubernetes: kubectl get pods -n ecr-now — all Running, but check Restarts column. kubectl logs <pod-name> --tail=100 — look for thread exhaustion errors, WARN/ERROR patterns. kubectl top pods — CPU at 0% with 0 throughput = classic thread exhaustion. 2) Check Prometheus/Grafana: thread pool active count, FHIR client response time, Kafka consumer lag growing. 3) Take thread dump: kubectl exec <pod-name> -- jstack 1 > threaddump.txt. Look for BLOCKED threads. Phase 2 — Diagnosis (5-10 minutes): Thread dump shows: all 20 FHIR thread pool threads BLOCKED on FHIR HTTP call (waiting for socket read). Root cause: Evident EHR FHIR server responding very slowly (8am is peak clinical load — EHR is overloaded). Phase 3 — Immediate Recovery: kubectl rollout restart deployment/ecr-now — rolling restart. New pods start with fresh thread pools. Launchered requests in Kafka queue — automatically retried when pods come up. Phase 4 — Prevent Recurrence: 1) Add 5-second timeout on all FHIR WebClient calls (if not already present). 2) Add Resilience4j circuit breaker on FHIR calls — after 5 slow calls, fail fast. 3) Fix liveness probe: if liveness uses /actuator/health which checks FHIR — a slow FHIR server causes liveness failure → automatic restart. 4) Bulkhead: separate thread pool for FHIR calls (20 threads) from rest of service — FHIR blocking cannot exhaust service thread pool.",
+          "where": "This scenario is directly applicable to eCR-Now in production. The 8am admission surge coincides with peak EHR clinical load — highest risk for FHIR server slowness.",
+          "when": "Recovery within 10 minutes of detection (manual). Prevention mechanisms should reduce MTTR to <2 minutes (automatic liveness probe restart + circuit breaker).",
+          "issue": "If liveness probe also calls FHIR server to check health, and FHIR is slow, liveness probe times out → pod restarted → new pod also fails liveness due to same slow FHIR → continuous restart loop (CrashLoopBackOff).",
+          "fix": "Separate liveness from readiness: Liveness probe: GET /actuator/health/liveness — checks only if Spring context is alive (NOT FHIR). This prevents CrashLoopBackOff. Readiness probe: GET /actuator/health/readiness — checks FHIR reachability. Pod removed from load balancer if FHIR unreachable (stops taking requests but does not restart). Add separate FHIR health metric to Prometheus for alerting without tying it to pod liveness.",
+          "star": {
+            "s": "Interview: 'eCR-Now pods are all Running but zero throughput. Kubernetes health checks show green. It is 8am Monday. Walk me through your response.'",
+            "t": "Demonstrate systematic incident response, root cause thinking, and architecture awareness.",
+            "a": "Walked through: (1) Check thread dump — found BLOCKED threads on FHIR socket. (2) Checked Grafana — FHIR p99 latency spiked to 45s from normal 200ms at 7:55am. (3) Correlated with EHR team — they had a DB query optimization running that locked tables. (4) Immediate: kubectl rollout restart. Queued reports in Kafka auto-retried. (5) Prevention: 5s FHIR timeout, circuit breaker, separate liveness/readiness probes, FHIR bulkhead thread pool.",
+            "r": "Recovery: 4 minutes. Prevention: zero recurrence of thread exhaustion in following 6 months. Liveness/readiness separation eliminated the CrashLoopBackOff risk."
+          },
+          "difficulty": "advanced",
+          "tags": [
+            "server-stuck",
+            "kubernetes",
+            "incident-response",
+            "thread-exhaustion",
+            "circuit-breaker",
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "22.4.self-intro-scenario",
+          "term": "🔴 T1 #10 — Scenario: Self Introduction for Architecture Role",
+          "what": "Structured approach to self-introduction specifically tailored for architecture-level positions in healthcare IT. Different from a general Java developer intro — emphasizes systems thinking, domain expertise, and leadership.",
+          "why": "Architecture roles evaluate technical depth AND breadth AND communication. The self-intro is your opportunity to establish credibility before any technical question. A strong intro shapes how the interviewer perceives all your subsequent answers.",
+          "how": "Template for 12+ year Java/healthcare architect: 'I am a senior Java engineer and systems architect with 12+ years, specializing in healthcare interoperability for the past [N] years. Currently, I design and own eCR-Now — an automated electronic case reporting system built on a microservices architecture, deployed on GKE, that integrates with hospital EHR systems via FHIR R4 to report infectious disease cases to the CDC. I designed the full data flow from patient admission through CDC reporting using Direct messaging protocol, and built the resilience layer — circuit breakers, retry queues, and liveness probes — that keeps the system running even when the EHR or CDC endpoints are slow. The system achieves 99.9% CDC reporting compliance across multiple hospital networks. In my career I have also worked deeply on [Spring/Kafka/Kubernetes — whichever is most relevant to the role]. I am now looking for [broader architecture ownership / staff engineer role / lead architect position] where I can drive system design decisions and mentor the team. Happy to go deeper on the eCR-Now architecture, the FHIR integration, or the GKE setup — what would be most useful for your team?'",
+          "where": "Any architecture-level interview. Adapt the specific system details to your actual experience. The structure is universal.",
+          "when": "Always deliver this first before any technical question. If interrupted or if interviewer wants to jump straight to technical — deliver the 30-second version: 'I am a 12-year Java architect working in healthcare interoperability, owning a FHIR-based CDC reporting system on GKE. Happy to detail any part of that.' Then let them drive.",
+          "issue": "Overloading the intro with too many systems, technologies, and dates. Interviewer loses the thread and does not know what to ask about. The intro fails to create a clear anchor.",
+          "fix": "ONE flagship system. ONE key architectural decision. ONE business result. Everything else is supporting detail they can ask about. Less is more — depth beats breadth in a self-intro.",
+          "star": {
+            "s": "Phone screen for Staff Engineer role. Interviewer said: 'We have 30 minutes. Start by telling me about yourself.'",
+            "t": "Use the 30 minutes efficiently. Establish credibility in 2 minutes, leaving 25 for technical depth.",
+            "a": "2-minute intro: Healthcare architect, eCR-Now on GKE, FHIR R4 integration, Direct messaging to CDC, resilience layer design. Ended with: 'Our biggest technical challenge was making the system resilient when government CDC endpoints are unreliable — happy to go into that or any other aspect.' Interviewer: 'Yes, tell me about the resilience design.' I spent the next 15 minutes on circuit breakers, retry queues, and the liveness probe design — all areas where I had deep specific experience.",
+            "r": "Phone screen passed. Hiring manager said: 'You were the most prepared candidate in terms of being able to go deep immediately on architecture.' Progressed to onsite."
+          },
+          "difficulty": "advanced",
+          "tags": [
+            "self-intro",
+            "interview",
+            "architecture",
+            "healthcare",
+            "communication",
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "22.5.star-cdc-compliance",
+          "term": "🔴 T1 #11 — STAR: Achieving 99.9% CDC Reporting Compliance",
+          "what": "STAR story demonstrating resilience engineering for a healthcare compliance-critical system where failures have regulatory consequences.",
+          "why": "Demonstrates ability to design reliable systems for high-stakes domains, understanding of failure modes, and architectural decision-making under real business pressure.",
+          "how": "Situation: eCR-Now had a 15% CDC report failure rate — reports were being dropped when CDC Direct endpoint was slow or unavailable. Regulatory risk: any missed report is a potential public health incident. Task: Design and implement a reliable CDC report delivery mechanism guaranteeing at-least-once delivery. Action: 1) Root cause analysis — no retry mechanism, synchronous Direct send with 10s timeout, no persistence of failed sends. 2) Implemented Kafka-based retry queue: CDC send failure → publish to cdc-retry topic. Retry consumer: 6 attempts with exponential backoff (1m, 5m, 15m, 1h, 6h, 24h). 3) Implemented idempotency: SHA256(encounterId + reportTimestamp) key prevents duplicate CDC submissions on retry. 4) Dead-letter queue after 6 failed retries: PagerDuty alert + manual review queue. 5) MDN tracking: verify CDC delivery receipt within 1 hour. 6) Dashboards: real-time CDC delivery status per report, retry rate, queue depth. Result: CDC report failure rate from 15% → 0.1% (9x improvement). 99.9% compliance rate. Zero regulatory findings in subsequent 12-month audit period.",
+          "where": "eCR-Now CDC submission component. Kafka retry infrastructure shared across multiple eCR-Now workflow steps.",
+          "when": "Implemented over 6 weeks. Zero downtime during rollout (Kafka consumer added alongside existing sync send, then sync send removed after validation).",
+          "issue": "Initial retry implementation used fixed 1-minute intervals for all 6 retries. During a 3-hour CDC outage, 180 retries per report × N reports overwhelmed the retry infrastructure.",
+          "fix": "Switched to exponential backoff: 1m, 5m, 15m, 1h, 6h, 24h. Maximum of 6 attempts per report, total spread over 24 hours. Kafka consumer rate-limited: max 100 retry deliveries per minute across all reports.",
+          "star": {
+            "s": "eCR-Now had 15% CDC report failure rate. Regulatory audit threatened. Hospital network at risk of CDC compliance violation.",
+            "t": "Achieve >99% CDC report delivery reliability. Design must survive CDC endpoint outages of up to 24 hours.",
+            "a": "Designed and implemented Kafka-based retry queue with 6-step exponential backoff, idempotency keys, MDN verification, dead-letter queue with PagerDuty alerting, and real-time Grafana delivery dashboard. Solo design, led a team of 2 engineers for implementation over 6 weeks.",
+            "r": "CDC failure rate: 15% → 0.1%. 99.9% compliance rate sustained for 12 months. Zero regulatory findings. Retry infrastructure subsequently reused for EHR DocumentReference delivery."
+          },
+          "difficulty": "advanced",
+          "tags": [
+            "star",
+            "cdc",
+            "compliance",
+            "kafka",
+            "reliability",
+            "healthcare",
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "22.5.star-fhir-performance",
+          "term": "🔴 T1 #12 — STAR: Reducing FHIR Query Latency from 3s to 180ms",
+          "what": "STAR story demonstrating systematic performance investigation, multi-hypothesis testing, and measurable outcome for a critical healthcare integration path.",
+          "why": "Demonstrates profiling skills, ability to find root cause without guessing, and understanding of FHIR-specific performance patterns. Shows senior-level performance thinking.",
+          "how": "Situation: eCR-Now FHIR patient queries averaging 3 seconds p95. Reports being generated 30+ minutes after admission — missing early-morning CDC reporting window and potentially violating 24-hour reporting requirement for late-afternoon admissions. Task: Reduce FHIR query latency to under 500ms p95 without changing EHR FHIR server configuration (no access to EHR team's backlog). Action: 1) Profiled with async-profiler on production traffic replay. Flame graph: 80% of time in Jackson deserializeFromBytes — response parsing. 2) Checked response sizes: FHIR Bundle averaging 52KB — entire patient history of Conditions returned, not just current encounter. 3) Fix 1: Added FHIR _elements parameter — request only needed fields. Added &encounter={encounterId} scoping — only current encounter's resources. Bundle size: 52KB → 6KB. Parse time: 820ms → 95ms. 4) Fix 2: Parallel CompletableFuture for Condition, Observation, MedicationRequest queries. Was sequential (3 × 820ms = 2.46s). Now parallel: max(3 × 95ms) = 95ms for all three. 5) Fix 3: Redis cache keyed by (patientId, encounterId, resourceType). 5-minute TTL. Cache hit rate 70% — multiple eCR workflow steps query same patient. Cache hit latency: 3ms. Result: FHIR query p95: 3000ms → 180ms (no cache), 3ms (cache hit). Weighted average with 70% cache hit: 57ms. 100% CDC 24-hour compliance restored.",
+          "where": "eCR-Now FHIR client component. Improvements applied to all 3 FHIR resource queries (Condition, Observation, MedicationRequest).",
+          "when": "Investigation: 1 week. Implementation: 1 week. Validated in load testing before production release.",
+          "issue": "Parallel CompletableFuture queries increased thread count significantly. Under burst load, created too many concurrent connections to EHR FHIR server. EHR team complained about connection spike.",
+          "fix": "Added connection pool cap: WebClient with bounded elastic scheduler, max 50 connections to EHR FHIR server. Backpressure: if pool full, queue request for up to 2 seconds before returning 503. EHR team confirmed: controlled connection pool caused zero complaints after fix.",
+          "star": {
+            "s": "eCR-Now FHIR queries at 3 seconds p95. Missing early CDC reporting window. Compliance risk for late-day admissions.",
+            "t": "Reduce to under 500ms p95 without EHR server changes.",
+            "a": "Profiled with async-profiler: bottleneck was response parsing of oversized Bundles. Applied: FHIR _elements + encounter scoping (52KB→6KB), parallel CompletableFuture queries, Redis cache with 70% hit rate. Total: 3s → 57ms weighted average.",
+            "r": "100% CDC 24-hour compliance. 70% reduction in EHR FHIR server load from eCR-Now queries."
+          },
+          "difficulty": "advanced",
+          "tags": [
+            "star",
+            "performance",
+            "fhir",
+            "profiling",
+            "redis",
+            "optimization",
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "4.2.volatile-keyword",
+          "term": "🔴 T1 #13 — volatile keyword",
+          "what": "volatile guarantees that reads and writes to a variable are visible to all threads immediately — no CPU cache inconsistency. Does NOT make compound operations atomic.",
+          "why": "Without volatile, threads can cache variable values in CPU registers — one thread changes it, other threads still see old value.",
+          "how": "private volatile boolean running = true; — all threads always see the latest value. Does NOT help with running++ because that is two operations (read + write).",
+          "where": "Simple flags (running/stopped), singleton double-checked locking pattern, status variables read by multiple threads.",
+          "when": "Use volatile for: simple flags, variables written by one thread and read by many, the instance field in double-checked locking singleton.",
+          "issue": "volatile does NOT fix race conditions on compound operations. volatile int x; x++ is NOT atomic — still a race condition.",
+          "fix": "For compound operations use AtomicInteger, synchronized, or ReentrantLock. volatile only for simple read/write visibility.",
+          "star": {
+            "s": "Thread stop flag not working — thread ignores the flag change.",
+            "t": "Fix.",
+            "a": "Added volatile to boolean stopRequested. Worker thread now sees the update immediately.",
+            "r": "Thread stops cleanly on flag change."
+          },
+          "difficulty": "intermediate",
+          "tags": [
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "4.2.synchronized-keyword",
+          "term": "🔴 T1 #14 — synchronized keyword",
+          "what": "synchronized ensures only one thread executes a block or method at a time. Other threads wait (BLOCKED) until the current thread finishes and releases the lock.",
+          "why": "Without synchronization, multiple threads reading/writing shared data can produce wrong results — race condition.",
+          "how": "synchronized method: public synchronized void increment() { count++; }. synchronized block: synchronized(this) { count++; } — block is preferred, smaller scope.",
+          "where": "Any shared mutable state accessed by multiple threads: counters, caches, queues, session state.",
+          "when": "Use synchronized when threads share mutable data. Prefer the smallest possible synchronized scope to minimize contention.",
+          "issue": "Over-synchronizing (entire method when only 2 lines need protection) creates contention — threads wait unnecessarily, killing throughput.",
+          "fix": "Use synchronized block with minimum scope. Or use java.util.concurrent classes (AtomicInteger, ConcurrentHashMap) which are more efficient.",
+          "star": {
+            "s": "Thread-safe counter needed for hit tracking.",
+            "t": "Implement efficiently.",
+            "a": "AtomicInteger.incrementAndGet() — lock-free, faster than synchronized counter for simple increment.",
+            "r": "Correct and fast."
+          },
+          "difficulty": "intermediate",
+          "tags": [
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "4.2b.happens-before-relationship",
+          "term": "🔴 T1 #15 — Happens-Before Relationship",
+          "what": "Happens-before is Java's formal guarantee: if action A happens-before action B, then everything A wrote is visible to B. Without it, threads can see stale data.",
+          "why": "CPUs and JIT compilers reorder instructions for performance. Happens-before rules define when reordering is NOT allowed.",
+          "how": "Rules: 1) Monitor unlock happens-before lock by another thread. 2) volatile write happens-before volatile read. 3) Thread.start() happens-before thread's actions. 4) Thread.join() happens-before caller's next action.",
+          "where": "Every synchronization point: synchronized blocks, volatile variables, thread start/join, object publication.",
+          "when": "Think about happens-before when: sharing data between threads, checking if a shared variable update is visible, designing lock-free data structures.",
+          "issue": "No happens-before = thread B may see the object in an uninitialized or partially- initialized state even after A 'finished' writing it.",
+          "fix": "Use synchronized, volatile, or java.util.concurrent structures — they all establish happens-before guarantees.",
+          "star": {
+            "s": "Interview: how does Java ensure one thread sees another's writes?",
+            "t": "Explain.",
+            "a": "Java Memory Model defines happens-before. synchronized unlock and volatile write create visibility guarantees. Without them, CPU caches can give stale values.",
+            "r": "Expert-level answer."
+          },
+          "difficulty": "intermediate",
+          "tags": [
+            "priority-roadmap"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "23.2",
+      "slug": "tier-2-architecture-depth",
+      "title": "🟡 TIER 2 — Architecture Deep Dive (Study This Week)",
+      "keyRule": "These 14 topics form the depth of your architecture knowledge for your current eCR-Now system and distributed systems design. They make your scenario answers credible and your design decisions defensible. Study these after completing Tier 1. Estimated time: 3-5 days.",
+      "terms": [
+        {
+          "id": "22.1.system-overview",
+          "term": "🟡 T2 #1 — eCR-Now System Overview",
+          "what": "eCR-Now (Electronic Case Reporting Now) is a healthcare interoperability middleware deployed on Google Kubernetes Engine (GKE) that automatically detects and reports infectious disease cases from hospital Electronic Health Records (EHR) to the Centers for Disease Control and Prevention (CDC). It sits between the hospital information systems and the CDC, handling the full workflow: patient admission detection → FHIR-based condition querying → reportability assessment → eCR report generation → CDC submission via Direct messaging → response handling → EHR update.",
+          "why": "Healthcare providers are legally required to report notifiable conditions (COVID, flu, TB, etc.) to public health authorities within 24-72 hours. Manual reporting is error-prone, delayed, and burdensome for clinical staff. eCR-Now automates this entirely — triggered by patient admission, no clinical staff involvement needed.",
+          "how": "Full flow step by step: 1) Patient Registered in Hospital: Patient admitted to IMS (Information Management System). 2) IMS processes admission: IMS uses cpXML (Clinical Protocol XML) to query the FHIR server for Patient ID and Encounter ID. 3) IMS sends launchPatient POST to eCR-Now via Linus Gateway (API Gateway / Load Balancer). Payload: {fhirUrl, patientId (FHIR), encounterId (FHIR)} — these are FHIR IDs, not IMS UI IDs. 4) eCR-Now receives launchPatient: The GKE-hosted eCR-Now service starts the eCR workflow for this patient. 5) Query Patient (FHIR): eCR-Now queries the EHR's FHIR R4 API for patient clinical data — Condition resources, Observation resources, MedicationRequest, Encounter details. Evaluates reportability triggers (specific SNOMED/LOINC/ICD codes indicating notifiable conditions). 6) If reportable condition found: Generates an eCR report (structured clinical document). Submits to CDC via Direct messaging protocol (secure SMTP-based health message transport). 7) CDC processes the report: CDC sends response back via Direct (SMTP). eCR-Now polls CDC's Direct inbox via IMAP. 8) Response handling: eCR-Now stores the CDC response in eCR-Now database. Sends FHIR POST (DocumentReference resource) back to Evident EHR with the CDC response attached. 9) Evident EHR: Displays the CDC response using HL7 Response Stylesheet. Existing screens modified to allow all users to view the report.",
+          "where": "Hospital networks using Evident EHR system. eCR-Now is a GKE-deployed service, accessible to hospital systems via the Linus API Gateway.",
+          "when": "The entire workflow triggers on every patient admission. For non-reportable conditions, the workflow terminates after the FHIR query step. For reportable conditions, the full flow to CDC completes within 2 hours of admission (well within the 24-hour regulatory requirement).",
+          "issue": "Any step in the flow can fail: Linus Gateway can timeout, FHIR server can be slow, CDC Direct endpoint can be unreachable, IMAP polling can miss responses. Each failure mode requires different handling.",
+          "fix": "Circuit breakers on FHIR API and CDC Direct calls. Kafka-based retry queues for each workflow step. Saga pattern for the full multi-step workflow. Kubernetes liveness probes for automatic pod recovery. Dead-letter queue for permanently failed reports with alerting to operations team.",
+          "star": {
+            "s": "Interview: 'Walk me through a system you have designed or owned end-to-end.'",
+            "t": "Demonstrate ownership of a complex, multi-component, fault-tolerant healthcare system.",
+            "a": "Described eCR-Now from business problem (mandatory CDC reporting) through full technical architecture (IMS → cpXML → Linus Gateway → GKE → FHIR R4 → Direct SMTP → IMAP → Evident EHR). Covered technology decisions (FHIR because national standard, GKE for autoscaling, Direct because CDC mandates it), failure handling (circuit breakers, retry, liveness probes), and compliance outcomes (99.9% CDC reporting compliance).",
+            "r": "Interviewer: 'This is exactly the kind of end-to-end system ownership we are looking for in a senior architect.' Proceeded to offer stage."
+          },
+          "difficulty": "advanced",
+          "tags": [
+            "ecr-now",
+            "ehr",
+            "fhir",
+            "gke",
+            "architecture",
+            "healthcare",
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "22.1.linus-gateway",
+          "term": "🟡 T2 #2 — Linus Gateway — API Gateway Role",
+          "what": "Linus Gateway is the API Gateway and load balancer between hospital information systems (IMS) and eCR-Now. It is the single entry point for all launchPatient POST requests from hospital systems. Handles: routing, SSL termination, authentication, rate limiting, and load distribution across eCR-Now GKE pods.",
+          "why": "Without an API Gateway, each hospital system would need to know the direct address of eCR-Now pods — which change as Kubernetes scales up and down. The gateway provides a stable, secure, managed entry point.",
+          "how": "Hospital IMS sends POST /launchPatient to Linus Gateway endpoint. Linus Gateway: 1) Authenticates the request (client certificate or API key). 2) Validates the payload (fhirUrl, patientId, encounterId present). 3) Rate limits per hospital system (prevents one IMS from flooding eCR-Now). 4) Routes to one of the eCR-Now pods running on GKE. 5) Returns response to IMS (202 Accepted for async processing). If eCR-Now is unavailable: Gateway returns 503 with Retry-After header. IMS retries according to the header.",
+          "where": "Between all external callers (IMS systems) and eCR-Now GKE deployment. Acts as the network boundary between hospital internal systems and the GKE cluster.",
+          "when": "All incoming requests go through Linus Gateway. Direct pod access is blocked by GKE network policy. This ensures every request is authenticated and rate-limited before reaching eCR-Now.",
+          "issue": "Linus Gateway itself can become a single point of failure. If it goes down, no hospital system can trigger eCR-Now — all patient admissions miss automated reporting.",
+          "fix": "Linus Gateway deployed in multiple instances behind a cloud load balancer (GCP Load Balancer). Health checks on gateway instances. If all gateway instances fail, IMS systems receive DNS timeout — they should queue the launchPatient call and retry (IMS-side retry is essential). Alert when gateway health degrades.",
+          "star": {
+            "s": "Architecture question: 'What happens if your API Gateway goes down?'",
+            "t": "Demonstrate understanding of SPOF and mitigation strategy.",
+            "a": "Linus Gateway runs multiple instances behind GCP Load Balancer — single instance failure is transparent. If ALL gateway instances fail: IMS systems receive connection refused. We documented the IMS-side retry requirement in our integration guide: IMS must queue launchPatient and retry every 5 minutes for up to 2 hours. Alert fires within 1 minute of gateway downtime via Prometheus + PagerDuty. 2-hour window is safe because CDC reporting SLA is 24 hours.",
+            "r": "Shows awareness of failure modes, mitigation at multiple layers, and that the SLA gives us recovery time."
+          },
+          "difficulty": "advanced",
+          "tags": [
+            "api-gateway",
+            "linus",
+            "load-balancer",
+            "ecr-now",
+            "spof",
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "22.1.gke-deployment-architecture",
+          "term": "🟡 T2 #3 — eCR-Now GKE Deployment Architecture",
+          "what": "eCR-Now runs on Google Kubernetes Engine (GKE) in multiple pods. GKE provides pod autoscaling, self-healing (restart stuck pods), rolling deployments, and network policy enforcement. Each pod runs the eCR-Now Spring Boot application — a stateless service that processes patient admission events.",
+          "why": "Hospital admission volume is bursty — peaks during morning shift changes and after-hours emergency admissions. GKE Horizontal Pod Autoscaler scales pods based on CPU or queue depth. Stateless design means any pod can handle any request — no session affinity needed.",
+          "how": "Deployment: 2 minimum replicas (always on), up to 20 replicas (HPA max). KEDA scaler on Kafka consumer group lag (scale up when lag > 50 messages, scale down when lag < 10 for 5 minutes). Resource requests: cpu: 500m, memory: 512Mi. Limits: cpu: 2000m, memory: 2Gi (avoids OOM kills while preventing one pod from consuming all node resources). Liveness probe: GET /actuator/health/liveness — checks if Spring context alive. Timeout 5s, failure threshold 3. Readiness probe: GET /actuator/health/readiness — checks FHIR client, DB connection, Kafka connectivity. New pod does not receive traffic until readiness probe passes (prevents cold-start errors). Rolling update: maxSurge: 1, maxUnavailable: 0 — zero-downtime deployments. Pod Disruption Budget: minAvailable: 2 — always at least 2 pods running during node drains.",
+          "where": "GCP region where hospital network is located. Multi-zone within the region for fault tolerance (pods spread across 3 GCP zones).",
+          "when": "Autoscaling handles routine load variation. Pre-scheduled scaling via CronJob scales to 10 pods at 6:30am before morning rounds (known peak). Scale down at 10am when rounds end.",
+          "issue": "JVM startup time for Spring Boot is 15-30 seconds. During scale-up events, new pods take 30-60 seconds before serving traffic. If peak arrives faster than pods warm up, queue backs up.",
+          "fix": "Readiness probe ensures traffic only routes to warmed-up pods (prevents errors to cold pods). CRaC (Checkpoint/Restore in Userspace) for near-instant JVM startup (experimental). Primary mitigation: predictive pre-scaling before known peak times. KEDA starts scale-up as queue depth grows, before CPU spikes.",
+          "star": {
+            "s": "Morning admission surge causing 15-minute report delays — HPA CPU-based scaling too slow.",
+            "t": "Eliminate admission burst delays.",
+            "a": "Replaced CPU HPA with KEDA on Kafka consumer lag. Pre-scale via CronJob to 10 pods at 6:30am. Readiness probe on FHIR client warm-up. Result: pods pre-warmed before the burst, KEDA adds more pods as queue grows.",
+            "r": "Report generation latency: 15 minutes at peak → consistently under 2 minutes at all load levels."
+          },
+          "difficulty": "advanced",
+          "tags": [
+            "gke",
+            "kubernetes",
+            "autoscaling",
+            "keda",
+            "spring-boot",
+            "deployment",
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "22.2.fhir-overview",
+          "term": "🟡 T2 #4 — FHIR R4 Integration in eCR-Now",
+          "what": "FHIR (Fast Healthcare Interoperability Resources) R4 is a RESTful API standard for healthcare data exchange, maintained by HL7 International. eCR-Now uses FHIR to query patient clinical data from the Evident EHR FHIR server. FHIR resources are JSON or XML documents representing clinical concepts: Patient, Encounter, Condition, Observation, MedicationRequest, DocumentReference.",
+          "why": "FHIR is the U.S. mandated standard for healthcare interoperability (CMS Interoperability Rule 2020). Every certified EHR must expose a FHIR R4 API. Using FHIR means eCR-Now can integrate with any FHIR-compliant EHR — not just Evident. This portability is critical for expanding to new hospital networks.",
+          "how": "eCR-Now receives launchPatient payload with: fhirUrl (EHR FHIR server base URL), patientId (FHIR Patient resource ID), encounterId (FHIR Encounter resource ID). These FHIR IDs are obtained by IMS using cpXML to query the FHIR server — they are NOT the same as the IMS UI patient/encounter IDs. FHIR queries in eCR-Now: GET {fhirUrl}/Condition?patient={patientId}&encounter={encounterId} GET {fhirUrl}/Observation?patient={patientId}&encounter={encounterId} GET {fhirUrl}/MedicationRequest?patient={patientId}&encounter={encounterId}. Responses are FHIR Bundle resources (list of matching resources). eCR-Now evaluates each Condition/Observation code against the RCTC (Reportable Condition Trigger Codes) value set — if any match, condition is reportable. FHIR _elements parameter: request only needed fields to reduce response size. FHIR _include for related resources in one request to reduce round trips.",
+          "where": "Every patient admission triggers FHIR queries to the Evident EHR FHIR server. In multi-hospital deployments, fhirUrl varies — eCR-Now queries each hospital's own FHIR server.",
+          "when": "FHIR queries execute immediately after launchPatient is received. Parallel queries for Condition, Observation, MedicationRequest (not sequential) to minimize latency. Results cached in Redis for 5 minutes — most follow-up queries within same encounter window.",
+          "issue": "FHIR IDs are different from EHR UI IDs. A common integration mistake: IMS sends the UI patient ID (e.g., MRN) instead of the FHIR Patient resource ID. eCR-Now gets 404 Not Found on FHIR query. This breaks the entire reportability assessment.",
+          "fix": "IMS must use cpXML to resolve the UI IDs to FHIR IDs before calling launchPatient. eCR-Now validates that patientId and encounterId are valid FHIR resource IDs (UUID format) before proceeding. Clear error response to IMS with specific message: 'patientId must be a FHIR Patient resource ID, not an MRN.'",
+          "star": {
+            "s": "New hospital network integration — IMS team sent MRN as patientId in launchPatient. FHIR queries returning 404. All admission events failing silently.",
+            "t": "Detect and communicate the integration error clearly. Fix without modifying IMS immediately.",
+            "a": "Added FHIR ID format validation on receipt of launchPatient (UUID pattern check). Clear error response: HTTP 400 with body explaining FHIR ID vs MRN distinction. Added a FHIR ID lookup fallback: if patientId fails FHIR query, attempt a search by identifier (MRN search: /Patient?identifier={mrn}) to resolve to FHIR ID automatically. Documented integration requirement clearly in API contract.",
+            "r": "New hospital onboarded successfully. Automatic MRN-to-FHIR-ID resolution as a convenience feature for hospitals with older IMS systems."
+          },
+          "difficulty": "advanced",
+          "tags": [
+            "fhir",
+            "ehr",
+            "healthcare-interoperability",
+            "r4",
+            "integration",
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "22.2.fhir-performance",
+          "term": "🟡 T2 #5 — FHIR API Performance Optimization",
+          "what": "FHIR Bundle responses can be large (50-500KB). Unoptimized FHIR queries cause high latency and EHR server load. Key optimizations: _elements (request only needed fields), _include (fetch related resources in one request), parallel queries, response caching, connection pooling.",
+          "why": "Slow FHIR queries delay eCR report generation. If query latency exceeds 5-10 minutes, CDC 24-hour reporting window becomes tight. EHR server overload causes slow responses for clinical users — eCR-Now must be a good citizen and not degrade clinical workflows.",
+          "how": "Optimizations applied in eCR-Now: 1) _elements parameter: GET /Condition?patient=123&_elements=code,clinicalStatus,category — request only needed fields. Reduces 50KB Bundle to 6KB. 2) Parallel queries with CompletableFuture: CompletableFuture<Bundle> conditionsFuture = CompletableFuture.supplyAsync(() -> fhirClient.query(conditionQuery)); CompletableFuture<Bundle> observationsFuture = CompletableFuture.supplyAsync(() -> fhirClient.query(observationQuery)); CompletableFuture.allOf(conditionsFuture, observationsFuture).join(); — runs in parallel instead of 3 sequential requests. 3) Redis cache: cache FHIR responses by (patientId, encounterId, resourceType) with 5-minute TTL. Cache hit rate ~70% — multiple eCR workflow steps query the same patient data. 4) Connection pooling: WebClient with connection pool (maxConnections=50, pendingAcquireMaxCount=100). 5) Response timeout: 5 seconds per FHIR request — prevents blocked threads. Circuit breaker: open after 50% slow calls in 10-call window.",
+          "where": "FHIR queries in eCR-Now workflow. Performance is critical because FHIR query latency directly impacts eCR report generation time and CDC compliance.",
+          "when": "Apply all optimizations from the start. Profile with async-profiler to find actual bottleneck before adding optimizations. Monitor: FHIR query p95 latency, cache hit rate, EHR FHIR server response time trend.",
+          "issue": "FHIR _include fetches related resources in one request but can return very large Bundles if the patient has extensive history. A patient with 500+ Conditions in their history = 2MB+ Bundle per query.",
+          "fix": "Add encounter-scoped filter: &encounter={encounterId} — only current encounter's resources. Add date range filter: &onset-date=ge{admissionDate} for Conditions. Page through large results with _count parameter. For bulk FHIR (historical analytics), use FHIR $export operation (async bulk export, not real-time queries).",
+          "star": {
+            "s": "Profiled eCR-Now FHIR queries: 80% of 3s latency was Jackson deserialization of 50KB+ Bundle responses. EHR had complex patients with years of clinical history.",
+            "t": "Reduce FHIR query latency without changing EHR configuration.",
+            "a": "Added _elements to all FHIR queries (only needed fields). Added encounter scoping with &encounter={encounterId}. Parallel CompletableFuture queries for Condition, Observation, MedicationRequest simultaneously. Redis cache for 5-minute TTL. Result: 50KB → 6KB response, sequential → parallel execution.",
+            "r": "FHIR query latency: 3000ms → 180ms p95. EHR server load from eCR-Now reduced by 65%. Freed FHIR query budget for clinical user queries."
+          },
+          "difficulty": "advanced",
+          "tags": [
+            "fhir",
+            "performance",
+            "redis",
+            "parallel-queries",
+            "optimization",
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "22.3.direct-protocol",
+          "term": "🟡 T2 #6 — Direct Protocol (Healthcare Secure Messaging)",
+          "what": "Direct Protocol is a national standard (part of the Nationwide Health Information Network) for secure point-to-point health information exchange. It is SMTP-based with mandatory S/MIME encryption and digital signatures. Messages are routed through Health Information Service Providers (HISPs) — trusted intermediaries that handle certificate management and message routing.",
+          "why": "Healthcare information exchange requires: HIPAA compliance (encryption of PHI in transit), identity authentication (sender and receiver verified via certificates), audit trails (delivery receipts). Standard SMTP provides none of these. Direct Protocol adds all three, while remaining based on familiar email infrastructure.",
+          "how": "eCR-Now CDC submission flow: 1) eCR-Now constructs eCR report (CDA/XML format). 2) Sends via SMTP to the HISP (Health Information Service Provider) using Direct-compliant client library. The HISP address is specific to the hospital system's Direct address (e.g., ecr-now@directaddress.hospitalnetwork.org). Recipient address is CDC's Direct inbox (cdc-ecr@cdc.gov or equivalent). 3) HISP encrypts the message using the recipient's public certificate (from HISP certificate directory). 4) CDC's HISP receives, decrypts, delivers to CDC inbox. 5) eCR-Now polls CDC response inbox via IMAP (Direct responses come back as SMTP replies to the original message). 6) IMAP polling: check CDC Direct mailbox every 15 minutes for new MDN (Message Disposition Notifications) and response reports. Store response content in eCR-Now DB.",
+          "where": "CDC submission step of eCR-Now workflow. Direct messaging also used for other healthcare information exchange: lab results, referral summaries, care transition summaries.",
+          "when": "eCR report sent to CDC within 2 hours of reportable condition detection. IMAP polling every 15 minutes for responses. If CDC takes >72 hours to respond, alert operations team (CDC SLA is typically 24-48 hours).",
+          "issue": "CDC Direct endpoint is government infrastructure — less reliable than commercial APIs. Periodic outages during maintenance windows. SMTP/Direct send can timeout or fail with no immediate feedback on delivery status.",
+          "fix": "Retry queue: failed Direct sends queued in Kafka with exponential backoff (1min, 5min, 15min, 1hr, 6hr, 24hr). Circuit breaker on Direct send — open after 3 consecutive failures, test every 5 minutes. MDN tracking: if MDN (delivery receipt) not received within 1 hour, treat as failed and retry. Alert when any report not delivered within 4 hours of generation.",
+          "star": {
+            "s": "CDC Direct endpoint down for 3 hours during a government maintenance window. 47 eCR reports queued and unsent. Risk of missing CDC 24-hour reporting window.",
+            "t": "Deliver all 47 queued reports after CDC endpoint recovers without manual intervention.",
+            "a": "Kafka retry queue with exponential backoff absorbed all 3-hour queue. When circuit breaker detected CDC recovery (probe succeeded in HALF-OPEN state), all 47 reports delivered automatically in 12 minutes. Operations team alerted (but no action required). Added MDN tracking with 1-hour SLA alert.",
+            "r": "Zero missed CDC reports despite 3-hour outage. Automatic recovery required no manual intervention. Operations team saw alert, monitored, confirmed auto-recovery."
+          },
+          "difficulty": "advanced",
+          "tags": [
+            "direct-protocol",
+            "smtp",
+            "cdc",
+            "healthcare-messaging",
+            "hisp",
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "21.4.saga-pattern",
+          "term": "🟡 T2 #7 — Saga Pattern (Distributed Transactions)",
+          "what": "Saga is a sequence of local transactions where each step publishes an event on success, and compensating transactions undo previous steps on failure. Replaces XA/2PC distributed transactions across microservices.",
+          "why": "In microservices, each service has its own database. You cannot use a database transaction across service boundaries. Saga provides eventual consistency without distributed locks or XA transactions (which are slow and create coupling).",
+          "how": "Two flavors: Choreography Saga (event-driven, decentralized): Patient Admitted → eCR-Now subscribes → queries FHIR → publishes ECRGenerated → CDC service subscribes → sends to CDC → publishes ECRSubmitted. On failure: service publishes ECRFailed → compensating actions triggered (alert operations team, queue for manual review). Orchestration Saga (centralized): A Saga Orchestrator (state machine) tells each service what to do next. More control, easier to monitor, easier to debug. Use Spring State Machine or Temporal for complex healthcare workflows.",
+          "where": "Multi-service workflows spanning multiple databases: healthcare patient admission flow, e-commerce order flow (payment, inventory, shipping), financial transaction processing.",
+          "when": "Use Saga when a business process spans 3+ services each with their own DB. Do NOT use for 2-service interactions — simple event publishing is enough. Do NOT use when strict ACID consistency is needed (use a shared database or accept the architecture limitation).",
+          "issue": "Compensating transactions can fail too. A saga stuck in a partial state (3 of 5 steps done, compensation of step 2 failed) is very hard to recover and requires manual intervention.",
+          "fix": "All compensating transactions must be idempotent. Persist saga state in DB — can replay or manually advance. Dead-letter queue for failed compensations. Monitoring dashboard showing saga state per patient/order. Define a clear manual escalation process for stuck sagas.",
+          "star": {
+            "s": "eCR-Now patient flow has 5 steps: launchPatient → FHIR query → reportability check → eCR generation → CDC submission. Any step can fail. Need reliable end-to-end delivery with no missed CDC reports.",
+            "t": "Design reliable multi-step workflow without XA distributed transaction.",
+            "a": "Choreography Saga with Kafka. Each step publishes success/failure event to its own topic. Failed steps publish to a per-step retry topic with exponential backoff. Saga state (patientId, encounterId, currentStep, timestamp) persisted in eCR-Now DB. Alert when saga not completed within 4 hours of patient admission (well within CDC 24h window).",
+            "r": "Full audit trail per patient encounter. Automatic retry on transient failures. SLA breach alerts give operations team time to intervene. Zero missed CDC reports in 6 months post-implementation."
+          },
+          "difficulty": "advanced",
+          "tags": [
+            "saga",
+            "distributed-transactions",
+            "microservices",
+            "kafka",
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "21.4.outbox-pattern",
+          "term": "🟡 T2 #8 — Outbox Pattern (Reliable Event Publishing)",
+          "what": "Outbox Pattern ensures a DB write and event publish happen atomically — solving the dual-write problem. Write the event to an OUTBOX table in the same DB transaction as the business data. A separate process reads the outbox table and publishes to Kafka/RabbitMQ, then marks as published.",
+          "why": "Without outbox: save to DB succeeds, then publish to Kafka fails → data in DB but event lost → downstream services never get notified → inconsistency. Or publish succeeds, DB fails → event without data in DB. The outbox pattern makes this atomic.",
+          "how": "Step 1: In same DB transaction: INSERT INTO ecr_reports (encounter_id, data) and INSERT INTO outbox (aggregate_type, aggregate_id, event_type, payload). Step 2: Outbox Poller (scheduled every 1s or CDC-based): SELECT * FROM outbox WHERE published = false ORDER BY created_at LIMIT 100. For each row: publish to Kafka. On success: UPDATE outbox SET published = true. On failure: leave for next poll (natural retry). Debezium (Change Data Capture): watch DB binlog, stream INSERT events from outbox table to Kafka — more efficient than polling, near real-time.",
+          "where": "Any time you need to both update a DB and publish an event — patient admitted event, eCR report generated event, CDC submission event. Critical when downstream system availability is uncertain.",
+          "when": "Use outbox whenever event publishing to Kafka must be guaranteed. Skip it for fire-and-forget notifications where loss is acceptable. Use Debezium when you need near real-time (polling has 1-5s delay).",
+          "issue": "Outbox table grows indefinitely if cleanup is not implemented. Old published entries accumulate, causing full table scans to become slow.",
+          "fix": "Scheduled cleanup: DELETE FROM outbox WHERE published = true AND created_at < NOW() - INTERVAL 7 DAY. Run in batches, not a single DELETE of all rows. Add index on (published, created_at).",
+          "star": {
+            "s": "eCR-Now was losing patient admission events when Kafka was briefly unavailable during broker rebalancing. The patient FHIR query step was missed, causing delayed CDC reports.",
+            "t": "Guarantee event delivery for every patient admission without Kafka-coupled DB writes.",
+            "a": "Implemented Outbox pattern: patient admission data written to ecr_reports table and outbox table in same transaction. Debezium watches outbox table via MySQL binlog, streams to Kafka. If Kafka is down, Debezium buffers and delivers when Kafka recovers. Outbox table has 7-day retention with daily cleanup batch.",
+            "r": "Zero lost patient admission events. Even during Kafka rolling upgrade, all admissions processed in correct order. Decoupled FHIR query trigger from Kafka availability."
+          },
+          "difficulty": "advanced",
+          "tags": [
+            "outbox",
+            "kafka",
+            "event-driven",
+            "reliability",
+            "debezium",
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "21.4.idempotency-design",
+          "term": "🟡 T2 #9 — Idempotency Design",
+          "what": "An operation is idempotent if calling it multiple times produces the same result as calling once. Critical for safe retries. GET, HEAD, OPTIONS, PUT, DELETE are naturally idempotent. POST needs explicit idempotency key design.",
+          "why": "Networks fail. Retries are necessary. Without idempotency: retries cause duplicate orders, duplicate payments, duplicate CDC reports. In healthcare, duplicate CDC reports is a compliance violation and wastes CDC reviewer time.",
+          "how": "Client generates UUID per request and sends in Idempotency-Key header (or in POST body). Server: 1) Check Redis/DB for key. 2) If found: return cached response (no reprocessing). 3) If not found: process, store key + result in Redis with TTL (24h typical). 4) Return result. DB safety net: unique constraint on idempotency_key column — catches race condition between two concurrent identical requests. Redis: hash map idempotency_key → response JSON. Key: always store the RESPONSE not just 'processed=true' so you return identical response on retry.",
+          "where": "All state-changing POST operations that might be retried: CDC report submission, EHR document creation, payment processing, Kafka consumer (use message offset/ID as idempotency key).",
+          "when": "Design for idempotency when writing the API, not retroactively. Rule: if the operation has side effects and might be retried, it needs idempotency. Pure reads (GET) are inherently idempotent — no extra work needed.",
+          "issue": "Idempotency key stored only in Redis can be lost if Redis crashes before expiry. A retry after Redis restart would reprocess the request — duplicate CDC submission.",
+          "fix": "Persist idempotency key in database (indexed column) as source of truth. Use Redis as cache (fast path). If Redis miss: fall back to DB check. On DB hit: re-cache in Redis. TTL must be long enough to cover client retry window (clients should retry within 24h, set TTL to 48h).",
+          "star": {
+            "s": "CDC submission service was timing out intermittently. Retry logic was retrying the POST to CDC. CDC received same eCR report 2-3 times. Compliance team flagged duplicate reports as a protocol violation.",
+            "t": "Prevent duplicate CDC submissions when retry logic fires.",
+            "a": "Idempotency key = SHA256(encounterId + reportGeneratedAt). Stored in eCR-Now DB with unique constraint. Before POST to CDC: check if key exists. If yes: return previous response. CDC also provides a tracking ID in response — stored and deduplicated on their processing side too. Added Idempotency-Key header to CDC request (their API supports it).",
+            "r": "Zero duplicate CDC reports. Retry logic safe to run aggressively. Compliance team confirmed protocol compliance."
+          },
+          "difficulty": "advanced",
+          "tags": [
+            "idempotency",
+            "distributed-systems",
+            "api-design",
+            "retry-safety",
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "21.5.performance-approach",
+          "term": "🟡 T2 #10 — Performance Tuning Methodology",
+          "what": "Systematic performance improvement: Establish baseline → Profile to find bottleneck → Form hypothesis → Change ONE variable → Measure → Document. Never optimize without a benchmark. Never change multiple things simultaneously.",
+          "why": "Random optimization wastes weeks on code paths that are not in the hot path. Senior engineers are expected to bring data to performance discussions, not intuition. Business stakeholders need projected impact before approving optimization work.",
+          "how": "Step 1 — Baseline: Run load test (Gatling/JMeter), capture p50/p95/p99 latency, throughput, CPU/Memory, error rate. Step 2 — Identify bottleneck: CPU-bound? (async-profiler, Java Flight Recorder). Memory/GC-bound? (heap dump in MAT or VisualVM, GC logs). I/O-bound? (slow DB queries via EXPLAIN plan, N+1 via Hibernate SQL logging, external API latency). Thread contention? (jstack, lock profiling in JFR). Step 3 — Fix one thing: add DB index, fix N+1, add caching, increase pool size, switch to async. Step 4 — Measure: run same load test, compare delta. Step 5 — Document: bottleneck found, fix applied, improvement measured. For team knowledge and future reference.",
+          "where": "User-facing APIs (<100ms p95 target), critical business flows (eCR processing < 2min), batch jobs (throughput target per hour).",
+          "when": "Performance tuning is reactive when SLA is breached, proactive via load testing before major releases. Quarterly performance review on critical paths for senior engineers.",
+          "issue": "Premature optimization: spending weeks on code that is not on the hot path. Also: optimizing without load testing means you fix local benchmarks that don't reflect real production traffic patterns.",
+          "fix": "Always profile in production-like environment with production-like data volumes. Synthetic data in staging with 100 rows vs production with 10 million rows = completely different bottlenecks. Use flame graphs from async-profiler to visualize where CPU time actually goes.",
+          "star": {
+            "s": "eCR-Now FHIR patient query taking 3 seconds p95. Missing CDC 24-hour reporting window for late-admitted patients.",
+            "t": "Reduce FHIR query latency to under 500ms p95 without changing the EHR FHIR server.",
+            "a": "Profiled with async-profiler: 80% of time in Jackson deserialization of 50KB FHIR Bundle responses. Fix 1: Added FHIR _elements parameter to request only needed fields → response shrunk from 50KB to 6KB → deserialization from 400ms to 50ms. Fix 2: Redis cache for FHIR patient data — 5-minute TTL (most queries within 5-min admission window). Cache hit rate: 70%. Fix 3: Parallel FHIR queries for Condition, Observation, MedicationRequest using CompletableFuture.allOf() instead of sequential. Total improvement: 3s sequential → 180ms parallel with caching.",
+            "r": "FHIR query latency: 3000ms → 180ms p95. 100% CDC 24-hour compliance restored. Cache reduced EHR FHIR server load by 70%."
+          },
+          "difficulty": "advanced",
+          "tags": [
+            "performance",
+            "profiling",
+            "optimization",
+            "async-profiler",
+            "caching",
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "21.5.gke-autoscaling",
+          "term": "🟡 T2 #11 — GKE Autoscaling & Pod Management",
+          "what": "GKE Horizontal Pod Autoscaler (HPA) scales pod replicas based on CPU/memory/custom metrics. Cluster Autoscaler scales the underlying node pool. Vertical Pod Autoscaler (VPA) adjusts pod resource requests/limits automatically.",
+          "why": "Hospital admission volume is bursty — 10x higher during morning rounds (7-9am) than midnight. Static sizing wastes money at off-peak and underserves at peak. Autoscaling handles this automatically.",
+          "how": "HPA: kubectl autoscale deployment ecr-now --cpu-percent=70 --min=2 --max=20. Or YAML: spec.metrics: type: Resource, resource.name: cpu, target.averageUtilization: 70. Custom metrics (e.g., Kafka lag): HPA with KEDA (Kubernetes Event-driven Autoscaling). KEDA scales pods based on Kafka consumer group lag — ideal for eCR-Now. Pod Disruption Budget (PDB): ensures minimum number of pods always available during node drains or updates. Liveness Probe: restarts stuck pods. Readiness Probe: removes pod from load balancer until ready (prevents traffic to starting pod). Resource Requests/Limits: requests.cpu: 500m, requests.memory: 512Mi, limits.cpu: 2000m, limits.memory: 2Gi. Requests used for scheduling, limits for enforcement.",
+          "where": "Any GKE/Kubernetes deployment handling variable load. eCR-Now: scales with admission volume. Healthcare systems: scale with shift changes and clinic hours.",
+          "when": "Configure HPA from day one. Do not manually scale — it is error-prone and slow. KEDA is preferred over CPU-based HPA for queue-driven workloads because CPU lags behind queue depth.",
+          "issue": "HPA scaling on CPU has lag — CPU spikes after load arrives, not before. By the time pods scale up (30-60 seconds), burst is already failing. Pods start up slowly (JVM warm-up, FHIR client initialization) — 60+ seconds to first request served.",
+          "fix": "Predictive scaling: schedule extra replicas before known peak times (morning rounds). KEDA on Kafka lag for queue-driven services — starts scaling as queue grows, before CPU spikes. Spring Boot AOT compilation + CRaC (Checkpoint/Restore) for sub-second pod startup. Readiness probe ensures traffic only routes to warmed-up pods.",
+          "star": {
+            "s": "Morning rounds caused 10x admission spike. eCR-Now CPU HPA was too slow — by the time pods scaled up (60 seconds), admission queue had backed up. Reports delayed by 15 minutes.",
+            "t": "Eliminate admission burst impact on eCR report latency.",
+            "a": "Switched from CPU-based HPA to KEDA scaled on Kafka consumer group lag. Threshold: scale up when lag > 50 messages. Scale down when lag < 10 for 5 minutes. Added pre-scheduled scale: CronJob scales to 10 pods at 6:30am, back to 2 at 10am. Added /actuator/health/readiness probe checking FHIR client warm-up before accepting traffic.",
+            "r": "Morning burst handled with pre-provisioned pods. Queue lag stays < 10 messages even at peak. eCR reports generated within 2 minutes of admission across all load levels."
+          },
+          "difficulty": "advanced",
+          "tags": [
+            "gke",
+            "kubernetes",
+            "autoscaling",
+            "keda",
+            "hpa",
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "19.1.horizontal-vs-vertical-scaling",
+          "term": "🟡 T2 #12 — Horizontal vs Vertical Scaling",
+          "what": "Sharding splits one large database table across multiple DB servers — each server holds a subset of the rows (a shard). Horizontal scaling for the database layer.",
+          "why": "Single DB server has limits (disk, CPU, connections). Sharding distributes data across many servers — scales write capacity and storage.",
+          "how": "Shard key (e.g., userId % 4) determines which shard. userId=0-24: shard 0. 25-49: shard 1. etc. Each shard is a separate DB instance.",
+          "where": "User data, order data at massive scale. MongoDB, Cassandra, DynamoDB handle sharding natively.",
+          "when": "Add sharding when: single DB is at capacity, write volume exceeds single DB limit, data size exceeds single server disk.",
+          "issue": "Cache invalidation is hard — stale data served after DB update. Cache thundering herd — cache expires, thousands of requests hit DB simultaneously.",
+          "fix": "Short TTLs for frequently changing data. Use write-through for critical data. Add 'cache warming' on startup. Use probabilistic early expiration to prevent thundering herd.",
+          "star": {
+            "s": "Product page very slow under load.",
+            "t": "Cache products.",
+            "a": "Spring @Cacheable on product service. 5-minute TTL. On product update, @CacheEvict.",
+            "r": "DB load reduced 90%. Page response from 200ms to 5ms. Database Sharding"
+          },
+          "difficulty": "intermediate",
+          "tags": [
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "19.1.cap-theorem",
+          "term": "🟡 T2 #13 — CAP Theorem",
+          "what": "CAP: Consistency (all nodes see same data), Availability (every request gets a response), Partition tolerance (system works despite network partition). You can only guarantee two of three.",
+          "why": "Forces you to think about trade-offs in distributed systems. No system can have perfect consistency, availability, AND partition tolerance simultaneously.",
+          "how": "CP (Consistency + Partition): HBase, ZooKeeper — sacrifices availability during partition. AP (Availability + Partition): DynamoDB, Cassandra — sacrifices strict consistency (eventual consistency). CA systems: traditional single-server DB (no partition tolerance).",
+          "where": "Distributed system design decisions: choosing between MySQL (CP) and Cassandra (AP).",
+          "when": "For financial systems (need strong consistency): CP. For social media, analytics (can tolerate eventual consistency): AP. Real systems are more nuanced — PACELC theorem extends CAP.",
+          "issue": "Claiming a system is 'CA' in a distributed environment — network partitions WILL happen. CA is not realistic in distributed systems.",
+          "fix": "Design for partition tolerance always. Choose C vs A based on your use case.",
+          "star": {
+            "s": "Interview: design a payment system.",
+            "t": "Choose DB considering CAP.",
+            "a": "CP system (strong consistency) — cannot lose a transaction or show wrong balance. Accept reduced availability over wrong data.",
+            "r": "Demonstrates understanding of trade-offs."
+          },
+          "difficulty": "intermediate",
+          "tags": [
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "19.2b.distributed-lock-cache-stampede",
+          "term": "🟡 T2 #14 — Distributed Lock / Cache Stampede",
+          "what": "Distributed lock: SET key value NX PX timeout — atomic set-if-not-exists with expiry. Cache stampede: all cache entries expire simultaneously — all requests hit DB at once.",
+          "why": "Distributed lock for leader election, resource exclusion across services. Cache stampede protection for high-traffic systems.",
+          "how": "Lock: SET lock:resource uuid NX PX 30000. If null → locked by others. Release: if (get(lock)==uuid) del(lock). Stampede fix: random TTL jitter (TTL + random(0,300s)).",
+          "where": "Distributed lock: payment deduplication, job scheduling, critical section across services. Stampede: product pages, homepage, any popular cached data.",
+          "when": "Use distributed lock for cross-service mutual exclusion. Use jitter to prevent stampede on regularly refreshed caches.",
+          "issue": "Lock expiry before operation completes — another process gets lock while first still holding it.",
+          "fix": "Extend lock TTL if operation is running longer than expected. Use Redisson library — handles lock extension automatically.",
+          "star": {
+            "s": "Cache for product page set to expire every midnight — all 1M users hit DB simultaneously at midnight.",
+            "t": "Fix.",
+            "a": "Added ±30 minute random jitter to TTL.",
+            "r": "Expiries spread over 1-hour window. DB load normalized."
+          },
+          "difficulty": "intermediate",
+          "tags": [
+            "priority-roadmap"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "23.3",
+      "slug": "tier-3-technical-breadth",
+      "title": "🟢 TIER 3 — Technical Breadth (Study Over Next 2 Weeks)",
+      "keyRule": "These 10 topics complete your technical profile for deep technical rounds when interviewers probe JVM internals, Kafka, Spring AOP/Transactions, and modern Java features. Study across week 2.",
+      "terms": [
+        {
+          "id": "5.1.class-loader",
+          "term": "🟢 T3 #1 — Class Loader",
+          "what": "Class Loader finds and loads .class files into JVM memory. Three built-in loaders: Bootstrap (rt.jar/JDK), Extension (ext/ directory), Application (your classpath).",
+          "why": "JVM does not load all classes at startup — classes are loaded on first use (lazy loading). Class Loaders make this possible.",
+          "how": "Parent delegation: when Application ClassLoader asked for a class, it asks Parent (Extension), which asks Parent (Bootstrap) first. If Bootstrap cannot find it, it comes back down. Prevents you from overriding java.lang.String.",
+          "where": "Every class load in JVM uses this chain. Custom ClassLoaders are used by: application servers (Tomcat), OSGi, hot-reload tools (JRebel).",
+          "when": "Custom ClassLoader needed when: loading classes from non-standard location, hot reloading, or class isolation in containers.",
+          "issue": "Same class loaded by two different ClassLoaders = two distinct classes in JVM — instanceof returns false even if same name. Causes ClassCastException.",
+          "fix": "Ensure only one ClassLoader loads a class. Common in application servers — check ClassLoader hierarchy in web.xml or container config.",
+          "star": {
+            "s": "ClassCastException on 'instanceof' check that seems correct.",
+            "t": "Diagnose.",
+            "a": "Same class loaded by parent ClassLoader and webapp ClassLoader — two classes. Fixed ClassLoader config in Tomcat.",
+            "r": "One class, no exception."
+          },
+          "difficulty": "intermediate",
+          "tags": [
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "5.2.g1gc-garbage-first",
+          "term": "🟢 T3 #2 — G1GC (Garbage First)",
+          "what": "ZGC (Z Garbage Collector) is a low-latency GC with pause times under 1 millisecond regardless of heap size — even terabyte heaps.",
+          "why": "Some apps need consistent sub-millisecond latency — trading systems, real-time games, latency-sensitive microservices. G1GC cannot guarantee this.",
+          "how": "ZGC does almost all work concurrently with application threads. Uses colored pointers and load barriers. Pause time is nearly constant regardless of heap size.",
+          "where": "High-frequency trading, real-time systems, large-heap apps needing predictable latency.",
+          "when": "Use ZGC for: latency SLA under 10ms, heaps over 32GB, any latency-critical app. Note: slightly lower throughput than Parallel GC.",
+          "issue": "ZGC requires more CPU and memory overhead than G1GC — running concurrent GC threads has cost.",
+          "fix": "ZGC on Java 15+ is production-ready. Enable with -XX:+UseZGC. Monitor CPU overhead and ensure your environment has enough CPUs for concurrent GC.",
+          "star": {
+            "s": "Financial app has GC pause spikes of 500ms — unacceptable for trading.",
+            "t": "Eliminate pauses.",
+            "a": "Switched to ZGC (-XX:+UseZGC).",
+            "r": "Max pause < 2ms. Trading SLA met."
+          },
+          "difficulty": "intermediate",
+          "tags": [
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "16.1.topics-partitions",
+          "term": "🟢 T3 #3 — Topics & Partitions",
+          "what": "A Topic is a named stream of events — like a DB table but for events. Each Topic is split into Partitions — ordered, immutable logs. Partitions enable parallel processing.",
+          "why": "Without partitions, one consumer reads all events — cannot scale. With 10 partitions and 10 consumers, 10x parallel processing.",
+          "how": "Topic 'orders' with 10 partitions. Messages with same key (customerId) always go to same partition — preserving order per customer. Each partition has a sequential offset.",
+          "where": "Decoupled event-driven microservices: order-service publishes 'order-placed', multiple services consume independently.",
+          "when": "More partitions = more parallelism but more overhead. Rule: number of consumers <= number of partitions. Add partitions only when needed.",
+          "issue": "Increasing partition count for an existing topic reassigns messages — breaks ordering guarantees for key-based routing.",
+          "fix": "Plan partition count at topic creation. Start with enough (10-50 for high-volume). Cannot reduce partitions — only increase.",
+          "star": {
+            "s": "Interview: how does Kafka scale consumers?",
+            "t": "Answer.",
+            "a": "Each consumer in a group gets exclusive partitions. Add consumers up to partition count = linear scaling. Beyond partition count, extra consumers idle.",
+            "r": "Correct explanation of consumer group scaling."
+          },
+          "difficulty": "intermediate",
+          "tags": [
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "16.1.consumers-consumer-groups",
+          "term": "🟢 T3 #4 — Consumers & Consumer Groups",
+          "what": "Consumer reads events from Kafka topics. Consumers in the same Consumer Group share partitions — each partition assigned to one consumer. Different groups each get all events independently.",
+          "why": "Consumer groups enable parallel processing (one group) AND fan-out (multiple groups each process all events — order-service AND inventory-service both get all order events).",
+          "how": "@KafkaListener(topics='orders', groupId='inventory-service') void processOrder(OrderEvent event) { ... } — inventory-service processes all orders.",
+          "where": "Every service that reacts to events from another service.",
+          "when": "One consumer group per downstream service. Each service independently reads at its own pace — Kafka retains messages for both.",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": [
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "13.1.ioc-container-applicationcontext",
+          "term": "🟢 T3 #5 — IoC Container & ApplicationContext",
+          "what": "IoC Container is Spring's object factory. It creates beans, wires dependencies, and manages bean lifecycle. ApplicationContext is the main IoC container interface.",
+          "why": "Without IoC, you manually create objects and pass dependencies — tight coupling, hard to test. IoC delegates creation to Spring — loose coupling, easy testing.",
+          "how": "@SpringBootApplication starts up ApplicationContext. Spring scans @Component, @Service, @Repository, @Controller — creates beans. You just @Autowired where needed.",
+          "where": "The foundation of every Spring application. All beans live here.",
+          "when": "Always let Spring manage your beans. Only create objects with 'new' for: simple value objects (DTO, entity), objects that should NOT be Spring-managed.",
+          "issue": "Trying to use @Autowired in a class created with 'new' — null injection. Spring cannot inject into manually-created objects.",
+          "fix": "Let Spring create and inject every bean. If you need a prototype bean, inject ApplicationContext and call getBean().",
+          "star": {
+            "s": "@Autowired repository is null in service.",
+            "t": "Diagnose.",
+            "a": "Service was created with 'new Service()' in controller — not managed by Spring. Changed to @Autowired injection.",
+            "r": "Dependencies injected correctly."
+          },
+          "difficulty": "intermediate",
+          "tags": [
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "13.2b.aop-terms-aspect-advice-pointcut-joinpoint",
+          "term": "🟢 T3 #6 — AOP Terms: Aspect, Advice, Pointcut, JoinPoint",
+          "what": "Aspect = class with cross-cutting logic (@Aspect). Advice = when to run (@Before, @After, @Around, @AfterReturning, @AfterThrowing). Pointcut = which methods to intercept. JoinPoint = the actual method being intercepted.",
+          "why": "Understanding AOP terminology helps you write correct aspects and debug proxy- related issues.",
+          "how": "",
+          "where": "",
+          "when": "",
+          "issue": "",
+          "fix": "",
+          "star": {
+            "s": "",
+            "t": "",
+            "a": "",
+            "r": ""
+          },
+          "difficulty": "intermediate",
+          "tags": [
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "13.3b.transaction-propagation-types",
+          "term": "🟢 T3 #7 — Transaction Propagation Types",
+          "what": "Propagation defines what happens when a @Transactional method is called from another @Transactional context. 7 types: REQUIRED, REQUIRES_NEW, NESTED, SUPPORTS, MANDATORY, NEVER, NOT_SUPPORTED.",
+          "why": "Correct propagation prevents: accidentally nesting transactions, losing rollbacks, or creating transactions where they don't belong.",
+          "how": "REQUIRED (default): join existing or create new. REQUIRES_NEW: always create new, suspend outer. NESTED: create savepoint within current (rolls back to savepoint on error). SUPPORTS: use existing if present, else no transaction.",
+          "where": "Any @Transactional method. Critical for: audit logging (should save even if main tx rolls back → REQUIRES_NEW), batch processing, and nested service calls.",
+          "when": "Use REQUIRED for most cases. REQUIRES_NEW for operations that must commit independently (audit, notification). NESTED for partial rollback within a transaction.",
+          "issue": "REQUIRED propagation: inner method rollback = outer transaction also rolled back — all work lost.",
+          "fix": "For operations that must succeed even if outer tx fails: use REQUIRES_NEW. This creates an independent transaction.",
+          "star": {
+            "s": "Audit log not saved when order transaction fails.",
+            "t": "Fix.",
+            "a": "@Transactional(propagation=REQUIRES_NEW) on audit method.",
+            "r": "Audit saves in its own transaction regardless of outer tx outcome."
+          },
+          "difficulty": "intermediate",
+          "tags": [
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "17.1.virtual-threads-java-21",
+          "term": "🟢 T3 #8 — Virtual Threads (Java 21)",
+          "what": "Virtual threads are lightweight threads managed by the JVM — not OS threads. You can create millions of them with tiny memory footprint.",
+          "why": "Platform threads (OS threads) are expensive — each needs 1MB+ stack. Can't have more than ~10,000. Virtual threads need ~few KB each — millions possible.",
+          "how": "Thread.ofVirtual().start(() -> handleRequest()). Or Executors.newVirtualThreadPerTaskExecutor() — creates a new virtual thread per task.",
+          "where": "High-concurrency servers, each request gets its own virtual thread. I/O-bound workloads where threads spend most time waiting.",
+          "when": "Use virtual threads for I/O-bound concurrent work (HTTP calls, DB queries, file reads). NOT for CPU-bound tasks — no benefit there.",
+          "issue": "Synchronized blocks pin virtual threads to platform threads — loses the benefit.",
+          "fix": "Replace synchronized with ReentrantLock in code that will use virtual threads. Avoid long-running synchronized blocks.",
+          "star": {
+            "s": "Tomcat with 200 platform threads cannot handle 10,000 concurrent connections.",
+            "t": "Scale.",
+            "a": "Switched to virtual thread executor. Each connection gets its own virtual thread.",
+            "r": "Handles 100,000 concurrent connections on same machine."
+          },
+          "difficulty": "intermediate",
+          "tags": [
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "21.6.continuous-upskilling",
+          "term": "🟢 T3 #9 — Upskilling Strategy for 12+ Year Engineers",
+          "what": "Structured approach to staying technically sharp while growing leadership influence. Focus on three layers: depth (go deeper in your core stack), breadth (understand adjacent technologies), and visibility (document and share what you know).",
+          "why": "Technology changes fast. A 12-year engineer who stopped learning at year 8 is effectively a 4-year engineer with 12 years of salary expectation. Continuous learning is non-negotiable for staying relevant and promotable.",
+          "how": "Weekly habits: 1) Read one architecture blog per week (Martin Fowler, AWS Architecture Blog, Google Cloud Blog, InfoQ). 2) One technical book per quarter (Designing Data-Intensive Applications, Building Microservices, Clean Architecture). 3) 30 minutes daily on new tech (hands-on, not just reading). Monthly: contribute one ADR (Architecture Decision Record) for a team decision. Quarterly: deliver one tech talk or brown bag session. Yearly: get one certification (AWS/GCP Solutions Architect, CKA for Kubernetes, Spring Professional). Specific areas to focus for 2025: Observability (distributed tracing, OpenTelemetry), AI/LLM integration in healthcare (FHIR + AI for condition detection), cloud cost optimization (FinOps), and data streaming (Kafka → Apache Flink).",
+          "where": "Personal learning is most effective in small daily habits. Apply new learning immediately on real work — not toy projects.",
+          "when": "Consistent > intense. 30 minutes daily is better than 8-hour weekend sprints. Schedule it like a meeting — it disappears without scheduling.",
+          "issue": "Tutorial hell: watching/reading about technologies without hands-on practice. The illusion of learning without actual skill development.",
+          "fix": "Build something with every new technology you learn. For rate limiting: implement a Redis rate limiter from scratch. For Kubernetes: deploy your own service on GKE with HPA and liveness probes. The act of building surfaces all the gaps that tutorials miss.",
+          "star": {
+            "s": "Job market became more competitive. Java 8 skills alone no longer sufficient for senior positions. Colleagues with cloud and architecture skills getting promoted.",
+            "t": "Modernize skill set while maintaining delivery on current project.",
+            "a": "Created a personal learning roadmap: Q1: GKE + Kubernetes CKA certification. Q2: Reactive programming (Spring WebFlux, Project Reactor). Q3: OpenTelemetry + distributed tracing in eCR-Now. Q4: Kafka Streams for real-time condition monitoring. Applied each skill to real eCR-Now features within 2 weeks of learning.",
+            "r": "Migrated eCR-Now to reactive WebClient (20% throughput improvement). Added distributed tracing (reduced incident investigation from 2 hours to 15 minutes). Passed CKA. Promoted to senior architect role."
+          },
+          "difficulty": "intermediate",
+          "tags": [
+            "upskilling",
+            "career-growth",
+            "learning",
+            "leadership",
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "21.6.architecture-meetings-communication",
+          "term": "🟢 T3 #10 — Excelling in Architecture Meetings & Tech Discussions",
+          "what": "Strategies for contributing effectively in architecture reviews, design sessions, and technical leadership meetings — where impact comes from clear thinking and communication, not just deep technical knowledge.",
+          "why": "At 12+ years, your influence is through others. How you communicate in architecture meetings determines whether your ideas get adopted, whether you are seen as a leader, and whether you get invited to higher-level discussions.",
+          "how": "Before the meeting: read any design docs or tickets. Identify the core tradeoffs. Prepare 1-2 clarifying questions and 1-2 concrete suggestions. In the meeting: 1) Listen first, understand the problem fully before proposing solutions. 2) When you speak: state assumption, then reasoning, then recommendation. 'My assumption is we need <99% availability. Given that, I'd recommend X over Y because...' 3) Quantify when possible: 'X adds 2ms latency per request — at 1000 req/sec that's 2s of cumulative overhead, is that acceptable?' 4) Acknowledge tradeoffs: 'X is simpler but Y is more scalable — what's our 3-year scale projection?' 5) When you disagree: 'I see the appeal of X. My concern is Y. Can we discuss how to mitigate that?' After the meeting: write the decision as an ADR (Architecture Decision Record). This positions you as the person who drives clarity and documentation.",
+          "where": "Architecture reviews, design sessions, incident post-mortems, technology evaluations, vendor discussions.",
+          "when": "Every time you are in a room with architects, staff engineers, or technical leadership. These are your opportunities to demonstrate seniority beyond your individual code contributions.",
+          "issue": "Experienced engineers often speak too technically too soon — alienating non-technical stakeholders and losing the room before making their point.",
+          "fix": "Match your communication depth to the audience. With engineers: full technical depth. With product managers: business impact and risk. With executives: cost, time, and risk in one sentence. Prepare audience-appropriate versions of your technical points.",
+          "star": {
+            "s": "Architecture review: debate about whether eCR-Now should use synchronous FHIR queries vs async event-driven. Two senior engineers on opposite sides. Meeting at risk of going in circles.",
+            "t": "Facilitate to a clear recommendation and decision.",
+            "a": "Drew a decision matrix on the whiteboard: criteria (latency, reliability, CDC compliance, implementation complexity) rated 1-5 for each option. Added quantitative estimates where available: sync adds 200ms latency but simplifies error handling. Async reduces latency but adds Kafka operational complexity. Named the key constraint: CDC 24-hour window gives us slack — eventual consistency is acceptable. Recommended: async for primary flow, sync as fallback for urgent cases. Proposed to write ADR to document decision and revisit in 6 months.",
+            "r": "Meeting ended with clear decision. ADR written and approved. Both engineers aligned. Decision referenced 6 months later when adding a new EHR integration — saved 2 weeks of re-debate."
+          },
+          "difficulty": "advanced",
+          "tags": [
+            "communication",
+            "leadership",
+            "architecture-meetings",
+            "adr",
+            "priority-roadmap"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "23.4",
+      "slug": "quick-reference-cheatsheet",
+      "title": "⚡ Quick Reference — Last 24 Hours Before Interview",
+      "keyRule": "High-yield communication tips, project walkthrough summary, and concurrency traps for the night before or morning of your interview.",
+      "terms": [
+        {
+          "id": "21.1.technical-communication-tips",
+          "term": "⚡ QR #1 — Technical Communication for Senior Roles",
+          "what": "Senior engineers communicate differently: they explain WHY before HOW, quantify impact, acknowledge tradeoffs, mention what they considered and rejected, and connect technical decisions to business outcomes.",
+          "why": "At architect/staff level, you influence decisions across teams. Your ability to communicate risk, tradeoffs, and recommendations clearly determines your actual impact — often more than your coding ability.",
+          "how": "Key habits: 1) Always state the 'why' before the 'how'. 2) Quantify: 'reduced latency from 3s to 180ms' beats 'improved performance'. 3) Acknowledge tradeoffs: 'We chose X over Y. X gives us A but costs B. We accepted that because...' 4) Mention rejected alternatives: 'We considered polling but chose event-driven because the 5-minute polling lag was too long for CDC 24-hour window.' 5) Connect to business: 'This change reduced CDC report failures, keeping us in compliance and avoiding the $X per-incident penalty.' 6) Invite follow-up: End explanations with 'Any questions on that before I move on?' — shows confidence and controls pace.",
+          "where": "All stakeholder communication, architecture reviews, incident post-mortems, design documents, 1:1s with management.",
+          "when": "Always. This mindset shift from 'I built X' to 'I designed X to solve Y because Z, which resulted in W' is what separates senior from staff engineer levels.",
+          "issue": "Technical people often go too deep too fast — losing non-technical stakeholders in implementation details before establishing why it matters.",
+          "fix": "Practice the Pyramid Principle: Start with the conclusion/recommendation, then give supporting reasons, then details. Adjust depth based on audience. Read body language — if eyes glaze, zoom out. If they lean forward, go deeper.",
+          "star": {
+            "s": "CTO asked why eCR-Now needs to be on GKE vs a simple EC2 instance.",
+            "t": "Justify architectural decision concisely to a non-GKE-expert CTO.",
+            "a": "Said: 'Hospital admission volume spikes 10x during morning rounds. A single EC2 needs to be sized for peak at all times — 90% idle cost. GKE auto-scales pods in 30 seconds based on CPU/memory, so we only pay for what we use. Also, GKE gives us automatic restarts when a pod freezes due to a stuck FHIR connection — critical for our 24-hour CDC reporting SLA.' Three sentences, business-framed.",
+            "r": "CTO immediately approved GKE budget. Technical decision accepted because it was communicated in cost and SLA terms, not Kubernetes terms."
+          },
+          "difficulty": "intermediate",
+          "tags": [
+            "communication",
+            "leadership",
+            "architecture",
+            "stakeholder",
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "22.4.project-walkthrough-scenario",
+          "term": "⚡ QR #2 — Scenario: Explain Your Project to a New Team / Architecture Panel",
+          "what": "A structured approach to explaining the eCR-Now / EHR integration system to technical and semi-technical audiences at architecture level. Covers business context, component responsibilities, data flow, technology choices, failure handling, and observability.",
+          "why": "Architects must explain systems clearly to: new team members, senior leadership, external partners (new EHR vendors), auditors (for HIPAA compliance), and interviewers. Each audience needs a different depth but the same structure.",
+          "how": "For technical audience (architecture panel): Start with a diagram (whiteboard or slides). Draw from left to right — IMS → Linus → GKE (eCR-Now) → FHIR Server → CDC → EHR. Then narrate the happy path: 'Patient admitted in IMS. IMS uses cpXML to resolve FHIR IDs, sends launchPatient POST to Linus Gateway. Linus authenticates (client cert), rate limits, routes to one of N eCR-Now pods on GKE.' Then the FHIR step: 'eCR-Now queries the EHR FHIR server for Condition, Observation, MedicationRequest resources for this patient-encounter. Evaluates each code against RCTC trigger code set. If match found: reportable.' Then CDC step: 'Generates eCR CDA document. Sends via Direct messaging (SMTP S/MIME through our HISP to CDC's HISP). Polls our Direct IMAP inbox every 15 minutes for CDC response.' Then EHR update: 'When CDC response received, eCR-Now POSTs a FHIR DocumentReference to Evident EHR. EHR displays using HL7 stylesheet.' Then failure handling: 'Circuit breaker on FHIR calls. Kafka retry queue for CDC submissions. Liveness probe restarts stuck pods. Dead-letter queue for permanently failed reports with PagerDuty alert.' Then observability: 'Prometheus metrics per step. Grafana dashboard. Distributed tracing with correlation ID per patient-encounter.'",
+          "where": "Architecture reviews, new hire onboarding, partner integration meetings, auditor walkthroughs, conference presentations.",
+          "when": "Prepare 3 versions: 5 minutes (high-level), 15 minutes (technical depth), 45 minutes (full design review with Q&A). Have the diagram ready — always draw it, never describe it purely verbally for complex systems.",
+          "issue": "Going too deep too fast on one component (e.g., spending 10 minutes on the IMAP polling logic) while the audience does not yet have the full system picture. They cannot evaluate depth without the breadth context first.",
+          "fix": "Always do one full pass at 10,000 feet before going deep on any component. After the overview: 'Any questions before I go deeper on any specific part?' This hands control to the audience and ensures you spend depth time on what they actually care about.",
+          "star": {
+            "s": "New EHR vendor (not Evident) evaluating whether their FHIR server can integrate with eCR-Now. Technical and product stakeholders in the room.",
+            "t": "Explain eCR-Now integration requirements clearly so they can assess their FHIR server's compatibility.",
+            "a": "Drew the integration diagram. Focused on the EHR-facing side: launchPatient payload requirements (FHIR IDs, fhirUrl format), FHIR queries eCR-Now would send (resources, parameters, expected response format), DocumentReference POST format for CDC response. Gave them a written FHIR API contract document. Answered their SMART on FHIR auth questions (eCR-Now supports both client credentials and backend services OAuth2 FHIR auth flows).",
+            "r": "EHR vendor confirmed compatibility in 2 hours. Integration started 2 weeks later. eCR-Now now integrated with 3 EHR vendors using the same architecture."
+          },
+          "difficulty": "advanced",
+          "tags": [
+            "project-walkthrough",
+            "architecture",
+            "communication",
+            "fhir",
+            "ehr-integration",
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "22.5.star-gke-migration",
+          "term": "⚡ QR #3 — STAR: Migrating eCR-Now to GKE for Autoscaling",
+          "what": "STAR story demonstrating cloud architecture decision-making, migration planning, and operational improvement through containerization and Kubernetes orchestration.",
+          "why": "Shows ability to evaluate infrastructure options, make and justify architectural decisions, manage migration risk in a healthcare compliance system, and deliver quantifiable operational improvements.",
+          "how": "Situation: eCR-Now running on two fixed EC2 instances. During morning rounds (7-9am), admission volume spiked 10x. EC2 sized for 2x normal load — 5x admissions during peak caused a backlog of 200+ reports, some taking 45 minutes to process. Non-peak hours: 90% CPU idle — paying for unused capacity. Task: Design infrastructure that handles 10x burst without degrading report generation time, while reducing cost at off-peak. Action: 1) Evaluated options: vertical scaling (bigger EC2 — expensive, still fixed), horizontal with manual scaling (operational burden), Kubernetes autoscaling (complex setup, best long-term). Recommended GKE for: autoscaling, self-healing (pod restart on stuck), rolling deployments, multi-zone HA. 2) Containerized Spring Boot app: multi-stage Dockerfile, optimized JVM flags for containers (-XX:MaxRAMPercentage=75 instead of fixed -Xmx). 3) Kubernetes manifests: Deployment (min 2 pods, max 20), HPA (CPU 70%), readiness probe, liveness probe, PDB (min 2 available). 4) Zero-downtime migration: ran GKE and EC2 in parallel for 2 weeks. Health checks validated. Traffic cut over to GKE. EC2 decommissioned after 1 week of stable GKE. 5) Post-migration: switched to KEDA on Kafka lag for faster scale-up than CPU HPA. Result: Morning burst backlog eliminated (max 2 minutes report latency at peak). Infrastructure cost reduced 35% (EC2 was always-on, GKE scales to 2 pods at night). Zero downtime during migration.",
+          "where": "Infrastructure architecture decision for eCR-Now. GCP project, GKE cluster, same region as hospital networks.",
+          "when": "Migration took 6 weeks end-to-end: 2 weeks containerization + testing, 2 weeks parallel run, 2 weeks validation and EC2 decommission.",
+          "issue": "Spring Boot JVM startup time in containers was 25 seconds. During scale-up events, new pods took 25 seconds before serving traffic. Readiness probe prevented premature routing, but requests queued for 25 seconds on scale-up.",
+          "fix": "Predictive pre-scaling with CronJob (scale to 10 pods at 6:30am before peak). KEDA starts scaling earlier (based on queue depth, not CPU lag). Future: Spring Boot AOT + CRaC for sub-second startup.",
+          "star": {
+            "s": "eCR-Now on fixed EC2: 45-minute delays during morning peaks, 90% idle at night. Cost: paying for peak capacity 24/7.",
+            "t": "Handle 10x admission burst without delay. Reduce infrastructure cost.",
+            "a": "Designed and led migration to GKE: containerization, Kubernetes manifests, KEDA autoscaling on Kafka lag, CronJob pre-scaling, zero-downtime migration plan. Led 2-engineer team for 6 weeks.",
+            "r": "Morning peak delay: 45 min → under 2 min. Infrastructure cost: 35% reduction. Zero downtime during migration. Self-healing: 3 pod restarts in first month (stuck threads) fully automatic."
+          },
+          "difficulty": "advanced",
+          "tags": [
+            "star",
+            "gke",
+            "kubernetes",
+            "migration",
+            "autoscaling",
+            "cloud",
+            "priority-roadmap"
+          ]
+        },
+        {
+          "id": "4.2.deadlock",
+          "term": "⚡ QR #4 — Deadlock",
+          "what": "Deadlock happens when two or more threads are each waiting for a lock held by the other — they wait forever. No thread can make progress. App freezes.",
+          "why": "Thread A holds Lock1 and needs Lock2. Thread B holds Lock2 and needs Lock1. Both wait forever. JVM has no automatic deadlock resolution.",
+          "how": "Classic: synchronized(lock1) { synchronized(lock2) {...} } in one thread, reversed order in another. If both threads run simultaneously, deadlock.",
+          "where": "Complex locking scenarios with multiple resources. Payment processing (lock account A, lock account B), database deadlocks.",
+          "when": "Deadlocks happen under concurrent load that you cannot always reproduce in tests. Requires careful lock ordering discipline.",
+          "issue": "Deadlocks can be rare and hard to reproduce — might only happen under specific timing conditions.",
+          "fix": "1) Always acquire locks in the same order in all threads. 2) Use tryLock() with timeout. 3) Use higher-level abstractions (Database transactions, java.util.concurrent).",
+          "star": {
+            "s": "Transfer service deadlocks when two users transfer to each other simultaneously.",
+            "t": "Fix.",
+            "a": "Normalize lock order — always lock account with smaller ID first.",
+            "r": "No more deadlock regardless of transfer direction."
+          },
+          "difficulty": "intermediate",
+          "tags": [
+            "priority-roadmap"
+          ]
+        }
+      ]
+    }
+  ]
+}

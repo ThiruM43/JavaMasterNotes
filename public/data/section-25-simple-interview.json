@@ -1,0 +1,265 @@
+{
+  "id": "25",
+  "slug": "simple-interview",
+  "title": "🗣️ Simple English Interview prep",
+  "icon": "🗣️",
+  "accentColor": "#0ea5e9",
+  "subsections": [
+    {
+      "id": "25.1",
+      "slug": "project-experience",
+      "title": "Module 1: Your Project (eCR-Now)",
+      "keyRule": "Use short sentences. Tell the truth. Focus on what you actually do.",
+      "terms": [
+        {
+          "id": "25.1.intro",
+          "topic": "1. Simple Self Introduction",
+          "coreAnswer": "Hi, I am a Senior Java Developer with 12 years of experience. I work mostly in healthcare IT. Right now, I work on a project called eCR-Now. We send patient records to the CDC automatically.",
+          "architectureDetails": "My job is to build features and fix bugs. The system uses Java, Spring Boot, and Kubernetes. We use a standard called FHIR to get patient data from hospitals.",
+          "tradeOffs": "I don't just write code. I also find out why things break in production. I read logs in Splunk to fix issues quickly. I like keeping things simple so other developers can understand the code.",
+          "realWorldScenarios": "Sometimes hospitals send too much data at once. The server gets slow. We use circuit breakers and retries to handle this. I can tell you more about how we handle errors if you want.",
+          "star": {
+            "s": "Interviewer asks: Tell me about yourself.",
+            "t": "Show that I have 12 years of experience but keep my English simple.",
+            "a": "I talked about my current project eCR-Now. I said what the project does in one sentence. Then I listed my tools: Java, Spring Boot, Kubernetes. Finally, I said I fix production bugs.",
+            "r": "The interviewer understood me perfectly. They asked me a follow-up question about Kubernetes."
+          },
+          "difficulty": "intermediate",
+          "tags": ["intro", "simple-english"]
+        },
+        {
+          "id": "25.1.architecture",
+          "topic": "2. Project Architecture (Simple Way)",
+          "coreAnswer": "Our app connects hospitals to the CDC. When a patient comes to the hospital, we get their data. We check if they have a disease. If yes, we send a report to the CDC.",
+          "architectureDetails": "The data flows like this: First, the hospital app calls our API Gateway. Second, our Spring Boot app gets the patient data using FHIR. Third, we build the report. Fourth, we send it to the CDC. We run this on Google Kubernetes (GKE).",
+          "tradeOffs": "Why Kubernetes? Because sometimes many patients come at once. Kubernetes adds more servers automatically. Why Spring Boot? Because it is fast to build APIs.",
+          "realWorldScenarios": "The biggest problem is the CDC server. Sometimes it is very slow. If we wait too long, our app crashes. So, we added a timeout. If the CDC fails, we put the message in Kafka and try again later.",
+          "star": {
+            "s": "Interviewer asks: Explain the architecture of eCR-Now.",
+            "t": "Explain the flow from start to finish clearly.",
+            "a": "I used words like 'First, Second, Third' to make it easy to follow. I explained the business problem first (sending disease reports). Then I listed the tech steps.",
+            "r": "The interviewer liked the clear steps. They understood the whole system easily."
+          },
+          "difficulty": "advanced",
+          "tags": ["architecture", "simple-english"]
+        },
+        {
+          "id": "25.1.bugs",
+          "topic": "3. Fixing Bugs in Production",
+          "coreAnswer": "When a bug happens in live, the first thing I do is check the logs. I use Splunk or Grafana. I look for the error message and the exact time it happened.",
+          "architectureDetails": "I find the transaction ID (or trace ID). This lets me see the whole path of the request. Once I find the error, I try to reproduce it on my local machine. I write a test to prove the bug exists. Then I write the fix.",
+          "tradeOffs": "Sometimes we cannot fix a bug immediately. If it takes too long, we might rollback the deployment. The most important thing is to make the system work for the user again.",
+          "realWorldScenarios": "We had a bug where patient reports were failing. I checked the logs. I saw a NullPointerException. A hospital was sending data without a patient name. I added a null check in the code and deployed the fix.",
+          "star": {
+            "s": "Interviewer asks: How do you handle a production issue?",
+            "t": "Show that I know how to debug real problems, not just write new code.",
+            "a": "I said: 1. Check logs. 2. Find Trace ID. 3. Reproduce locally. 4. Write a test. 5. Fix and deploy. I gave a real example of a NullPointerException.",
+            "r": "The interviewer saw that I have real, hands-on experience maintaining systems."
+          },
+          "difficulty": "intermediate",
+          "tags": ["debugging", "production", "simple-english"]
+        }
+      ]
+    },
+    {
+      "id": "25.2",
+      "slug": "core-java-simple",
+      "title": "Module 2: Core Java (Must Know)",
+      "keyRule": "Don't memorize textbook definitions. Explain how you use it at work.",
+      "terms": [
+        {
+          "id": "25.2.hashmap",
+          "topic": "4. HashMap Internals",
+          "coreAnswer": "HashMap stores data in key-value pairs. It is very fast for searching. It uses a concept called hashing.",
+          "architectureDetails": "When you put a key, Java calculates a hash code. This code tells HashMap which 'bucket' to put the value in. If two keys have the same hash code, it is a collision. In Java 8, it stores collisions in a Linked List. If the list gets too big, it changes to a Tree to stay fast.",
+          "tradeOffs": "HashMap is not thread-safe. If two threads change it at the same time, it breaks. For multithreading, we use ConcurrentHashMap.",
+          "realWorldScenarios": "I use HashMap all the time to cache data in memory. For example, storing hospital IDs and their names so we don't have to query the database every time.",
+          "star": {
+            "s": "Interviewer asks: How does HashMap work internally?",
+            "t": "Give a simple answer without getting confused by math.",
+            "a": "I explained: 1. Key-value. 2. Hash code to find bucket. 3. Collisions use Linked List, then Tree. 4. Not thread-safe.",
+            "r": "They were happy with the simple and correct answer."
+          },
+          "difficulty": "intermediate",
+          "tags": ["java", "hashmap"]
+        },
+        {
+          "id": "25.2.streams",
+          "topic": "5. Java 8 Streams & Lambdas",
+          "coreAnswer": "Streams and Lambdas make our code shorter and easier to read. Before Java 8, we used many 'for' loops and 'if' conditions. Now, we can do it in one line.",
+          "architectureDetails": "A Stream is a pipeline of data. We can filter, map, and collect data easily. A Lambda is just a short way to write a function. Example: list.stream().filter(p -> p.getAge() > 18).collect(Collectors.toList());",
+          "tradeOffs": "Streams are great for readability. But sometimes, a simple 'for' loop is faster and easier to debug. If the logic is very complex, I don't use Streams because it gets hard to read.",
+          "realWorldScenarios": "I use Streams to filter patient records. If I get 100 records from the database, I use a stream to filter out the empty ones and map them to DTO objects to send to the UI.",
+          "star": {
+            "s": "Interviewer asks: Why use Java 8 Streams?",
+            "t": "Explain the practical benefit, not just theory.",
+            "a": "I said it makes code clean. I gave an example of filtering out null patients and converting Entity to DTO in one line.",
+            "r": "They agreed that clean code is the main benefit."
+          },
+          "difficulty": "beginner",
+          "tags": ["java", "streams"]
+        },
+        {
+          "id": "25.2.multithreading",
+          "topic": "6. Multithreading & Executors",
+          "coreAnswer": "Multithreading means doing many things at the same time. This makes the app faster. We don't create threads manually anymore. We use ExecutorService.",
+          "architectureDetails": "Creating a new thread is expensive for the CPU. So we use a Thread Pool. It creates a fixed number of threads, like 10. When a task comes, an empty thread picks it up. When done, the thread goes back to the pool.",
+          "tradeOffs": "Multithreading is hard to debug. You can get race conditions (two threads changing the same data) or deadlocks (two threads waiting for each other forever).",
+          "realWorldScenarios": "In our app, we have to process 1000 reports. Instead of doing it one by one, we use an ExecutorService with 20 threads. It finishes much faster. We use CompletableFuture to know when all tasks are done.",
+          "star": {
+            "s": "Interviewer asks: How do you handle multithreading?",
+            "t": "Show that I use modern Java tools, not old thread classes.",
+            "a": "I explained ExecutorService and Thread Pools. I mentioned we use CompletableFuture to process bulk hospital reports asynchronously.",
+            "r": "They liked the real-world bulk processing example."
+          },
+          "difficulty": "advanced",
+          "tags": ["java", "concurrency"]
+        }
+      ]
+    },
+    {
+      "id": "25.3",
+      "slug": "spring-microservices-simple",
+      "title": "Module 3: Spring Boot & Microservices",
+      "keyRule": "Explain why we use these tools. What problems do they solve?",
+      "terms": [
+        {
+          "id": "25.3.springboot",
+          "topic": "7. Why Spring Boot?",
+          "coreAnswer": "Spring Boot makes it very fast to start a new Java project. Before, we had to write a lot of XML configuration and setup Tomcat manually. Spring Boot does this automatically.",
+          "architectureDetails": "It uses 'Auto-Configuration'. If it sees a database library in the pom.xml, it configures the database automatically. It also has a built-in Tomcat server. We just click run, and the API is up.",
+          "tradeOffs": "The good thing is development speed. The bad thing is it uses a lot of memory. Sometimes it acts like 'magic', so if an error happens during startup, it can be hard to figure out why.",
+          "realWorldScenarios": "Every new microservice we build uses Spring Boot. We use Spring Initializr to create the project, add Web and JPA dependencies, and we can write a REST API in 5 minutes.",
+          "star": {
+            "s": "Interviewer asks: What is the main advantage of Spring Boot?",
+            "t": "Give a practical answer based on experience.",
+            "a": "I said it removes boilerplate code and XML. I mentioned embedded Tomcat and Auto-Configuration. I said it lets developers focus on business logic.",
+            "r": "Perfect answer."
+          },
+          "difficulty": "beginner",
+          "tags": ["spring", "basics"]
+        },
+        {
+          "id": "25.3.di",
+          "topic": "8. Dependency Injection (DI)",
+          "coreAnswer": "Dependency Injection means the Spring framework creates objects for us. We don't use the 'new' keyword. We just use @Autowired or Constructor Injection.",
+          "architectureDetails": "Spring puts all created objects into an IoC Container (Inversion of Control). These objects are called Beans. When a class needs a service, Spring injects it automatically.",
+          "tradeOffs": "Constructor Injection is the best way. It makes writing Unit Tests very easy because we can pass mock objects in the constructor. Field injection (@Autowired) is bad for testing.",
+          "realWorldScenarios": "In my controller, I need the PatientService. I don't create it. I put PatientService in the constructor, and Spring gives it to me. This makes my code loosely coupled.",
+          "star": {
+            "s": "Interviewer asks: Why do we use Dependency Injection?",
+            "t": "Explain the benefit for testing and coupling.",
+            "a": "I said it makes code loosely coupled. The biggest benefit is Unit Testing. We can easily mock dependencies using constructor injection.",
+            "r": "They asked about Constructor vs Autowired, and I answered correctly."
+          },
+          "difficulty": "intermediate",
+          "tags": ["spring", "di"]
+        },
+        {
+          "id": "25.3.microservices",
+          "topic": "9. Microservices vs Monolith",
+          "coreAnswer": "A Monolith is one big application containing all code. A Microservice architecture splits the app into many small apps. Each small app does only one thing.",
+          "architectureDetails": "In eCR-Now, we have a gateway service, a patient-query service, and a CDC-sender service. They talk to each other using REST APIs or Kafka.",
+          "tradeOffs": "Microservices are good because teams can deploy independently. If one service crashes, the others still work. But it is very hard to manage. Debugging is hard because a request jumps across many servers.",
+          "realWorldScenarios": "We moved from monolith to microservices because the team got too big. Deploying took 3 hours. Now, we can deploy a small service in 10 minutes. But we had to learn Kubernetes and Distributed Tracing to manage it.",
+          "star": {
+            "s": "Interviewer asks: What are the challenges of microservices?",
+            "t": "Show that I know microservices are not perfect.",
+            "a": "I said the biggest challenges are debugging and network failures. To fix debugging, we added trace IDs (Sleuth/Zipkin). To fix network failures, we added Circuit Breakers.",
+            "r": "They liked that I talked about solutions to the problems."
+          },
+          "difficulty": "advanced",
+          "tags": ["architecture", "microservices"]
+        },
+        {
+          "id": "25.3.rest",
+          "topic": "10. REST API Best Practices",
+          "coreAnswer": "REST is a set of rules for making APIs. We use HTTP methods correctly: GET to read, POST to create, PUT to update, DELETE to remove.",
+          "architectureDetails": "Good APIs use nouns, not verbs. (e.g., /patients, not /getPatients). We also use HTTP status codes: 200 for OK, 201 for Created, 400 for Bad Request, 404 for Not Found, 500 for Server Error.",
+          "tradeOffs": "Sometimes we have a very complex search. A GET request url becomes too long. In that rare case, we might use POST for searching and put the search filters in the request body.",
+          "realWorldScenarios": "I built an API for hospitals to get patient status. I used GET /patients/{id}. If the ID is not in the database, my code throws an exception, and a GlobalExceptionHandler returns a clean 404 JSON to the user.",
+          "star": {
+            "s": "Interviewer asks: How do you handle errors in your REST APIs?",
+            "t": "Explain standard Spring Boot error handling.",
+            "a": "I explained @RestControllerAdvice. It catches all exceptions globally and returns a standard JSON error message with the correct HTTP 400 or 500 status code. This keeps controllers clean.",
+            "r": "Standard and expected answer for a senior developer."
+          },
+          "difficulty": "intermediate",
+          "tags": ["api", "rest"]
+        }
+      ]
+    },
+    {
+      "id": "25.4",
+      "slug": "architecture-scenarios-simple",
+      "title": "Module 4: Architecture & Scenarios",
+      "keyRule": "These are real problems. Explain the problem first, then the simple solution.",
+      "terms": [
+        {
+          "id": "25.4.ratelimit",
+          "topic": "11. Rate Limiting",
+          "coreAnswer": "Rate limiting stops users from sending too many requests. If a hospital sends 5,000 requests per minute by mistake, our server will crash. We block them after 100 requests.",
+          "architectureDetails": "We use Spring Cloud Gateway and Redis. The algorithm is called 'Token Bucket'. We give the client a bucket of 100 tokens. Each request takes 1 token. When empty, we return an HTTP 429 'Too Many Requests' error.",
+          "tradeOffs": "We must use Redis because we have multiple servers. If we only store the count in memory, each server has its own count, and the limit will not work correctly globally.",
+          "realWorldScenarios": "One time, a hospital system had a bug in a loop. It sent millions of requests to our API. Because we had a Redis rate limiter, they were blocked immediately. The rest of the system stayed up for other hospitals.",
+          "star": {
+            "s": "Interviewer asks: How do you protect your API from a bad client?",
+            "t": "Explain Rate Limiting practically.",
+            "a": "I explained we use Redis and Token Bucket at the API Gateway. I mentioned we return a 429 status code. I explained we use Redis so limits work across all Kubernetes pods.",
+            "r": "They were impressed by the understanding of distributed limits."
+          },
+          "difficulty": "advanced",
+          "tags": ["rate-limiting", "redis"]
+        },
+        {
+          "id": "25.4.serverstuck",
+          "topic": "12. Server Stuck (Timeouts & Circuit Breaker)",
+          "coreAnswer": "If our app calls another API (like CDC) and that API is very slow, our app's threads will wait forever. Eventually, we run out of threads and our whole app stops working.",
+          "architectureDetails": "To fix this, we do two things: 1) Add a Timeout (e.g., wait maximum 5 seconds). 2) Use a Circuit Breaker (Resilience4j). If the CDC fails 5 times, the circuit 'opens'. This means we stop calling the CDC and fail instantly, saving our threads.",
+          "tradeOffs": "If the circuit is open, we can't drop the data. We must have a 'fallback'. In my project, the fallback saves the message to a Kafka topic. A retry service tries to send it later.",
+          "realWorldScenarios": "The CDC server was down for maintenance. Before Circuit Breakers, our app crashed. After we added Resilience4j, our app stayed up. The messages just went into Kafka and were delivered the next day.",
+          "star": {
+            "s": "Interviewer asks: What happens if a downstream service goes down?",
+            "t": "Explain cascading failures and how to stop them.",
+            "a": "I explained that threads block, causing our app to crash. The solution is Timeouts and Circuit Breakers. I gave the CDC example and how we use Kafka for retries.",
+            "r": "This is a perfect senior architect answer."
+          },
+          "difficulty": "advanced",
+          "tags": ["circuit-breaker", "resilience"]
+        },
+        {
+          "id": "25.4.sql",
+          "topic": "13. SQL vs NoSQL",
+          "coreAnswer": "SQL (like PostgreSQL) is good for structured data with relationships. NoSQL (like MongoDB) is good for unstructured, fast-changing data.",
+          "architectureDetails": "SQL uses tables and joins. It guarantees ACID (data is perfectly safe and consistent). NoSQL uses JSON documents. It doesn't have joins. It is very easy to scale horizontally by adding more servers.",
+          "tradeOffs": "If the data has complex relationships (like users, orders, and payments), SQL is best. If we are just saving huge amounts of JSON logs or FHIR patient documents, NoSQL is much faster and easier.",
+          "realWorldScenarios": "In eCR-Now, we use PostgreSQL to store user settings and audit logs because they are structured. But we use a NoSQL approach (MongoDB) to save the raw FHIR JSON documents because patient data shapes change frequently.",
+          "star": {
+            "s": "Interviewer asks: When do you choose NoSQL?",
+            "t": "Show that I understand both tools.",
+            "a": "I said I choose NoSQL when the data shape is not fixed, or when I need massive horizontal scaling. But for financial or highly relational data, I stick with SQL for ACID safety.",
+            "r": "They liked that I didn't say one was better than the other."
+          },
+          "difficulty": "intermediate",
+          "tags": ["database", "sql", "nosql"]
+        },
+        {
+          "id": "25.4.redis",
+          "topic": "14. Caching with Redis",
+          "coreAnswer": "Redis is an in-memory database. It is extremely fast. We use it to store data that is read many times but changes very rarely.",
+          "architectureDetails": "If a query to the SQL database takes 500ms, we can save the result in Redis. The next time we need it, reading from Redis takes 2ms. We always set a TTL (Time To Live), like 1 hour, so the data eventually refreshes.",
+          "tradeOffs": "The hardest part of caching is 'Cache Invalidation'. If the data in SQL changes, the old data is still in Redis. You have to remember to delete the Redis key when you update SQL.",
+          "realWorldScenarios": "We get hospital configuration details from a slow database. It never changes. I added @Cacheable in Spring Boot to store it in Redis. Our API response time went from 600ms down to 15ms.",
+          "star": {
+            "s": "Interviewer asks: How do you improve application performance?",
+            "t": "Talk about caching and database optimization.",
+            "a": "I said the fastest way is adding Redis caching. I gave the hospital configuration example. I also mentioned the importance of Cache Invalidation and setting a TTL.",
+            "r": "They agreed this is the best first step for performance."
+          },
+          "difficulty": "intermediate",
+          "tags": ["redis", "performance"]
+        }
+      ]
+    }
+  ]
+}

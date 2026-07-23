@@ -37,6 +37,35 @@ export interface Section {
   subsections: Subsection[];
 }
 
+export interface InterviewTerm {
+  id: string;
+  topic: string;
+  coreAnswer: string;
+  architectureDetails: string;
+  tradeOffs: string;
+  realWorldScenarios: string;
+  star: StarFormat;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  tags: string[];
+}
+
+export interface InterviewSubsection {
+  id: string;
+  slug: string;
+  title: string;
+  keyRule: string;
+  terms: InterviewTerm[];
+}
+
+export interface InterviewSection {
+  id: string;
+  slug: string;
+  title: string;
+  icon: string;
+  accentColor: string;
+  subsections: InterviewSubsection[];
+}
+
 export interface SectionIndex {
   id: string;
   slug: string;

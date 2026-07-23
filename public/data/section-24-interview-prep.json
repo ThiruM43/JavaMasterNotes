@@ -1,0 +1,65 @@
+{
+  "id": "24",
+  "slug": "interview-simulator",
+  "title": "🎯 Interview Simulator Studio",
+  "icon": "🎯",
+  "accentColor": "#f43f5e",
+  "subsections": [
+    {
+      "id": "24.1",
+      "slug": "architect-level-answers",
+      "title": "Core Architect Pitch & System Design",
+      "keyRule": "These answers are structured exactly how you should speak them in an interview. Master the narrative flow.",
+      "terms": [
+        {
+          "id": "24.1.intro",
+          "topic": "1. The 12+ Year Architect Self Introduction",
+          "coreAnswer": "A powerful 2-minute pitch establishing your authority. Example: 'I am a Senior Java Engineer & Architect with 12+ years of experience, currently working in healthcare interoperability. I design and build high-throughput systems, most notably eCR-Now on GKE, which connects hospital EHRs to the CDC for automated disease surveillance.'",
+          "architectureDetails": "Do not list technologies; describe the system. 'The core of my recent work involves a FHIR-based middleware. When a patient is admitted, our API gateway routes requests to eCR-Now, which queries the EHR via FHIR, evaluates triggers, and pushes to the CDC using the Direct protocol. It handles burst admissions across multiple hospital networks with 99.9% compliance.'",
+          "tradeOffs": "Lead the interviewer by offering tradeoffs up front: 'I spent significant time optimizing our failure handling—specifically choosing resilient event-driven retries over simple polling to ensure we never miss a 24-hour CDC reporting window. I'm happy to dive deeper into our GKE deployment, FHIR integrations, or how we isolate slow downstream services.'",
+          "realWorldScenarios": "If the interviewer asks 'What is your day-to-day?', emphasize technical leadership: 'Beyond coding the core system, I drive architecture reviews, establish resilience patterns like bulkheads for external calls, and mentor the team on designing for failure.'",
+          "star": {
+            "s": "Interviewer says: 'Tell me about yourself and your background.'",
+            "t": "Establish seniority immediately. A void listing every job since graduation.",
+            "a": "Lead with current domain, pitch the flagship system (eCR-Now), describe one complete architectural flow (EHR -> FHIR -> CDC), state the business impact, and invite them to dig into a specific technical challenge.",
+            "r": "Interviewer bypasses basic Java questions and immediately jumps into an architecture discussion about FHIR integration and failure handling."
+          },
+          "difficulty": "advanced",
+          "tags": ["communication", "self-intro", "leadership"]
+        },
+        {
+          "id": "24.1.architecture",
+          "topic": "2. Explaining Your Project Architecture",
+          "coreAnswer": "Start with the business problem, not the tech stack. 'Hospitals are legally required to report infectious diseases to the CDC within 24 hours. We built eCR-Now to completely automate this pipeline between legacy EHRs and government endpoints.'",
+          "architectureDetails": "Break it down into 4 steps: 1) Ingestion: IMS sends a launchPatient POST to our Linus API Gateway. 2) Processing: eCR-Now (running on GKE for auto-scaling) queries patient data via FHIR R4. 3) Delivery: We generate the eCR report and push it via secure Direct messaging. 4) Feedback Loop: We poll for the CDC response and POST a DocumentReference back to the EHR.",
+          "tradeOffs": "Why GKE over bare VMs? 'Morning admission bursts required rapid pod autoscaling.' Why FHIR over HL7v2? 'Standardization across modern EHRs.' Why not Kafka for everything? 'We use synchronous APIs for immediate EHR feedback, but async Kafka topics specifically for our dead-letter retry queues when the CDC is down.'",
+          "realWorldScenarios": "Troubleshooting architecture: 'The biggest challenge is that the CDC endpoint is completely out of our control and often slow. If we didn't decouple the submission, our threads would hang. We implemented Resilience4j circuit breakers so that if the CDC slows down, we instantly fail-fast and drop the payload into a Kafka retry topic rather than degrading the whole eCR-Now service.'",
+          "star": {
+            "s": "Panel Interview: 'Walk us through a complex system you designed.'",
+            "t": "Prove you understand the full lifecycle, from business requirement to production observability.",
+            "a": "Drew the end-to-end data flow on a whiteboard. Explicitly called out the boundaries between systems (IMS, eCR-Now, CDC). Highlighted where things break (network boundaries) and how we mitigated it with circuit breakers and retries.",
+            "r": "The panel agreed the architecture was robust. It shifted the interview from a 'test' to a collaborative engineering discussion."
+          },
+          "difficulty": "advanced",
+          "tags": ["architecture", "system-design", "tradeoffs"]
+        },
+        {
+          "id": "24.1.rate-limiting-stuck",
+          "topic": "3. Rate Limiting & Handling Stuck Servers",
+          "coreAnswer": "When downstream dependencies (like an EHR or CDC) get slow, our threads block waiting for responses. To prevent server hangs, we strictly enforce Timeouts, Bulkheads (thread isolation), and Circuit Breakers. For inbound protection, we use Distributed Rate Limiting via Redis.",
+          "architectureDetails": "Inbound (Protecting Us): Spring Cloud Gateway with a Redis-backed Token Bucket rate limiter. Each hospital is identified by a client cert CN. We allow bursts up to 100 req/min. Outbound (Protecting Threads): Resilience4j Circuit Breaker on WebClient. If 50% of calls fail or exceed 3 seconds, the circuit opens for 30s, failing fast.",
+          "tradeOffs": "Token Bucket vs Fixed Window: Fixed window allows double bursts at the minute boundary; Token Bucket is smoother for APIs. In-Memory vs Redis: In-memory rate limiting fails in a multi-pod GKE setup because limits aren't shared globally. Redis adds 2ms latency but ensures strict global limits.",
+          "realWorldScenarios": "The 'Stuck Server' Incident: 'An EHR upgrade caused FHIR queries to take 30 seconds. Because we had infinite default timeouts, all eCR-Now threads blocked. The K8s liveness probe passed because the Spring context was up, but throughput was 0. Fix: We added 5s explicit timeouts on WebClient, implemented Resilience4j bulkheads (max 20 concurrent FHIR threads), and changed the liveness probe to actually ping the FHIR server.'",
+          "star": {
+            "s": "An EHR sent 5,000 launch requests per minute by mistake, threatening to starve all other hospitals on our multi-tenant eCR-Now platform.",
+            "t": "Isolate the abusive tenant without affecting platform availability for others.",
+            "a": "Because we had already implemented a Redis-backed distributed Token Bucket rate limiter at the API gateway layer, the abusive EHR hit their 100/min cap instantly. They received HTTP 429s (Too Many Requests) with a Retry-After header. Our pods remained healthy.",
+            "r": "Zero downtime for other hospitals. The incident became a routine 429 log rather than a P1 outage."
+          },
+          "difficulty": "advanced",
+          "tags": ["rate-limiting", "resilience", "production-incidents"]
+        }
+      ]
+    }
+  ]
+}

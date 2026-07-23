@@ -198,5 +198,35 @@
     "file": "section-20-devops.json",
     "subsectionCount": 2,
     "termCount": 6
+  },
+  {
+    "id": "21",
+    "slug": "senior-java-interview",
+    "title": "Senior Java Interview (12+ Years)",
+    "icon": "🎯",
+    "accentColor": "#e11d48",
+    "file": "section-21-senior-java-interview.json",
+    "subsectionCount": 6,
+    "termCount": 16
+  },
+  {
+    "id": "22",
+    "slug": "architecture-interview",
+    "title": "Architecture Interview — EHR & eCR-Now",
+    "icon": "🏛️",
+    "accentColor": "#0369a1",
+    "file": "section-22-architecture-interview.json",
+    "subsectionCount": 5,
+    "termCount": 14
+  },
+  {
+    "id": "23",
+    "slug": "priority-learning-roadmap",
+    "title": "⭐ Priority Roadmap — 12+ Years",
+    "icon": "⭐",
+    "accentColor": "#7c3aed",
+    "file": "section-23-priority-learning-roadmap.json",
+    "subsectionCount": 4,
+    "termCount": 43
   }
 ]

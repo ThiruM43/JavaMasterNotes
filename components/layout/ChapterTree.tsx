@@ -51,7 +51,35 @@ export function ChapterTree() {
 
   return (
     <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-      <div className="sidebar-header">Sections & Subsections</div>
+      <div style={{ padding: '12px 12px 6px 12px' }}>
+        <Link
+          href="/podcast"
+          onClick={() => setSidebarOpen(false)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            background: pathname === '/podcast' ? '#8b5cf6' : 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(139, 92, 246, 0.05) 100%)',
+            border: '1px solid #8b5cf6',
+            borderRadius: 10,
+            padding: '10px 14px',
+            color: pathname === '/podcast' ? '#ffffff' : 'var(--text-primary)',
+            fontWeight: 700,
+            fontSize: '0.85rem',
+            textDecoration: 'none',
+            boxShadow: pathname === '/podcast' ? '0 4px 12px rgba(139, 92, 246, 0.35)' : 'none',
+            transition: 'all 0.2s'
+          }}
+        >
+          <span style={{ fontSize: '1.2rem' }}>🎧</span>
+          <div>
+            <div>Podcast Studio</div>
+            <div style={{ fontSize: '0.68rem', opacity: 0.8, fontWeight: 500 }}>Tanglish Conversations</div>
+          </div>
+        </Link>
+      </div>
+
+      <div className="sidebar-header" style={{ marginTop: 6 }}>Sections & Subsections</div>
       {sectionIndex.map(sec => {
         const isActive = pathname.startsWith(`/${sec.slug}`);
         const isExpanded = expandedSec === sec.slug || isActive;

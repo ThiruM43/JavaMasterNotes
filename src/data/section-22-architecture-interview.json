@@ -1,0 +1,334 @@
+{
+  "id": "22",
+  "slug": "architecture-interview",
+  "title": "Architecture Interview — EHR & eCR-Now",
+  "icon": "🏛️",
+  "accentColor": "#0369a1",
+  "subsections": [
+    {
+      "id": "22.1",
+      "slug": "ecr-now-architecture-overview",
+      "title": "eCR-Now System Architecture Overview",
+      "keyRule": "eCR-Now is a FHIR-based middleware that automates electronic case reporting from hospital EHR systems to the CDC. Key components: IMS (Hospital) → cpXML → Linus API Gateway → eCR-Now on GKE → FHIR R4 Query → eCR Report → CDC via Direct (SMTP) → IMAP poll → eCR-Now DB → FHIR POST → Evident EHR. Every step must be fault-tolerant — this is healthcare compliance software.",
+      "terms": [
+        {
+          "id": "22.1.system-overview",
+          "term": "eCR-Now System Overview",
+          "what": "eCR-Now (Electronic Case Reporting Now) is a healthcare interoperability middleware deployed on Google Kubernetes Engine (GKE) that automatically detects and reports infectious disease cases from hospital Electronic Health Records (EHR) to the Centers for Disease Control and Prevention (CDC). It sits between the hospital information systems and the CDC, handling the full workflow: patient admission detection → FHIR-based condition querying → reportability assessment → eCR report generation → CDC submission via Direct messaging → response handling → EHR update.",
+          "why": "Healthcare providers are legally required to report notifiable conditions (COVID, flu, TB, etc.) to public health authorities within 24-72 hours. Manual reporting is error-prone, delayed, and burdensome for clinical staff. eCR-Now automates this entirely — triggered by patient admission, no clinical staff involvement needed.",
+          "how": "Full flow step by step: 1) Patient Registered in Hospital: Patient admitted to IMS (Information Management System). 2) IMS processes admission: IMS uses cpXML (Clinical Protocol XML) to query the FHIR server for Patient ID and Encounter ID. 3) IMS sends launchPatient POST to eCR-Now via Linus Gateway (API Gateway / Load Balancer). Payload: {fhirUrl, patientId (FHIR), encounterId (FHIR)} — these are FHIR IDs, not IMS UI IDs. 4) eCR-Now receives launchPatient: The GKE-hosted eCR-Now service starts the eCR workflow for this patient. 5) Query Patient (FHIR): eCR-Now queries the EHR's FHIR R4 API for patient clinical data — Condition resources, Observation resources, MedicationRequest, Encounter details. Evaluates reportability triggers (specific SNOMED/LOINC/ICD codes indicating notifiable conditions). 6) If reportable condition found: Generates an eCR report (structured clinical document). Submits to CDC via Direct messaging protocol (secure SMTP-based health message transport). 7) CDC processes the report: CDC sends response back via Direct (SMTP). eCR-Now polls CDC's Direct inbox via IMAP. 8) Response handling: eCR-Now stores the CDC response in eCR-Now database. Sends FHIR POST (DocumentReference resource) back to Evident EHR with the CDC response attached. 9) Evident EHR: Displays the CDC response using HL7 Response Stylesheet. Existing screens modified to allow all users to view the report.",
+          "where": "Hospital networks using Evident EHR system. eCR-Now is a GKE-deployed service, accessible to hospital systems via the Linus API Gateway.",
+          "when": "The entire workflow triggers on every patient admission. For non-reportable conditions, the workflow terminates after the FHIR query step. For reportable conditions, the full flow to CDC completes within 2 hours of admission (well within the 24-hour regulatory requirement).",
+          "issue": "Any step in the flow can fail: Linus Gateway can timeout, FHIR server can be slow, CDC Direct endpoint can be unreachable, IMAP polling can miss responses. Each failure mode requires different handling.",
+          "fix": "Circuit breakers on FHIR API and CDC Direct calls. Kafka-based retry queues for each workflow step. Saga pattern for the full multi-step workflow. Kubernetes liveness probes for automatic pod recovery. Dead-letter queue for permanently failed reports with alerting to operations team.",
+          "star": {
+            "s": "Interview: 'Walk me through a system you have designed or owned end-to-end.'",
+            "t": "Demonstrate ownership of a complex, multi-component, fault-tolerant healthcare system.",
+            "a": "Described eCR-Now from business problem (mandatory CDC reporting) through full technical architecture (IMS → cpXML → Linus Gateway → GKE → FHIR R4 → Direct SMTP → IMAP → Evident EHR). Covered technology decisions (FHIR because national standard, GKE for autoscaling, Direct because CDC mandates it), failure handling (circuit breakers, retry, liveness probes), and compliance outcomes (99.9% CDC reporting compliance).",
+            "r": "Interviewer: 'This is exactly the kind of end-to-end system ownership we are looking for in a senior architect.' Proceeded to offer stage."
+          },
+          "difficulty": "advanced",
+          "tags": ["ecr-now", "ehr", "fhir", "gke", "architecture", "healthcare"]
+        },
+        {
+          "id": "22.1.linus-gateway",
+          "term": "Linus Gateway — API Gateway Role",
+          "what": "Linus Gateway is the API Gateway and load balancer between hospital information systems (IMS) and eCR-Now. It is the single entry point for all launchPatient POST requests from hospital systems. Handles: routing, SSL termination, authentication, rate limiting, and load distribution across eCR-Now GKE pods.",
+          "why": "Without an API Gateway, each hospital system would need to know the direct address of eCR-Now pods — which change as Kubernetes scales up and down. The gateway provides a stable, secure, managed entry point.",
+          "how": "Hospital IMS sends POST /launchPatient to Linus Gateway endpoint. Linus Gateway: 1) Authenticates the request (client certificate or API key). 2) Validates the payload (fhirUrl, patientId, encounterId present). 3) Rate limits per hospital system (prevents one IMS from flooding eCR-Now). 4) Routes to one of the eCR-Now pods running on GKE. 5) Returns response to IMS (202 Accepted for async processing). If eCR-Now is unavailable: Gateway returns 503 with Retry-After header. IMS retries according to the header.",
+          "where": "Between all external callers (IMS systems) and eCR-Now GKE deployment. Acts as the network boundary between hospital internal systems and the GKE cluster.",
+          "when": "All incoming requests go through Linus Gateway. Direct pod access is blocked by GKE network policy. This ensures every request is authenticated and rate-limited before reaching eCR-Now.",
+          "issue": "Linus Gateway itself can become a single point of failure. If it goes down, no hospital system can trigger eCR-Now — all patient admissions miss automated reporting.",
+          "fix": "Linus Gateway deployed in multiple instances behind a cloud load balancer (GCP Load Balancer). Health checks on gateway instances. If all gateway instances fail, IMS systems receive DNS timeout — they should queue the launchPatient call and retry (IMS-side retry is essential). Alert when gateway health degrades.",
+          "star": {
+            "s": "Architecture question: 'What happens if your API Gateway goes down?'",
+            "t": "Demonstrate understanding of SPOF and mitigation strategy.",
+            "a": "Linus Gateway runs multiple instances behind GCP Load Balancer — single instance failure is transparent. If ALL gateway instances fail: IMS systems receive connection refused. We documented the IMS-side retry requirement in our integration guide: IMS must queue launchPatient and retry every 5 minutes for up to 2 hours. Alert fires within 1 minute of gateway downtime via Prometheus + PagerDuty. 2-hour window is safe because CDC reporting SLA is 24 hours.",
+            "r": "Shows awareness of failure modes, mitigation at multiple layers, and that the SLA gives us recovery time."
+          },
+          "difficulty": "advanced",
+          "tags": ["api-gateway", "linus", "load-balancer", "ecr-now", "spof"]
+        },
+        {
+          "id": "22.1.gke-deployment-architecture",
+          "term": "eCR-Now GKE Deployment Architecture",
+          "what": "eCR-Now runs on Google Kubernetes Engine (GKE) in multiple pods. GKE provides pod autoscaling, self-healing (restart stuck pods), rolling deployments, and network policy enforcement. Each pod runs the eCR-Now Spring Boot application — a stateless service that processes patient admission events.",
+          "why": "Hospital admission volume is bursty — peaks during morning shift changes and after-hours emergency admissions. GKE Horizontal Pod Autoscaler scales pods based on CPU or queue depth. Stateless design means any pod can handle any request — no session affinity needed.",
+          "how": "Deployment: 2 minimum replicas (always on), up to 20 replicas (HPA max). KEDA scaler on Kafka consumer group lag (scale up when lag > 50 messages, scale down when lag < 10 for 5 minutes). Resource requests: cpu: 500m, memory: 512Mi. Limits: cpu: 2000m, memory: 2Gi (avoids OOM kills while preventing one pod from consuming all node resources). Liveness probe: GET /actuator/health/liveness — checks if Spring context alive. Timeout 5s, failure threshold 3. Readiness probe: GET /actuator/health/readiness — checks FHIR client, DB connection, Kafka connectivity. New pod does not receive traffic until readiness probe passes (prevents cold-start errors). Rolling update: maxSurge: 1, maxUnavailable: 0 — zero-downtime deployments. Pod Disruption Budget: minAvailable: 2 — always at least 2 pods running during node drains.",
+          "where": "GCP region where hospital network is located. Multi-zone within the region for fault tolerance (pods spread across 3 GCP zones).",
+          "when": "Autoscaling handles routine load variation. Pre-scheduled scaling via CronJob scales to 10 pods at 6:30am before morning rounds (known peak). Scale down at 10am when rounds end.",
+          "issue": "JVM startup time for Spring Boot is 15-30 seconds. During scale-up events, new pods take 30-60 seconds before serving traffic. If peak arrives faster than pods warm up, queue backs up.",
+          "fix": "Readiness probe ensures traffic only routes to warmed-up pods (prevents errors to cold pods). CRaC (Checkpoint/Restore in Userspace) for near-instant JVM startup (experimental). Primary mitigation: predictive pre-scaling before known peak times. KEDA starts scale-up as queue depth grows, before CPU spikes.",
+          "star": {
+            "s": "Morning admission surge causing 15-minute report delays — HPA CPU-based scaling too slow.",
+            "t": "Eliminate admission burst delays.",
+            "a": "Replaced CPU HPA with KEDA on Kafka consumer lag. Pre-scale via CronJob to 10 pods at 6:30am. Readiness probe on FHIR client warm-up. Result: pods pre-warmed before the burst, KEDA adds more pods as queue grows.",
+            "r": "Report generation latency: 15 minutes at peak → consistently under 2 minutes at all load levels."
+          },
+          "difficulty": "advanced",
+          "tags": ["gke", "kubernetes", "autoscaling", "keda", "spring-boot", "deployment"]
+        }
+      ]
+    },
+    {
+      "id": "22.2",
+      "slug": "fhir-integration-architecture",
+      "title": "FHIR Integration Architecture",
+      "keyRule": "FHIR (Fast Healthcare Interoperability Resources) R4 is the national standard for healthcare data exchange. eCR-Now uses FHIR to query patient clinical data from Evident EHR. Key FHIR resources used: Patient, Encounter, Condition, Observation, MedicationRequest, DocumentReference. Key principle: FHIR IDs are not the same as EHR UI IDs — always use FHIR-native IDs from the FHIR server.",
+      "terms": [
+        {
+          "id": "22.2.fhir-overview",
+          "term": "FHIR R4 Integration in eCR-Now",
+          "what": "FHIR (Fast Healthcare Interoperability Resources) R4 is a RESTful API standard for healthcare data exchange, maintained by HL7 International. eCR-Now uses FHIR to query patient clinical data from the Evident EHR FHIR server. FHIR resources are JSON or XML documents representing clinical concepts: Patient, Encounter, Condition, Observation, MedicationRequest, DocumentReference.",
+          "why": "FHIR is the U.S. mandated standard for healthcare interoperability (CMS Interoperability Rule 2020). Every certified EHR must expose a FHIR R4 API. Using FHIR means eCR-Now can integrate with any FHIR-compliant EHR — not just Evident. This portability is critical for expanding to new hospital networks.",
+          "how": "eCR-Now receives launchPatient payload with: fhirUrl (EHR FHIR server base URL), patientId (FHIR Patient resource ID), encounterId (FHIR Encounter resource ID). These FHIR IDs are obtained by IMS using cpXML to query the FHIR server — they are NOT the same as the IMS UI patient/encounter IDs. FHIR queries in eCR-Now: GET {fhirUrl}/Condition?patient={patientId}&encounter={encounterId} GET {fhirUrl}/Observation?patient={patientId}&encounter={encounterId} GET {fhirUrl}/MedicationRequest?patient={patientId}&encounter={encounterId}. Responses are FHIR Bundle resources (list of matching resources). eCR-Now evaluates each Condition/Observation code against the RCTC (Reportable Condition Trigger Codes) value set — if any match, condition is reportable. FHIR _elements parameter: request only needed fields to reduce response size. FHIR _include for related resources in one request to reduce round trips.",
+          "where": "Every patient admission triggers FHIR queries to the Evident EHR FHIR server. In multi-hospital deployments, fhirUrl varies — eCR-Now queries each hospital's own FHIR server.",
+          "when": "FHIR queries execute immediately after launchPatient is received. Parallel queries for Condition, Observation, MedicationRequest (not sequential) to minimize latency. Results cached in Redis for 5 minutes — most follow-up queries within same encounter window.",
+          "issue": "FHIR IDs are different from EHR UI IDs. A common integration mistake: IMS sends the UI patient ID (e.g., MRN) instead of the FHIR Patient resource ID. eCR-Now gets 404 Not Found on FHIR query. This breaks the entire reportability assessment.",
+          "fix": "IMS must use cpXML to resolve the UI IDs to FHIR IDs before calling launchPatient. eCR-Now validates that patientId and encounterId are valid FHIR resource IDs (UUID format) before proceeding. Clear error response to IMS with specific message: 'patientId must be a FHIR Patient resource ID, not an MRN.'",
+          "star": {
+            "s": "New hospital network integration — IMS team sent MRN as patientId in launchPatient. FHIR queries returning 404. All admission events failing silently.",
+            "t": "Detect and communicate the integration error clearly. Fix without modifying IMS immediately.",
+            "a": "Added FHIR ID format validation on receipt of launchPatient (UUID pattern check). Clear error response: HTTP 400 with body explaining FHIR ID vs MRN distinction. Added a FHIR ID lookup fallback: if patientId fails FHIR query, attempt a search by identifier (MRN search: /Patient?identifier={mrn}) to resolve to FHIR ID automatically. Documented integration requirement clearly in API contract.",
+            "r": "New hospital onboarded successfully. Automatic MRN-to-FHIR-ID resolution as a convenience feature for hospitals with older IMS systems."
+          },
+          "difficulty": "advanced",
+          "tags": ["fhir", "ehr", "healthcare-interoperability", "r4", "integration"]
+        },
+        {
+          "id": "22.2.fhir-performance",
+          "term": "FHIR API Performance Optimization",
+          "what": "FHIR Bundle responses can be large (50-500KB). Unoptimized FHIR queries cause high latency and EHR server load. Key optimizations: _elements (request only needed fields), _include (fetch related resources in one request), parallel queries, response caching, connection pooling.",
+          "why": "Slow FHIR queries delay eCR report generation. If query latency exceeds 5-10 minutes, CDC 24-hour reporting window becomes tight. EHR server overload causes slow responses for clinical users — eCR-Now must be a good citizen and not degrade clinical workflows.",
+          "how": "Optimizations applied in eCR-Now: 1) _elements parameter: GET /Condition?patient=123&_elements=code,clinicalStatus,category — request only needed fields. Reduces 50KB Bundle to 6KB. 2) Parallel queries with CompletableFuture: CompletableFuture<Bundle> conditionsFuture = CompletableFuture.supplyAsync(() -> fhirClient.query(conditionQuery)); CompletableFuture<Bundle> observationsFuture = CompletableFuture.supplyAsync(() -> fhirClient.query(observationQuery)); CompletableFuture.allOf(conditionsFuture, observationsFuture).join(); — runs in parallel instead of 3 sequential requests. 3) Redis cache: cache FHIR responses by (patientId, encounterId, resourceType) with 5-minute TTL. Cache hit rate ~70% — multiple eCR workflow steps query the same patient data. 4) Connection pooling: WebClient with connection pool (maxConnections=50, pendingAcquireMaxCount=100). 5) Response timeout: 5 seconds per FHIR request — prevents blocked threads. Circuit breaker: open after 50% slow calls in 10-call window.",
+          "where": "FHIR queries in eCR-Now workflow. Performance is critical because FHIR query latency directly impacts eCR report generation time and CDC compliance.",
+          "when": "Apply all optimizations from the start. Profile with async-profiler to find actual bottleneck before adding optimizations. Monitor: FHIR query p95 latency, cache hit rate, EHR FHIR server response time trend.",
+          "issue": "FHIR _include fetches related resources in one request but can return very large Bundles if the patient has extensive history. A patient with 500+ Conditions in their history = 2MB+ Bundle per query.",
+          "fix": "Add encounter-scoped filter: &encounter={encounterId} — only current encounter's resources. Add date range filter: &onset-date=ge{admissionDate} for Conditions. Page through large results with _count parameter. For bulk FHIR (historical analytics), use FHIR $export operation (async bulk export, not real-time queries).",
+          "star": {
+            "s": "Profiled eCR-Now FHIR queries: 80% of 3s latency was Jackson deserialization of 50KB+ Bundle responses. EHR had complex patients with years of clinical history.",
+            "t": "Reduce FHIR query latency without changing EHR configuration.",
+            "a": "Added _elements to all FHIR queries (only needed fields). Added encounter scoping with &encounter={encounterId}. Parallel CompletableFuture queries for Condition, Observation, MedicationRequest simultaneously. Redis cache for 5-minute TTL. Result: 50KB → 6KB response, sequential → parallel execution.",
+            "r": "FHIR query latency: 3000ms → 180ms p95. EHR server load from eCR-Now reduced by 65%. Freed FHIR query budget for clinical user queries."
+          },
+          "difficulty": "advanced",
+          "tags": ["fhir", "performance", "redis", "parallel-queries", "optimization"]
+        },
+        {
+          "id": "22.2.document-reference",
+          "term": "FHIR DocumentReference — Posting CDC Response to EHR",
+          "what": "FHIR DocumentReference is a resource that references a clinical document and provides metadata about it. eCR-Now uses DocumentReference to post the CDC response report back to the Evident EHR — making the CDC response visible to clinical users in the EHR interface.",
+          "why": "The CDC's response to the eCR report is clinically significant — it may contain public health investigation notes, case status, or guidance. Posting it back to the EHR as a DocumentReference makes it accessible to the care team within their existing clinical workflow.",
+          "how": "After eCR-Now receives the CDC response via IMAP: 1) Parse CDC response (HL7 Response content). 2) Create FHIR DocumentReference resource: { resourceType: 'DocumentReference', status: 'current', type: { coding: [{ system: 'hl7-document-type', code: 'eCR-Response' }] }, subject: { reference: 'Patient/{patientId}' }, context: { encounter: [{ reference: 'Encounter/{encounterId}' }] }, content: [{ attachment: { contentType: 'application/hl7-v3+xml', data: '<base64-encoded CDC response>' } }] }. 3) POST DocumentReference to Evident EHR FHIR server: POST {fhirUrl}/DocumentReference. 4) Evident EHR screens modified to display DocumentReference resources using HL7 Response Stylesheet.",
+          "where": "Final step of the eCR-Now workflow. Only executed when CDC responds to a submitted eCR report. Targets the same Evident EHR FHIR server that was queried for patient data.",
+          "when": "CDC response polling via IMAP runs every 15 minutes. When response found, DocumentReference POST happens immediately. Retry with exponential backoff if EHR FHIR server is unavailable for the POST.",
+          "issue": "EHR may reject DocumentReference POST if the patient encounter is already closed (discharged). FHIR server returns 422 Unprocessable Entity.",
+          "fix": "Catch 422 response specifically. For closed encounters: post DocumentReference against the Patient resource directly (without encounter context). Log the closed-encounter scenario for operational visibility. Coordinate with EHR team to allow historical encounter updates.",
+          "star": {
+            "s": "CDC response arrived 48 hours after admission — patient already discharged. EHR rejected DocumentReference POST (closed encounter).",
+            "t": "Ensure CDC response reaches EHR regardless of encounter status.",
+            "a": "Added specific handling for 422 Unprocessable Entity from FHIR POST. Fallback: re-POST DocumentReference without encounter context (patient-level, not encounter-level). EHR team added configuration: allow DocumentReference against closed encounters if reference period within 90 days. Stored all CDC responses in eCR-Now DB permanently — accessible via eCR-Now reporting UI even if EHR POST fails.",
+            "r": "Zero lost CDC responses. Late responses posted to EHR successfully. eCR-Now DB provides compliance audit trail independent of EHR availability."
+          },
+          "difficulty": "advanced",
+          "tags": ["fhir", "document-reference", "ehr", "cdc-response", "healthcare"]
+        }
+      ]
+    },
+    {
+      "id": "22.3",
+      "slug": "healthcare-messaging-direct",
+      "title": "Healthcare Messaging — Direct Protocol & CDC",
+      "keyRule": "Direct Protocol (Direct Messaging) is a secure email-based messaging protocol for healthcare information exchange. Built on SMTP/SMIME — encrypted, authenticated, peer-to-peer. eCR-Now uses Direct to submit eCR reports to the CDC and to receive CDC responses. Key: Direct is essentially SMTP with mandatory end-to-end encryption and healthcare identity verification (certificates from HISP).",
+      "terms": [
+        {
+          "id": "22.3.direct-protocol",
+          "term": "Direct Protocol (Healthcare Secure Messaging)",
+          "what": "Direct Protocol is a national standard (part of the Nationwide Health Information Network) for secure point-to-point health information exchange. It is SMTP-based with mandatory S/MIME encryption and digital signatures. Messages are routed through Health Information Service Providers (HISPs) — trusted intermediaries that handle certificate management and message routing.",
+          "why": "Healthcare information exchange requires: HIPAA compliance (encryption of PHI in transit), identity authentication (sender and receiver verified via certificates), audit trails (delivery receipts). Standard SMTP provides none of these. Direct Protocol adds all three, while remaining based on familiar email infrastructure.",
+          "how": "eCR-Now CDC submission flow: 1) eCR-Now constructs eCR report (CDA/XML format). 2) Sends via SMTP to the HISP (Health Information Service Provider) using Direct-compliant client library. The HISP address is specific to the hospital system's Direct address (e.g., ecr-now@directaddress.hospitalnetwork.org). Recipient address is CDC's Direct inbox (cdc-ecr@cdc.gov or equivalent). 3) HISP encrypts the message using the recipient's public certificate (from HISP certificate directory). 4) CDC's HISP receives, decrypts, delivers to CDC inbox. 5) eCR-Now polls CDC response inbox via IMAP (Direct responses come back as SMTP replies to the original message). 6) IMAP polling: check CDC Direct mailbox every 15 minutes for new MDN (Message Disposition Notifications) and response reports. Store response content in eCR-Now DB.",
+          "where": "CDC submission step of eCR-Now workflow. Direct messaging also used for other healthcare information exchange: lab results, referral summaries, care transition summaries.",
+          "when": "eCR report sent to CDC within 2 hours of reportable condition detection. IMAP polling every 15 minutes for responses. If CDC takes >72 hours to respond, alert operations team (CDC SLA is typically 24-48 hours).",
+          "issue": "CDC Direct endpoint is government infrastructure — less reliable than commercial APIs. Periodic outages during maintenance windows. SMTP/Direct send can timeout or fail with no immediate feedback on delivery status.",
+          "fix": "Retry queue: failed Direct sends queued in Kafka with exponential backoff (1min, 5min, 15min, 1hr, 6hr, 24hr). Circuit breaker on Direct send — open after 3 consecutive failures, test every 5 minutes. MDN tracking: if MDN (delivery receipt) not received within 1 hour, treat as failed and retry. Alert when any report not delivered within 4 hours of generation.",
+          "star": {
+            "s": "CDC Direct endpoint down for 3 hours during a government maintenance window. 47 eCR reports queued and unsent. Risk of missing CDC 24-hour reporting window.",
+            "t": "Deliver all 47 queued reports after CDC endpoint recovers without manual intervention.",
+            "a": "Kafka retry queue with exponential backoff absorbed all 3-hour queue. When circuit breaker detected CDC recovery (probe succeeded in HALF-OPEN state), all 47 reports delivered automatically in 12 minutes. Operations team alerted (but no action required). Added MDN tracking with 1-hour SLA alert.",
+            "r": "Zero missed CDC reports despite 3-hour outage. Automatic recovery required no manual intervention. Operations team saw alert, monitored, confirmed auto-recovery."
+          },
+          "difficulty": "advanced",
+          "tags": ["direct-protocol", "smtp", "cdc", "healthcare-messaging", "hisp"]
+        },
+        {
+          "id": "22.3.imap-polling",
+          "term": "IMAP Polling for CDC Responses",
+          "what": "eCR-Now polls the Direct messaging inbox via IMAP to retrieve CDC responses to submitted eCR reports. IMAP (Internet Message Access Protocol) allows server-side email access — eCR-Now connects to the HISP mail server and checks for new messages in the CDC response mailbox.",
+          "why": "CDC responses arrive asynchronously — not in response to the HTTP request that submitted the report, but as a separate Direct message from CDC to the hospital's Direct address. IMAP polling is how eCR-Now retrieves these asynchronous responses.",
+          "how": "IMAP connection: JavaMail API (javax.mail) or Jakarta Mail. Store store = Session.getInstance(props).getStore('imaps'). Connect to HISP IMAP server with Direct address credentials. Open INBOX folder. Search for new messages since last poll: new SearchTerm().unseen(). For each new message: 1) Parse message headers — match to original eCR submission (correlate by message ID or encounter ID in subject). 2) Extract CDC response content (CDA XML or PDF). 3) Store in eCR-Now DB: cdc_responses table (encounterId, patientId, responseContent, receivedAt). 4) Mark message as read (SEEN flag). 5) Trigger DocumentReference POST to Evident EHR. Polling interval: every 15 minutes via Spring @Scheduled. Idempotency: check if response for this encounterId already processed (DB unique constraint) before creating DocumentReference.",
+          "where": "eCR-Now scheduled job component. Runs independently of the patient admission processing — separate concern.",
+          "when": "Polls every 15 minutes. Runs as long as there are eCR-Now pods alive. If polling misses a cycle (pod restart during polling), messages remain unread in IMAP — next poll picks them up (IMAP messages persist on server).",
+          "issue": "IMAP connection is stateful — if the IMAP session is held open and the network drops, the connection hangs without throwing an exception for minutes. Polling thread gets stuck. This blocks all subsequent polls.",
+          "fix": "Set IMAP connection timeouts: mail.imaps.connectiontimeout=5000 (5s), mail.imaps.timeout=10000 (10s), mail.imaps.writetimeout=5000 (5s). Close IMAP connection after each poll cycle (do not hold open). Use separate thread pool for IMAP polling with a watchdog timer — if poll takes >2 minutes, interrupt and log alert.",
+          "star": {
+            "s": "IMAP polling thread hung for 45 minutes — network dropped mid-session, IMAP connection did not time out. No CDC responses processed during that window.",
+            "t": "Make IMAP polling resilient to network hangs.",
+            "a": "Added explicit IMAP connection timeouts (5s connect, 10s read). Changed to open-and-close per poll cycle (stateless approach). Added watchdog: CompletableFuture with 2-minute timeout. If poll exceeds 2 minutes: cancel, log ERROR, send alert. Added Prometheus counter: imap_poll_success vs imap_poll_timeout — alerting when timeout rate > 1/hour.",
+            "r": "No IMAP hang incidents in 8 months post-fix. Watchdog detected and recovered from two subsequent network issues in under 2 minutes each."
+          },
+          "difficulty": "advanced",
+          "tags": ["imap", "cdc-response", "polling", "javamail", "fault-tolerance"]
+        }
+      ]
+    },
+    {
+      "id": "22.4",
+      "slug": "architecture-scenario-questions",
+      "title": "Architecture Scenario Questions & Answers",
+      "keyRule": "Scenario questions test how you think under pressure. Use this structure: Restate the problem → Clarify constraints → State assumptions → Give solution options (not just one) → Recommend with rationale → Acknowledge tradeoffs. Never give a single answer to a scenario — always show you evaluated alternatives. This is what differentiates an architect from a developer.",
+      "terms": [
+        {
+          "id": "22.4.rate-limiting-scenario",
+          "term": "Scenario: Design Rate Limiting for FHIR API",
+          "what": "Architecture scenario: 'One hospital IMS is sending 5000 launchPatient requests per minute — overwhelming eCR-Now. Other hospitals are being starved of processing capacity. How do you handle this?'",
+          "why": "This tests: understanding of rate limiting algorithms, distributed systems constraints (multiple eCR-Now pods), per-client isolation design, and graceful degradation vs hard rejection.",
+          "how": "Step 1 — Clarify: 'Is this a buggy IMS sending duplicates, or legitimate high admission volume?' (Determines if we alert the hospital IT team vs just rate limit). 'Do we need per-hospital limits or global limits?' Step 2 — Solution: Rate limit at Linus Gateway layer (not inside eCR-Now). Per-hospital rate limit keyed by hospital system identifier (client certificate CN or API key). Algorithm: Token Bucket — allows some burst for legitimate peak admissions, but caps sustained rate. Limit: 100 launchPatient/min per hospital (configurable per hospital tier). Redis-backed for consistency across multiple Linus Gateway instances. Step 3 — Response to rate-limited hospital: HTTP 429 with Retry-After: 60 header. IMS must implement retry — documented in integration contract. Step 4 — Monitoring: Real-time dashboard of launchPatient rate per hospital. Alert when any hospital hits >80% of limit (proactive, not just reactive). Step 5 — Investigation: If legitimate high volume (mass casualty event), allow manual override of rate limit for specific hospital with TTL.",
+          "where": "Linus Gateway (not inside eCR-Now). Rate limiting at the entry point, before eCR-Now does any FHIR work.",
+          "when": "Rate limits active always. Override capability for exceptional circumstances (disaster scenarios, mass casualty events) with audit log of override actions.",
+          "issue": "Rate limiting too aggressively during a mass casualty incident could prevent reporting of a large number of genuine infectious disease cases — direct public health harm.",
+          "fix": "Tiered limits: normal hospitals at 100/min, designated emergency centers at 500/min. Dynamic override capability: operations team can raise limit for specific hospital for up to 4 hours via admin API (with audit log). Alert CDC operations when any hospital exceeds normal tier limits — they may need to prepare for a large batch of eCR reports.",
+          "star": {
+            "s": "Interview: 'A hospital IMS had a bug and sent 50,000 duplicate launchPatient requests in 10 minutes. How should your system handle this?'",
+            "t": "Show multi-layer thinking: immediate protection + root cause + recovery + prevention.",
+            "a": "Layer 1 (Immediate): Rate limiter at Linus Gateway drops excess requests, returns 429. Layer 2 (Deduplication): eCR-Now checks for existing in-progress report for same encounterId before starting new workflow (idempotency). Duplicate detected → return 200 with existing workflow status. No duplicate FHIR queries, no duplicate CDC submissions. Layer 3 (Alert): Hospital IT team alerted automatically when 429 rate exceeds 10 in 1 minute — they can investigate the IMS bug. Layer 4 (Prevention): Documented in IMS integration guide: launchPatient is idempotent — do not send same encounterId more than once unless workflow explicitly failed.",
+            "r": "Shows defense in depth: rate limiter + idempotency + alerting + documentation. Demonstrates that I think about the entire failure mode, not just one layer."
+          },
+          "difficulty": "advanced",
+          "tags": ["rate-limiting", "scenario", "architecture", "idempotency", "healthcare"]
+        },
+        {
+          "id": "22.4.server-stuck-scenario",
+          "term": "Scenario: eCR-Now Server Gets Stuck — What Do You Do?",
+          "what": "Interview scenario: 'Your eCR-Now service is deployed on GKE. At 8am on a Monday, it stops responding to new patient admissions. Kubernetes shows all pods as running and healthy. How do you investigate and recover?'",
+          "why": "Tests: understanding of hung thread vs crashed process distinction, Kubernetes health check design, diagnosis skills, immediate recovery vs root cause analysis, and architecture decisions that prevent recurrence.",
+          "how": "Phase 1 — Immediate Investigation (first 5 minutes): 1) Check Kubernetes: kubectl get pods -n ecr-now — all Running, but check Restarts column. kubectl logs <pod-name> --tail=100 — look for thread exhaustion errors, WARN/ERROR patterns. kubectl top pods — CPU at 0% with 0 throughput = classic thread exhaustion. 2) Check Prometheus/Grafana: thread pool active count, FHIR client response time, Kafka consumer lag growing. 3) Take thread dump: kubectl exec <pod-name> -- jstack 1 > threaddump.txt. Look for BLOCKED threads. Phase 2 — Diagnosis (5-10 minutes): Thread dump shows: all 20 FHIR thread pool threads BLOCKED on FHIR HTTP call (waiting for socket read). Root cause: Evident EHR FHIR server responding very slowly (8am is peak clinical load — EHR is overloaded). Phase 3 — Immediate Recovery: kubectl rollout restart deployment/ecr-now — rolling restart. New pods start with fresh thread pools. Launchered requests in Kafka queue — automatically retried when pods come up. Phase 4 — Prevent Recurrence: 1) Add 5-second timeout on all FHIR WebClient calls (if not already present). 2) Add Resilience4j circuit breaker on FHIR calls — after 5 slow calls, fail fast. 3) Fix liveness probe: if liveness uses /actuator/health which checks FHIR — a slow FHIR server causes liveness failure → automatic restart. 4) Bulkhead: separate thread pool for FHIR calls (20 threads) from rest of service — FHIR blocking cannot exhaust service thread pool.",
+          "where": "This scenario is directly applicable to eCR-Now in production. The 8am admission surge coincides with peak EHR clinical load — highest risk for FHIR server slowness.",
+          "when": "Recovery within 10 minutes of detection (manual). Prevention mechanisms should reduce MTTR to <2 minutes (automatic liveness probe restart + circuit breaker).",
+          "issue": "If liveness probe also calls FHIR server to check health, and FHIR is slow, liveness probe times out → pod restarted → new pod also fails liveness due to same slow FHIR → continuous restart loop (CrashLoopBackOff).",
+          "fix": "Separate liveness from readiness: Liveness probe: GET /actuator/health/liveness — checks only if Spring context is alive (NOT FHIR). This prevents CrashLoopBackOff. Readiness probe: GET /actuator/health/readiness — checks FHIR reachability. Pod removed from load balancer if FHIR unreachable (stops taking requests but does not restart). Add separate FHIR health metric to Prometheus for alerting without tying it to pod liveness.",
+          "star": {
+            "s": "Interview: 'eCR-Now pods are all Running but zero throughput. Kubernetes health checks show green. It is 8am Monday. Walk me through your response.'",
+            "t": "Demonstrate systematic incident response, root cause thinking, and architecture awareness.",
+            "a": "Walked through: (1) Check thread dump — found BLOCKED threads on FHIR socket. (2) Checked Grafana — FHIR p99 latency spiked to 45s from normal 200ms at 7:55am. (3) Correlated with EHR team — they had a DB query optimization running that locked tables. (4) Immediate: kubectl rollout restart. Queued reports in Kafka auto-retried. (5) Prevention: 5s FHIR timeout, circuit breaker, separate liveness/readiness probes, FHIR bulkhead thread pool.",
+            "r": "Recovery: 4 minutes. Prevention: zero recurrence of thread exhaustion in following 6 months. Liveness/readiness separation eliminated the CrashLoopBackOff risk."
+          },
+          "difficulty": "advanced",
+          "tags": ["server-stuck", "kubernetes", "incident-response", "thread-exhaustion", "circuit-breaker"]
+        },
+        {
+          "id": "22.4.self-intro-scenario",
+          "term": "Scenario: Self Introduction for Architecture Role",
+          "what": "Structured approach to self-introduction specifically tailored for architecture-level positions in healthcare IT. Different from a general Java developer intro — emphasizes systems thinking, domain expertise, and leadership.",
+          "why": "Architecture roles evaluate technical depth AND breadth AND communication. The self-intro is your opportunity to establish credibility before any technical question. A strong intro shapes how the interviewer perceives all your subsequent answers.",
+          "how": "Template for 12+ year Java/healthcare architect: 'I am a senior Java engineer and systems architect with 12+ years, specializing in healthcare interoperability for the past [N] years. Currently, I design and own eCR-Now — an automated electronic case reporting system built on a microservices architecture, deployed on GKE, that integrates with hospital EHR systems via FHIR R4 to report infectious disease cases to the CDC. I designed the full data flow from patient admission through CDC reporting using Direct messaging protocol, and built the resilience layer — circuit breakers, retry queues, and liveness probes — that keeps the system running even when the EHR or CDC endpoints are slow. The system achieves 99.9% CDC reporting compliance across multiple hospital networks. In my career I have also worked deeply on [Spring/Kafka/Kubernetes — whichever is most relevant to the role]. I am now looking for [broader architecture ownership / staff engineer role / lead architect position] where I can drive system design decisions and mentor the team. Happy to go deeper on the eCR-Now architecture, the FHIR integration, or the GKE setup — what would be most useful for your team?'",
+          "where": "Any architecture-level interview. Adapt the specific system details to your actual experience. The structure is universal.",
+          "when": "Always deliver this first before any technical question. If interrupted or if interviewer wants to jump straight to technical — deliver the 30-second version: 'I am a 12-year Java architect working in healthcare interoperability, owning a FHIR-based CDC reporting system on GKE. Happy to detail any part of that.' Then let them drive.",
+          "issue": "Overloading the intro with too many systems, technologies, and dates. Interviewer loses the thread and does not know what to ask about. The intro fails to create a clear anchor.",
+          "fix": "ONE flagship system. ONE key architectural decision. ONE business result. Everything else is supporting detail they can ask about. Less is more — depth beats breadth in a self-intro.",
+          "star": {
+            "s": "Phone screen for Staff Engineer role. Interviewer said: 'We have 30 minutes. Start by telling me about yourself.'",
+            "t": "Use the 30 minutes efficiently. Establish credibility in 2 minutes, leaving 25 for technical depth.",
+            "a": "2-minute intro: Healthcare architect, eCR-Now on GKE, FHIR R4 integration, Direct messaging to CDC, resilience layer design. Ended with: 'Our biggest technical challenge was making the system resilient when government CDC endpoints are unreliable — happy to go into that or any other aspect.' Interviewer: 'Yes, tell me about the resilience design.' I spent the next 15 minutes on circuit breakers, retry queues, and the liveness probe design — all areas where I had deep specific experience.",
+            "r": "Phone screen passed. Hiring manager said: 'You were the most prepared candidate in terms of being able to go deep immediately on architecture.' Progressed to onsite."
+          },
+          "difficulty": "advanced",
+          "tags": ["self-intro", "interview", "architecture", "healthcare", "communication"]
+        },
+        {
+          "id": "22.4.project-walkthrough-scenario",
+          "term": "Scenario: Explain Your Project to a New Team / Architecture Panel",
+          "what": "A structured approach to explaining the eCR-Now / EHR integration system to technical and semi-technical audiences at architecture level. Covers business context, component responsibilities, data flow, technology choices, failure handling, and observability.",
+          "why": "Architects must explain systems clearly to: new team members, senior leadership, external partners (new EHR vendors), auditors (for HIPAA compliance), and interviewers. Each audience needs a different depth but the same structure.",
+          "how": "For technical audience (architecture panel): Start with a diagram (whiteboard or slides). Draw from left to right — IMS → Linus → GKE (eCR-Now) → FHIR Server → CDC → EHR. Then narrate the happy path: 'Patient admitted in IMS. IMS uses cpXML to resolve FHIR IDs, sends launchPatient POST to Linus Gateway. Linus authenticates (client cert), rate limits, routes to one of N eCR-Now pods on GKE.' Then the FHIR step: 'eCR-Now queries the EHR FHIR server for Condition, Observation, MedicationRequest resources for this patient-encounter. Evaluates each code against RCTC trigger code set. If match found: reportable.' Then CDC step: 'Generates eCR CDA document. Sends via Direct messaging (SMTP S/MIME through our HISP to CDC's HISP). Polls our Direct IMAP inbox every 15 minutes for CDC response.' Then EHR update: 'When CDC response received, eCR-Now POSTs a FHIR DocumentReference to Evident EHR. EHR displays using HL7 stylesheet.' Then failure handling: 'Circuit breaker on FHIR calls. Kafka retry queue for CDC submissions. Liveness probe restarts stuck pods. Dead-letter queue for permanently failed reports with PagerDuty alert.' Then observability: 'Prometheus metrics per step. Grafana dashboard. Distributed tracing with correlation ID per patient-encounter.'",
+          "where": "Architecture reviews, new hire onboarding, partner integration meetings, auditor walkthroughs, conference presentations.",
+          "when": "Prepare 3 versions: 5 minutes (high-level), 15 minutes (technical depth), 45 minutes (full design review with Q&A). Have the diagram ready — always draw it, never describe it purely verbally for complex systems.",
+          "issue": "Going too deep too fast on one component (e.g., spending 10 minutes on the IMAP polling logic) while the audience does not yet have the full system picture. They cannot evaluate depth without the breadth context first.",
+          "fix": "Always do one full pass at 10,000 feet before going deep on any component. After the overview: 'Any questions before I go deeper on any specific part?' This hands control to the audience and ensures you spend depth time on what they actually care about.",
+          "star": {
+            "s": "New EHR vendor (not Evident) evaluating whether their FHIR server can integrate with eCR-Now. Technical and product stakeholders in the room.",
+            "t": "Explain eCR-Now integration requirements clearly so they can assess their FHIR server's compatibility.",
+            "a": "Drew the integration diagram. Focused on the EHR-facing side: launchPatient payload requirements (FHIR IDs, fhirUrl format), FHIR queries eCR-Now would send (resources, parameters, expected response format), DocumentReference POST format for CDC response. Gave them a written FHIR API contract document. Answered their SMART on FHIR auth questions (eCR-Now supports both client credentials and backend services OAuth2 FHIR auth flows).",
+            "r": "EHR vendor confirmed compatibility in 2 hours. Integration started 2 weeks later. eCR-Now now integrated with 3 EHR vendors using the same architecture."
+          },
+          "difficulty": "advanced",
+          "tags": ["project-walkthrough", "architecture", "communication", "fhir", "ehr-integration"]
+        }
+      ]
+    },
+    {
+      "id": "22.5",
+      "slug": "star-stories-healthcare-architecture",
+      "title": "STAR Stories — Healthcare Architecture Achievements",
+      "keyRule": "STAR = Situation (context), Task (what was required of you), Action (specifically what YOU did — use 'I', not 'we'), Result (quantified outcome). At 12+ years, STAR stories must show: system-level thinking, ownership of architecture decisions, measurable impact, and lessons learned. Prepare 6-8 strong STAR stories covering: performance, reliability, integration design, technical leadership, and difficult decisions.",
+      "terms": [
+        {
+          "id": "22.5.star-cdc-compliance",
+          "term": "STAR: Achieving 99.9% CDC Reporting Compliance",
+          "what": "STAR story demonstrating resilience engineering for a healthcare compliance-critical system where failures have regulatory consequences.",
+          "why": "Demonstrates ability to design reliable systems for high-stakes domains, understanding of failure modes, and architectural decision-making under real business pressure.",
+          "how": "Situation: eCR-Now had a 15% CDC report failure rate — reports were being dropped when CDC Direct endpoint was slow or unavailable. Regulatory risk: any missed report is a potential public health incident. Task: Design and implement a reliable CDC report delivery mechanism guaranteeing at-least-once delivery. Action: 1) Root cause analysis — no retry mechanism, synchronous Direct send with 10s timeout, no persistence of failed sends. 2) Implemented Kafka-based retry queue: CDC send failure → publish to cdc-retry topic. Retry consumer: 6 attempts with exponential backoff (1m, 5m, 15m, 1h, 6h, 24h). 3) Implemented idempotency: SHA256(encounterId + reportTimestamp) key prevents duplicate CDC submissions on retry. 4) Dead-letter queue after 6 failed retries: PagerDuty alert + manual review queue. 5) MDN tracking: verify CDC delivery receipt within 1 hour. 6) Dashboards: real-time CDC delivery status per report, retry rate, queue depth. Result: CDC report failure rate from 15% → 0.1% (9x improvement). 99.9% compliance rate. Zero regulatory findings in subsequent 12-month audit period.",
+          "where": "eCR-Now CDC submission component. Kafka retry infrastructure shared across multiple eCR-Now workflow steps.",
+          "when": "Implemented over 6 weeks. Zero downtime during rollout (Kafka consumer added alongside existing sync send, then sync send removed after validation).",
+          "issue": "Initial retry implementation used fixed 1-minute intervals for all 6 retries. During a 3-hour CDC outage, 180 retries per report × N reports overwhelmed the retry infrastructure.",
+          "fix": "Switched to exponential backoff: 1m, 5m, 15m, 1h, 6h, 24h. Maximum of 6 attempts per report, total spread over 24 hours. Kafka consumer rate-limited: max 100 retry deliveries per minute across all reports.",
+          "star": {
+            "s": "eCR-Now had 15% CDC report failure rate. Regulatory audit threatened. Hospital network at risk of CDC compliance violation.",
+            "t": "Achieve >99% CDC report delivery reliability. Design must survive CDC endpoint outages of up to 24 hours.",
+            "a": "Designed and implemented Kafka-based retry queue with 6-step exponential backoff, idempotency keys, MDN verification, dead-letter queue with PagerDuty alerting, and real-time Grafana delivery dashboard. Solo design, led a team of 2 engineers for implementation over 6 weeks.",
+            "r": "CDC failure rate: 15% → 0.1%. 99.9% compliance rate sustained for 12 months. Zero regulatory findings. Retry infrastructure subsequently reused for EHR DocumentReference delivery."
+          },
+          "difficulty": "advanced",
+          "tags": ["star", "cdc", "compliance", "kafka", "reliability", "healthcare"]
+        },
+        {
+          "id": "22.5.star-fhir-performance",
+          "term": "STAR: Reducing FHIR Query Latency from 3s to 180ms",
+          "what": "STAR story demonstrating systematic performance investigation, multi-hypothesis testing, and measurable outcome for a critical healthcare integration path.",
+          "why": "Demonstrates profiling skills, ability to find root cause without guessing, and understanding of FHIR-specific performance patterns. Shows senior-level performance thinking.",
+          "how": "Situation: eCR-Now FHIR patient queries averaging 3 seconds p95. Reports being generated 30+ minutes after admission — missing early-morning CDC reporting window and potentially violating 24-hour reporting requirement for late-afternoon admissions. Task: Reduce FHIR query latency to under 500ms p95 without changing EHR FHIR server configuration (no access to EHR team's backlog). Action: 1) Profiled with async-profiler on production traffic replay. Flame graph: 80% of time in Jackson deserializeFromBytes — response parsing. 2) Checked response sizes: FHIR Bundle averaging 52KB — entire patient history of Conditions returned, not just current encounter. 3) Fix 1: Added FHIR _elements parameter — request only needed fields. Added &encounter={encounterId} scoping — only current encounter's resources. Bundle size: 52KB → 6KB. Parse time: 820ms → 95ms. 4) Fix 2: Parallel CompletableFuture for Condition, Observation, MedicationRequest queries. Was sequential (3 × 820ms = 2.46s). Now parallel: max(3 × 95ms) = 95ms for all three. 5) Fix 3: Redis cache keyed by (patientId, encounterId, resourceType). 5-minute TTL. Cache hit rate 70% — multiple eCR workflow steps query same patient. Cache hit latency: 3ms. Result: FHIR query p95: 3000ms → 180ms (no cache), 3ms (cache hit). Weighted average with 70% cache hit: 57ms. 100% CDC 24-hour compliance restored.",
+          "where": "eCR-Now FHIR client component. Improvements applied to all 3 FHIR resource queries (Condition, Observation, MedicationRequest).",
+          "when": "Investigation: 1 week. Implementation: 1 week. Validated in load testing before production release.",
+          "issue": "Parallel CompletableFuture queries increased thread count significantly. Under burst load, created too many concurrent connections to EHR FHIR server. EHR team complained about connection spike.",
+          "fix": "Added connection pool cap: WebClient with bounded elastic scheduler, max 50 connections to EHR FHIR server. Backpressure: if pool full, queue request for up to 2 seconds before returning 503. EHR team confirmed: controlled connection pool caused zero complaints after fix.",
+          "star": {
+            "s": "eCR-Now FHIR queries at 3 seconds p95. Missing early CDC reporting window. Compliance risk for late-day admissions.",
+            "t": "Reduce to under 500ms p95 without EHR server changes.",
+            "a": "Profiled with async-profiler: bottleneck was response parsing of oversized Bundles. Applied: FHIR _elements + encounter scoping (52KB→6KB), parallel CompletableFuture queries, Redis cache with 70% hit rate. Total: 3s → 57ms weighted average.",
+            "r": "100% CDC 24-hour compliance. 70% reduction in EHR FHIR server load from eCR-Now queries."
+          },
+          "difficulty": "advanced",
+          "tags": ["star", "performance", "fhir", "profiling", "redis", "optimization"]
+        },
+        {
+          "id": "22.5.star-gke-migration",
+          "term": "STAR: Migrating eCR-Now to GKE for Autoscaling",
+          "what": "STAR story demonstrating cloud architecture decision-making, migration planning, and operational improvement through containerization and Kubernetes orchestration.",
+          "why": "Shows ability to evaluate infrastructure options, make and justify architectural decisions, manage migration risk in a healthcare compliance system, and deliver quantifiable operational improvements.",
+          "how": "Situation: eCR-Now running on two fixed EC2 instances. During morning rounds (7-9am), admission volume spiked 10x. EC2 sized for 2x normal load — 5x admissions during peak caused a backlog of 200+ reports, some taking 45 minutes to process. Non-peak hours: 90% CPU idle — paying for unused capacity. Task: Design infrastructure that handles 10x burst without degrading report generation time, while reducing cost at off-peak. Action: 1) Evaluated options: vertical scaling (bigger EC2 — expensive, still fixed), horizontal with manual scaling (operational burden), Kubernetes autoscaling (complex setup, best long-term). Recommended GKE for: autoscaling, self-healing (pod restart on stuck), rolling deployments, multi-zone HA. 2) Containerized Spring Boot app: multi-stage Dockerfile, optimized JVM flags for containers (-XX:MaxRAMPercentage=75 instead of fixed -Xmx). 3) Kubernetes manifests: Deployment (min 2 pods, max 20), HPA (CPU 70%), readiness probe, liveness probe, PDB (min 2 available). 4) Zero-downtime migration: ran GKE and EC2 in parallel for 2 weeks. Health checks validated. Traffic cut over to GKE. EC2 decommissioned after 1 week of stable GKE. 5) Post-migration: switched to KEDA on Kafka lag for faster scale-up than CPU HPA. Result: Morning burst backlog eliminated (max 2 minutes report latency at peak). Infrastructure cost reduced 35% (EC2 was always-on, GKE scales to 2 pods at night). Zero downtime during migration.",
+          "where": "Infrastructure architecture decision for eCR-Now. GCP project, GKE cluster, same region as hospital networks.",
+          "when": "Migration took 6 weeks end-to-end: 2 weeks containerization + testing, 2 weeks parallel run, 2 weeks validation and EC2 decommission.",
+          "issue": "Spring Boot JVM startup time in containers was 25 seconds. During scale-up events, new pods took 25 seconds before serving traffic. Readiness probe prevented premature routing, but requests queued for 25 seconds on scale-up.",
+          "fix": "Predictive pre-scaling with CronJob (scale to 10 pods at 6:30am before peak). KEDA starts scaling earlier (based on queue depth, not CPU lag). Future: Spring Boot AOT + CRaC for sub-second startup.",
+          "star": {
+            "s": "eCR-Now on fixed EC2: 45-minute delays during morning peaks, 90% idle at night. Cost: paying for peak capacity 24/7.",
+            "t": "Handle 10x admission burst without delay. Reduce infrastructure cost.",
+            "a": "Designed and led migration to GKE: containerization, Kubernetes manifests, KEDA autoscaling on Kafka lag, CronJob pre-scaling, zero-downtime migration plan. Led 2-engineer team for 6 weeks.",
+            "r": "Morning peak delay: 45 min → under 2 min. Infrastructure cost: 35% reduction. Zero downtime during migration. Self-healing: 3 pod restarts in first month (stuck threads) fully automatic."
+          },
+          "difficulty": "advanced",
+          "tags": ["star", "gke", "kubernetes", "migration", "autoscaling", "cloud"]
+        }
+      ]
+    }
+  ]
+}

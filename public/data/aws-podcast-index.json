@@ -1,0 +1,70 @@
+{
+  "modules": [
+    {
+      "id": "aws-1",
+      "title": "Module 1: Foundations & Identity",
+      "episodes": [
+        {
+          "id": "aws-1-1",
+          "slug": "aws/aws-1-foundations",
+          "title": "AWS Cloud Infrastructure & IAM"
+        }
+      ]
+    },
+    {
+      "id": "aws-2",
+      "title": "Module 2: Compute Patterns",
+      "episodes": [
+        {
+          "id": "aws-2-1",
+          "slug": "aws/aws-2-scaling",
+          "title": "High Availability, Scaling & Containers"
+        }
+      ]
+    },
+    {
+      "id": "aws-3",
+      "title": "Module 3: Data Layer",
+      "episodes": [
+        {
+          "id": "aws-3-1",
+          "slug": "aws/aws-3-data-layer",
+          "title": "Databases, Caching & Storage"
+        }
+      ]
+    },
+    {
+      "id": "aws-4",
+      "title": "Module 4: Networking",
+      "episodes": [
+        {
+          "id": "aws-4-1",
+          "slug": "aws/aws-4-networking",
+          "title": "Networking & Global Content Delivery"
+        }
+      ]
+    },
+    {
+      "id": "aws-5",
+      "title": "Module 5: Security & Monitoring",
+      "episodes": [
+        {
+          "id": "aws-5-1",
+          "slug": "aws/aws-5-security",
+          "title": "Security, Monitoring & Governance"
+        }
+      ]
+    },
+    {
+      "id": "aws-6",
+      "title": "Module 6: Architecture",
+      "episodes": [
+        {
+          "id": "aws-6-1",
+          "slug": "aws/aws-6-architecture",
+          "title": "Solutions Architecture & Exam Scenarios"
+        }
+      ]
+    }
+  ]
+}

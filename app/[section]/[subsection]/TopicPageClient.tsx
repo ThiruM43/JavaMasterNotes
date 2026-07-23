@@ -6,6 +6,7 @@ import { useApp } from '@/components/providers/AppProviders';
 import { TermAccordion } from '@/components/content/TermAccordion';
 import { fetchSectionBySlug } from '@/lib/data';
 import { setLastVisited } from '@/lib/storage/progress';
+import { useSearchParams } from 'next/navigation';
 import type { Section, Subsection } from '@/lib/types';
 
 export default function TopicPageClient({ sectionSlug, subsectionSlug }: { sectionSlug: string; subsectionSlug: string }) {
@@ -13,6 +14,8 @@ export default function TopicPageClient({ sectionSlug, subsectionSlug }: { secti
   const [section, setSection] = useState<Section | null>(null);
   const [subsection, setSubsection] = useState<Subsection | null>(null);
   const [loading, setLoading] = useState(true);
+  const searchParams = useSearchParams();
+  const returnUrl = searchParams.get('returnUrl');
 
   useEffect(() => {
     let active = true;
@@ -136,6 +139,13 @@ export default function TopicPageClient({ sectionSlug, subsectionSlug }: { secti
           )}
         </div>
       </div>
+
+      {returnUrl && (
+        <Link href={returnUrl} className="fab-podcast">
+          <span style={{ fontSize: '1.2rem' }}>🎧</span>
+          Back to Podcast
+        </Link>
+      )}
     </AppShell>
   );
 }

@@ -236,13 +236,8 @@ img { max-width: 100%; }
     display: none !important;
   }
 
-  .topbar-username {
-    max-width: 85px !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
-    display: inline-block !important;
-    vertical-align: bottom !important;
+  .topbar-user-pill {
+    padding: 4px 10px !important;
   }
 }
 
@@ -250,7 +245,7 @@ img { max-width: 100%; }
   .app-shell,
   .app-shell.drawer-open {
     grid-template-columns: 1fr;
-    grid-template-rows: var(--topbar-h) 1fr auto;
+    grid-template-rows: auto 1fr auto;
     grid-template-areas:
       "topbar"
       "main"
@@ -266,8 +261,11 @@ img { max-width: 100%; }
   }
 
   .topbar {
-    padding: 0 10px;
-    gap: 6px;
+    padding: 10px;
+    gap: 8px;
+    flex-wrap: wrap;
+    height: auto;
+    min-height: var(--topbar-h);
   }
 
   .topbar-logo span:not(.logo-icon) {
@@ -366,7 +364,7 @@ img { max-width: 100%; }
   }
 
   .topbar-username {
-    max-width: 65px !important;
+    max-width: 85px !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
@@ -2053,4 +2051,60 @@ img { max-width: 100%; }
 
 @media (min-width: 769px) {
   .toast { bottom: 24px; }
+}
+
+/* FAB for Podcast Return */
+.fab-podcast {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 30px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4);
+  text-decoration: none;
+  z-index: 100;
+  border: 2px solid rgba(255,255,255,0.2);
+  transition: transform 0.2s;
+}
+.fab-podcast:hover {
+  transform: translateY(-2px);
+  color: #fff;
+}
+@media (min-width: 769px) {
+  .fab-podcast { bottom: 24px; right: 24px; }
+}
+
+/* ═══════════════════════════════════════════════
+   PRINT / PDF EXPORT
+═══════════════════════════════════════════════ */
+@media print {
+  .topbar, .sidebar, .mobile-bottom-nav, .fab-podcast, .hide-on-print, .toast {
+    display: none !important;
+  }
+  .app-shell, .app-shell.drawer-open {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .main-content {
+    overflow: visible !important;
+    height: auto !important;
+    padding: 0 !important;
+  }
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .qa-card, .podcast-speech-bubble {
+    break-inside: avoid;
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+  }
 }

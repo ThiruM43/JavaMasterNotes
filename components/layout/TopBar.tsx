@@ -71,10 +71,11 @@ export function TopBar() {
             </span>
             <button
               onClick={() => { logout(false); showToast('🚪 Logged out successfully'); }}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--issue-red)', fontWeight: 600, padding: '0 4px' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--issue-red)', fontWeight: 600, padding: '0 4px' }}
               title="Logout"
             >
-              Logout
+              <span>🚪</span>
+              <span className="btn-logout-text">Logout</span>
             </button>
           </div>
         ) : (
@@ -106,6 +107,32 @@ export function TopBar() {
           <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
           </svg>
+        </Link>
+
+
+        {/* Podcast link */}
+        <Link
+          href="/podcast"
+          data-tooltip="Tanglish Podcast"
+          style={{
+            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(139, 92, 246, 0.05) 100%)',
+            border: '1px solid #8b5cf6',
+            borderRadius: 18,
+            padding: '4px 12px',
+            color: '#8b5cf6',
+            fontWeight: 700,
+            fontSize: '0.8rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            textDecoration: 'none',
+            whiteSpace: 'nowrap',
+            height: '34px',
+            transition: 'all 0.2s'
+          }}
+        >
+          <span style={{ fontSize: '1rem' }}>🎧</span>
+          <span className="hide-on-mobile">Podcast</span>
         </Link>
 
         {/* Theme toggle */}

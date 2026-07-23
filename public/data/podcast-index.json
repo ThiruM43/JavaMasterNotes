@@ -1,0 +1,239 @@
+{
+  "modules": [
+    {
+      "id": "1",
+      "title": "1. Self-Intro & Project Architecture",
+      "episodes": [
+        { "id": "1.1", "slug": "monolith-vs-microservices", "title": "Monolith vs Microservices" },
+        { "id": "1.2", "slug": "hld-vs-lld", "title": "HLD vs LLD" },
+        { "id": "1.3", "slug": "layered-architecture", "title": "Layered Architecture" },
+        { "id": "1.4", "slug": "api-gateway", "title": "API Gateway" },
+        { "id": "1.5", "slug": "load-balancer", "title": "Load Balancer" },
+        { "id": "1.6", "slug": "service-discovery", "title": "Service Discovery" },
+        { "id": "1.7", "slug": "message-queue", "title": "Message Queue (Kafka/RabbitMQ)" },
+        { "id": "1.8", "slug": "sync-vs-async", "title": "Synchronous vs Asynchronous" },
+        { "id": "1.9", "slug": "database-per-service", "title": "Database per service pattern" },
+        { "id": "1.10", "slug": "cicd-basics", "title": "CI/CD pipeline basics" }
+      ]
+    },
+    {
+      "id": "2",
+      "title": "2. Production Issue Handling",
+      "episodes": [
+        { "id": "2.1", "slug": "thread-dump", "title": "Thread dump (jstack)" },
+        { "id": "2.2", "slug": "heap-dump", "title": "Heap dump" },
+        { "id": "2.3", "slug": "deadlock", "title": "Deadlock" },
+        { "id": "2.4", "slug": "thread-starvation", "title": "Thread starvation" },
+        { "id": "2.5", "slug": "gc-pause", "title": "GC pause / Full GC" },
+        { "id": "2.6", "slug": "oom-error", "title": "OutOfMemoryError (OOM)" },
+        { "id": "2.7", "slug": "cpu-spike-vs-memory-leak", "title": "CPU spike vs memory leak" },
+        { "id": "2.8", "slug": "logs-vs-dumps", "title": "Logs vs Dumps prioritization" },
+        { "id": "2.9", "slug": "apm-tools", "title": "APM tools (New Relic/Dynatrace)" },
+        { "id": "2.10", "slug": "rollback-vs-hotfix", "title": "Rollback vs Hotfix" }
+      ]
+    },
+    {
+      "id": "3",
+      "title": "3. Rate Limiting & Resilience",
+      "episodes": [
+        { "id": "3.1", "slug": "rate-limiting-algorithms", "title": "Rate limiting algorithms" },
+        { "id": "3.2", "slug": "throttling-vs-rate-limiting", "title": "Throttling vs Rate Limiting" },
+        { "id": "3.3", "slug": "circuit-breaker", "title": "Circuit Breaker pattern" },
+        { "id": "3.4", "slug": "retry-backoff", "title": "Retry pattern & Backoff" },
+        { "id": "3.5", "slug": "bulkhead", "title": "Bulkhead pattern" },
+        { "id": "3.6", "slug": "idempotency", "title": "Idempotency" },
+        { "id": "3.7", "slug": "timeouts", "title": "Timeout configuration" }
+      ]
+    },
+    {
+      "id": "4",
+      "title": "4. Concurrency & Multithreading",
+      "episodes": [
+        { "id": "4.1", "slug": "thread-vs-process", "title": "Thread vs Process" },
+        { "id": "4.2", "slug": "runnable-vs-callable", "title": "Runnable vs Callable" },
+        { "id": "4.3", "slug": "synchronized-vs-lock", "title": "Synchronized vs Lock" },
+        { "id": "4.4", "slug": "executor-framework", "title": "Executor Framework / Thread Pool" },
+        { "id": "4.5", "slug": "volatile-keyword", "title": "Volatile keyword" },
+        { "id": "4.6", "slug": "completablefuture", "title": "CompletableFuture" },
+        { "id": "4.7", "slug": "race-condition", "title": "Race condition" },
+        { "id": "4.8", "slug": "threadlocal", "title": "ThreadLocal" },
+        { "id": "4.9", "slug": "producer-consumer", "title": "Producer-Consumer problem" },
+        { "id": "4.10", "slug": "wait-notify", "title": "wait/notify vs modern concurrency" },
+        { "id": "4.11", "slug": "atomic-classes", "title": "Atomic classes (CAS)" },
+        { "id": "4.12", "slug": "fork-join", "title": "Fork/Join framework" },
+        { "id": "4.13", "slug": "virtual-threads", "title": "Virtual Threads (Loom)" }
+      ]
+    },
+    {
+      "id": "5",
+      "title": "5. JVM & Memory",
+      "episodes": [
+        { "id": "5.1", "slug": "jvm-architecture", "title": "JVM architecture" },
+        { "id": "5.2", "slug": "jvm-memory-areas", "title": "JVM memory areas" },
+        { "id": "5.3", "slug": "garbage-collectors", "title": "Garbage Collectors" },
+        { "id": "5.4", "slug": "memory-leaks", "title": "Memory leak causes" },
+        { "id": "5.5", "slug": "class-loading", "title": "Class loading mechanism" },
+        { "id": "5.6", "slug": "jit-compilation", "title": "JIT compilation basics" },
+        { "id": "5.7", "slug": "references", "title": "Strong/Weak/Soft/Phantom references" }
+      ]
+    },
+    {
+      "id": "6",
+      "title": "6. Spring / Spring Boot",
+      "episodes": [
+        { "id": "6.1", "slug": "dependency-injection", "title": "Dependency Injection & IoC" },
+        { "id": "6.2", "slug": "bean-lifecycle-scopes", "title": "Bean lifecycle & scopes" },
+        { "id": "6.3", "slug": "actuator", "title": "Spring Boot Actuator" },
+        { "id": "6.4", "slug": "transaction-management", "title": "Transaction management" },
+        { "id": "6.5", "slug": "exception-handling", "title": "Exception handling" },
+        { "id": "6.6", "slug": "spring-aop", "title": "Spring AOP" },
+        { "id": "6.7", "slug": "auto-configuration", "title": "Auto-configuration internals" },
+        { "id": "6.8", "slug": "constructor-injection", "title": "Autowired vs constructor injection" },
+        { "id": "6.9", "slug": "spring-security", "title": "Spring Security basics" },
+        { "id": "6.10", "slug": "spring-data-jpa", "title": "Spring Data JPA" }
+      ]
+    },
+    {
+      "id": "7",
+      "title": "7. Database & Hibernate",
+      "episodes": [
+        { "id": "7.1", "slug": "acid-properties", "title": "ACID properties" },
+        { "id": "7.2", "slug": "isolation-levels", "title": "Isolation levels" },
+        { "id": "7.3", "slug": "indexing", "title": "Indexing (clustered vs non)" },
+        { "id": "7.4", "slug": "n-plus-1-problem", "title": "N+1 query problem" },
+        { "id": "7.5", "slug": "connection-pooling", "title": "Connection pooling" },
+        { "id": "7.6", "slug": "optimistic-pessimistic-locking", "title": "Optimistic vs Pessimistic locking" },
+        { "id": "7.7", "slug": "hibernate-cache", "title": "First vs Second-level cache" },
+        { "id": "7.8", "slug": "lazy-vs-eager", "title": "Lazy vs Eager loading" },
+        { "id": "7.9", "slug": "jpa-lifecycle", "title": "JPA entity lifecycle" },
+        { "id": "7.10", "slug": "entity-mapping", "title": "Mapping pitfalls (OneToMany, etc)" }
+      ]
+    },
+    {
+      "id": "8",
+      "title": "8. Security & API Basics",
+      "episodes": [
+        { "id": "8.1", "slug": "oauth2-jwt", "title": "OAuth2 / JWT" },
+        { "id": "8.2", "slug": "https-tls", "title": "HTTPS/TLS basics" },
+        { "id": "8.3", "slug": "cors", "title": "CORS" },
+        { "id": "8.4", "slug": "sql-injection", "title": "SQL Injection prevention" },
+        { "id": "8.5", "slug": "csrf", "title": "CSRF" },
+        { "id": "8.6", "slug": "api-versioning", "title": "API versioning strategies" }
+      ]
+    },
+    {
+      "id": "9",
+      "title": "9. System Design Basics",
+      "episodes": [
+        { "id": "9.1", "slug": "scaling", "title": "Horizontal vs Vertical scaling" },
+        { "id": "9.2", "slug": "caching", "title": "Caching strategies (Redis)" },
+        { "id": "9.3", "slug": "cap-theorem", "title": "CAP theorem" },
+        { "id": "9.4", "slug": "consistent-hashing", "title": "Consistent hashing" },
+        { "id": "9.5", "slug": "database-sharding", "title": "Database sharding vs replication" },
+        { "id": "9.6", "slug": "cdn", "title": "CDN basics" },
+        { "id": "9.7", "slug": "rate-limiter-design", "title": "Designing a rate limiter / shortener" }
+      ]
+    },
+    {
+      "id": "10",
+      "title": "10. Collections / Data Structures",
+      "episodes": [
+        { "id": "10.1", "slug": "arraylist-vs-linkedlist", "title": "ArrayList vs LinkedList" },
+        { "id": "10.2", "slug": "hashmap-internals", "title": "HashMap internals" },
+        { "id": "10.3", "slug": "hashmap-vs-hashtable-vs-concurrent", "title": "HashMap vs ConcurrentHashMap" },
+        { "id": "10.4", "slug": "treemap-treeset", "title": "TreeMap / TreeSet" },
+        { "id": "10.5", "slug": "comparable-vs-comparator", "title": "Comparable vs Comparator" },
+        { "id": "10.6", "slug": "hashset-vs-linked-vs-tree", "title": "Set implementations" },
+        { "id": "10.7", "slug": "iterators", "title": "Iterator vs ListIterator vs Spliterator" },
+        { "id": "10.8", "slug": "fail-fast-vs-fail-safe", "title": "Fail-fast vs fail-safe" }
+      ]
+    },
+    {
+      "id": "11",
+      "title": "11. Core Java Language Fundamentals",
+      "episodes": [
+        { "id": "11.1", "slug": "oop-pillars", "title": "OOP pillars & trade-offs" },
+        { "id": "11.2", "slug": "abstract-class-vs-interface", "title": "Abstract class vs Interface" },
+        { "id": "11.3", "slug": "equals-hashcode", "title": "== vs equals() vs hashCode()" },
+        { "id": "11.4", "slug": "string-pool", "title": "String pool & Immutability" },
+        { "id": "11.5", "slug": "final-finally-finalize", "title": "final, finally, finalize()" },
+        { "id": "11.6", "slug": "static-members", "title": "Static members & blocks" },
+        { "id": "11.7", "slug": "exceptions", "title": "Checked vs Unchecked exceptions" },
+        { "id": "11.8", "slug": "try-with-resources", "title": "try-with-resources" },
+        { "id": "11.9", "slug": "overloading-vs-overriding", "title": "Overloading vs Overriding" },
+        { "id": "11.10", "slug": "object-cloning", "title": "Object cloning (shallow vs deep)" },
+        { "id": "11.11", "slug": "enums", "title": "Enums in Java" },
+        { "id": "11.12", "slug": "generics", "title": "Generics & wildcards" },
+        { "id": "11.13", "slug": "varargs", "title": "Varargs" },
+        { "id": "11.14", "slug": "nested-classes", "title": "Nested & Inner classes" }
+      ]
+    },
+    {
+      "id": "12",
+      "title": "12. Java 8+ Modern Features",
+      "episodes": [
+        { "id": "12.1", "slug": "lambda-expressions", "title": "Lambda expressions" },
+        { "id": "12.2", "slug": "functional-interfaces", "title": "Functional interfaces" },
+        { "id": "12.3", "slug": "stream-api", "title": "Stream API basics" },
+        { "id": "12.4", "slug": "parallel-streams", "title": "Parallel streams" },
+        { "id": "12.5", "slug": "optional", "title": "Optional & anti-patterns" },
+        { "id": "12.6", "slug": "method-references", "title": "Method references" },
+        { "id": "12.7", "slug": "default-methods", "title": "Default & static methods" },
+        { "id": "12.8", "slug": "date-time-api", "title": "Date/Time API" },
+        { "id": "12.9", "slug": "records", "title": "Records (Java 14+)" },
+        { "id": "12.10", "slug": "sealed-classes", "title": "Sealed classes (Java 17+)" },
+        { "id": "12.11", "slug": "pattern-matching", "title": "Pattern matching" },
+        { "id": "12.12", "slug": "text-blocks", "title": "Text blocks" }
+      ]
+    },
+    {
+      "id": "13",
+      "title": "13. Design Patterns",
+      "episodes": [
+        { "id": "13.1", "slug": "singleton", "title": "Singleton (thread-safe)" },
+        { "id": "13.2", "slug": "factory-pattern", "title": "Factory / Abstract Factory" },
+        { "id": "13.3", "slug": "builder-pattern", "title": "Builder pattern" },
+        { "id": "13.4", "slug": "observer-pattern", "title": "Observer pattern" },
+        { "id": "13.5", "slug": "strategy-pattern", "title": "Strategy pattern" },
+        { "id": "13.6", "slug": "decorator-pattern", "title": "Decorator pattern" },
+        { "id": "13.7", "slug": "proxy-pattern", "title": "Proxy pattern" },
+        { "id": "13.8", "slug": "template-method", "title": "Template Method pattern" },
+        { "id": "13.9", "slug": "dependency-injection-pattern", "title": "DI as a pattern" },
+        { "id": "13.10", "slug": "adapter-pattern", "title": "Adapter pattern" }
+      ]
+    },
+    {
+      "id": "14",
+      "title": "14. Testing",
+      "episodes": [
+        { "id": "14.1", "slug": "junit-5-basics", "title": "JUnit 5 basics" },
+        { "id": "14.2", "slug": "mockito-basics", "title": "Mockito fundamentals" },
+        { "id": "14.3", "slug": "test-doubles", "title": "Test doubles (mock, stub, spy)" },
+        { "id": "14.4", "slug": "integration-vs-unit", "title": "Integration vs Unit testing" },
+        { "id": "14.5", "slug": "springboot-test", "title": "@SpringBootTest vs slice tests" },
+        { "id": "14.6", "slug": "testcontainers", "title": "TestContainers basics" }
+      ]
+    },
+    {
+      "id": "15",
+      "title": "15. Build Tools & DevOps Basics",
+      "episodes": [
+        { "id": "15.1", "slug": "maven-vs-gradle", "title": "Maven vs Gradle" },
+        { "id": "15.2", "slug": "docker-basics", "title": "Docker basics" },
+        { "id": "15.3", "slug": "kubernetes-basics", "title": "Kubernetes basics" },
+        { "id": "15.4", "slug": "git-branching", "title": "Git branching strategies" },
+        { "id": "15.5", "slug": "logging-frameworks", "title": "Logging frameworks (SLF4J)" }
+      ]
+    },
+    {
+      "id": "16",
+      "title": "16. Messaging & Integration",
+      "episodes": [
+        { "id": "16.1", "slug": "kafka-core", "title": "Kafka core concepts" },
+        { "id": "16.2", "slug": "message-delivery-semantics", "title": "Delivery semantics (At-least-once)" },
+        { "id": "16.3", "slug": "rest-vs-grpc", "title": "REST vs SOAP vs gRPC vs GraphQL" },
+        { "id": "16.4", "slug": "webhooks-vs-polling", "title": "Webhooks vs polling" }
+      ]
+    }
+  ]
+}
